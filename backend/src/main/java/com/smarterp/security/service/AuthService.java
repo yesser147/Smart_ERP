@@ -1,6 +1,7 @@
 package com.smarterp.security.service;
 
 import com.smarterp.security.domain.Role;
+import com.smarterp.security.domain.RoleName;
 import com.smarterp.security.domain.User;
 import com.smarterp.security.dto.AuthResponse;
 import com.smarterp.security.dto.LoginRequest;
@@ -8,6 +9,8 @@ import com.smarterp.security.dto.RegisterRequest;
 import com.smarterp.security.dto.UserDTO;
 import com.smarterp.security.repository.RoleRepository;
 import com.smarterp.security.repository.UserRepository;
+import com.smarterp.shared.exception.BadRequestException;
+import com.smarterp.shared.exception.ResourceNotFoundException;
 import com.smarterp.shared.security.JwtUtils;
 import com.smarterp.shared.security.SecurityUser;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -42,11 +45,11 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("Email address is already in use.");
+            throw new BadRequestException("Email address is already in use.");
         }
 
         Role role = roleRepository.findByName(request.role())
-                .orElseThrow(() -> new RuntimeException("Error: Role " + request.role() + " was not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Error: Role " + request.role() + " was not found."));
 
         User user = new User();
         user.setEmail(request.email());
@@ -72,7 +75,7 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + request.email()));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.email()));
 
         SecurityUser securityUser = new SecurityUser(user);
         String jwtToken = jwtUtils.generateToken(securityUser);
@@ -88,7 +91,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserDTO getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         return new UserDTO(
                 user.getId(),
