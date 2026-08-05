@@ -1,0 +1,34 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: smart-erp-core
+
+  # Database Connection
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smart_erp
+    username: postgres
+    password: postgres  # Change to your actual PostgreSQL password if not "postgres"
+    driver-class-name: org.postgresql.Driver
+
+  # JPA & Hibernate Settings
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL:update}
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# JWT Security Configuration Settings
+application:
+  security:
+    jwt:
+      # Must be a Base64-encoded string of at least 256 bits (32+ bytes)
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration-ms: 86400000 # 24 Hours in milliseconds
+      refresh-token-expiration-ms: 604800000 # 7 Days in milliseconds
