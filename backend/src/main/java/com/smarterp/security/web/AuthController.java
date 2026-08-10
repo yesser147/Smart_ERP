@@ -3,6 +3,7 @@ package com.smarterp.security.web;
 import com.smarterp.security.dto.AuthResponse;
 import com.smarterp.security.dto.LoginRequest;
 import com.smarterp.security.dto.RegisterRequest;
+import com.smarterp.security.dto.SetPasswordRequest;
 import com.smarterp.security.dto.UserDTO;
 import com.smarterp.security.service.AuthService;
 import jakarta.validation.Valid;
@@ -34,5 +35,11 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
         return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
+    }
+
+    @PostMapping("/set-password")
+    public ResponseEntity<String> setPassword(@RequestBody SetPasswordRequest request) {
+        authService.setPasswordWithToken(request);
+        return ResponseEntity.ok("Mot de passe configuré avec succès.");
     }
 }

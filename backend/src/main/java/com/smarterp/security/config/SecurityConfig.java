@@ -33,8 +33,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // 2. ADD '/api/v1' TO YOUR PATHS SO THEY MATCH ANGULAR
-                .requestMatchers("/api/v1/auth/login", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                .requestMatchers("/api/v1/auth/register").hasRole("ADMIN") 
+                .requestMatchers("/auth/login", "/auth/set-password", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                .requestMatchers("/auth/register").hasRole("ADMIN") 
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

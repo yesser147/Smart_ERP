@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import { AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { AuthResponse, LoginRequest, RegisterRequest, setpass } from '../models/auth.model';
 import { TokenService } from './token.service';
 
 @Injectable({
@@ -36,6 +36,10 @@ export class AuthService {
   createUser(userData: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData);
   }
+
+  setpassword(newpass: setpass): Observable<string> {
+  return this.http.post(`${this.apiUrl}/set-password`, newpass, { responseType: 'text' });
+}
 
   logout(): void {
     this.tokenService.clearAuthData();

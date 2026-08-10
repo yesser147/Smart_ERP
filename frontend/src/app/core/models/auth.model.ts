@@ -18,3 +18,9 @@ export interface AuthResponse {
   email: string;
   role: RoleName;
 }
+export interface setpass{
+  token: string;
+  newPassword: string;
+
+
+}

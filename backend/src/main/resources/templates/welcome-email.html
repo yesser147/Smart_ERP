@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activez votre compte Nexus ERP</title>
+    <style>
+        /* Base resets for email clients */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        /* Mobile styling */
+        @media screen and (max-width: 600px) {
+            .email-container { width: 100% !important; padding: 12px !important; }
+            .content-box { padding: 24px 20px !important; }
+            .btn { width: 100% !important; text-align: center !important; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body style="background-color: #0f172a; color: #f8fafc; margin: 0; padding: 32px 0;">
+
+    <!-- Main Wrapper Table for maximum email client compatibility -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+        <tr>
+            <td align="center">
+                
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container" style="max-width: 580px; margin: 0 auto;">
+                    
+                    <!-- Header / Logo -->
+                    <tr>
+                        <td align="center" style="padding-bottom: 28px;">
+                            <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                <tr>
+                                    <td align="center" style="background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px 20px;">
+                                        <span style="color: #14b8a6; font-size: 22px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">NEXUS<span style="color: #f8fafc; font-weight: 400;">ERP</span></span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Card -->
+                    <tr>
+                        <td class="content-box" style="background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 40px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+                            
+                            <!-- Title & Subtitle -->
+                            <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 12px 0; text-align: left;">
+                                Bienvenue sur la plateforme ! 👋
+                            </h1>
+                            <p style="color: #94a3b8; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">
+                                Un administrateur vous a invité à rejoindre votre espace de travail <strong style="color: #f8fafc;">Nexus ERP</strong>. Veuillez activer votre compte pour configurer vos accès.
+                            </p>
+
+                            <!-- Account Information Summary Box -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" style="background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; margin-bottom: 32px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                                            <tr>
+                                                <td style="padding-bottom: 10px; font-size: 14px; color: #94a3b8;" width="110">Identifiant</td>
+                                                <td style="padding-bottom: 10px; font-size: 14px; color: #f8fafc; font-weight: 600;" th:text="${email}">user@company.com</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom: 10px; font-size: 14px; color: #94a3b8;">Rôle attribué</td>
+                                                <td style="padding-bottom: 10px; font-size: 14px; color: #14b8a6; font-weight: 600;" th:text="${role}">ADMINISTRATEUR</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 14px; color: #94a3b8;">Validité</td>
+                                                <td style="font-size: 14px; color: #f8fafc; font-weight: 500;">24 heures</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Call To Action Button -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                                <tr>
+                                    <td align="center" style="padding-bottom: 32px;">
+                                        <a th:href="${activationUrl}" class="btn" style="background-color: #0d9488; color: #ffffff !important; display: inline-block; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 10px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">
+                                            Activer mon compte &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative Plain Link Section -->
+                            <div style="border-top: 1px solid #334155; padding-top: 24px;">
+                                <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin: 0 0 8px 0;">
+                                    Si le bouton ne fonctionne pas, vous pouvez copier et coller ce lien direct dans votre navigateur :
+                                </p>
+                                <p style="margin: 0; word-break: break-all;">
+                                    <a th:href="${activationUrl}" th:text="${activationUrl}" style="color: #14b8a6; font-size: 12px; text-decoration: underline;">http://localhost:4200/auth/set-password?token=...</a>
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding-top: 28px; text-align: center;">
+                            <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0;">
+                                Ce lien d'activation est à usage unique et expirera dans 24h.
+                            </p>
+                            <p style="color: #475569; font-size: 12px; margin: 0;">
+                                &copy; 2026 Nexus ERP. Tous droits réservés.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
