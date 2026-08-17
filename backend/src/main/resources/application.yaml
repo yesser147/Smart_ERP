@@ -11,7 +11,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/smart_erp
     username: postgres
-    password: postgres  # Change to your actual PostgreSQL password if not "postgres"
+    password: postgres  
     driver-class-name: org.postgresql.Driver
 
   # JPA & Hibernate Settings

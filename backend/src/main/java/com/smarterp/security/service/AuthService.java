@@ -1,14 +1,11 @@
 package com.smarterp.security.service;
 
-import com.smarterp.security.domain.PasswordResetToken;
 import com.smarterp.security.domain.Role;
 import com.smarterp.security.domain.User;
-import com.smarterp.security.dto.AuthResponse;
-import com.smarterp.security.dto.LoginRequest;
-import com.smarterp.security.dto.RegisterRequest;
-import com.smarterp.security.dto.SetPasswordRequest;
-import com.smarterp.security.dto.UserDTO;
-import com.smarterp.security.repository.PasswordResetTokenRepository;
+import com.smarterp.security.domain.UserToken;
+import com.smarterp.security.domain.TokenType;
+import com.smarterp.security.dto.*;
+import com.smarterp.security.repository.UserTokenRepository;
 import com.smarterp.security.repository.RoleRepository;
 import com.smarterp.security.repository.UserRepository;
 import com.smarterp.shared.email.EmailService;
@@ -28,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final UserTokenRepository userTokenRepository; // Renamed
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -43,7 +40,7 @@ public class AuthService {
             JwtUtils jwtUtils,
             AuthenticationManager authenticationManager, 
             EmailService emailService, 
-            PasswordResetTokenRepository passwordResetTokenRepository
+            UserTokenRepository userTokenRepository // Renamed
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -51,10 +48,10 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
         this.authenticationManager = authenticationManager;
         this.emailService = emailService;
-        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.userTokenRepository = userTokenRepository;
     }
 
-    @Transactional //enable the rollback
+    @Transactional 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new BadRequestException("Cette adresse e-mail est déjà utilisée.");
@@ -68,12 +65,15 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(role);
         user.setIsActive(true);
+        // Note: employeeId can be set here later if passed in the request
 
         User savedUser = userRepository.save(user);
 
         String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = new PasswordResetToken(token, savedUser, 24);
-        passwordResetTokenRepository.save(resetToken);
+        
+        
+        UserToken activationToken = new UserToken(token, TokenType.ACTIVATION, savedUser, 1440);
+        userTokenRepository.save(activationToken);
 
         SecurityUser securityUser = new SecurityUser(savedUser);
         String jwtToken = jwtUtils.generateToken(securityUser);
@@ -84,6 +84,7 @@ public class AuthService {
         return new AuthResponse(
                 jwtToken,
                 savedUser.getId(),
+                savedUser.getEmployeeId(), // Added to response
                 savedUser.getEmail(),
                 savedUser.getRole().getName().name()
         );
@@ -103,6 +104,7 @@ public class AuthService {
         return new AuthResponse(
                 jwtToken,
                 user.getId(),
+                user.getEmployeeId(), // Added to response
                 user.getEmail(),
                 user.getRole().getName().name()
         );
@@ -115,31 +117,32 @@ public class AuthService {
 
         return new UserDTO(
                 user.getId(),
+                user.getEmployeeId(), // Added to response
                 user.getEmail(),
                 user.getRole().getName().name(),
                 user.getIsActive()
         );
-}
-
-       @Transactional 
-        public void setPasswordWithToken(SetPasswordRequest request) {
-    if (request == null || request.getToken() == null || request.getNewPassword() == null) {
-        throw new BadRequestException("Le jeton et le mot de passe sont obligatoires.");
     }
 
-    PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
-            .orElseThrow(() -> new BadRequestException("Jeton invalide ou introuvable. Veuillez refaire une demande."));
+    @Transactional 
+    public void setPasswordWithToken(SetPasswordRequest request) {
+        if (request == null || request.getToken() == null || request.getNewPassword() == null) {
+            throw new BadRequestException("Le jeton et le mot de passe sont obligatoires.");
+        }
 
-    if (resetToken.isExpired()) {
-        passwordResetTokenRepository.delete(resetToken);
-        throw new BadRequestException("Ce lien d'activation a expiré.");
+        // UPDATE: Querying the generic UserToken table
+        UserToken resetToken = userTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Jeton invalide ou introuvable. Veuillez refaire une demande."));
+
+        if (resetToken.isExpired()) {
+            userTokenRepository.delete(resetToken);
+            throw new BadRequestException("Ce lien a expiré.");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        
+        userRepository.save(user);
+        userTokenRepository.delete(resetToken);
     }
-
-    User user = resetToken.getUser();
-    user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-    
-    // Save updated user and delete single-use token
-    userRepository.save(user);
-    passwordResetTokenRepository.delete(resetToken);
-}
 }

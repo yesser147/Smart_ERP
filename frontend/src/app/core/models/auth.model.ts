@@ -17,6 +17,7 @@ export interface AuthResponse {
   userId: string;
   email: string;
   role: RoleName;
+  employeeId:Number,
 }
 export interface setpass{
   token: string;

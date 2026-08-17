@@ -8,8 +8,8 @@ import java.util.UUID;
 public class Role {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use IDENTITY for standard auto-increment integers
+    private Long id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true, length = 50)
@@ -25,8 +25,8 @@ public class Role {
         this.description = description;
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public RoleName getName() { return name; }
     public void setName(RoleName name) { this.name = name; }
