@@ -133,7 +133,6 @@ def enforce_field_lengths(df, table, report):
 # ---------------------------------------------------------------------------
 # Employees
 # ---------------------------------------------------------------------------
-
 def clean_employees(df, report):
     table = "employees"
     df = df.copy()
@@ -202,6 +201,16 @@ def clean_employees(df, report):
         df.loc[bad_order_mask, "needs_review"] = True
         report.log(table, "exit_before_start_cleared", bad_order_mask.sum(),
                     "exit_date was before start_date -- impossible, exit_date nulled and flagged")
+
+    # ---------------------------------------------------------
+    # NEW LOGIC: Prevent Future Starts from inflating turnover
+    # ---------------------------------------------------------
+    future_exit_mask = (df["employee_status"] == "Future Start") & df["exit_date"].notna()
+    if future_exit_mask.any():
+        df.loc[future_exit_mask, "exit_date"] = pd.NaT
+        report.log(table, "future_start_with_exit_date", future_exit_mask.sum(),
+                   "Future Start employee had an exit_date -- impossible, set to null")
+    # ---------------------------------------------------------
 
     # 9. start_date in the future is impossible for a real employee record
     future_start_mask = df["start_date"] > TODAY
@@ -291,6 +300,7 @@ def clean_employees(df, report):
     df = enforce_field_lengths(df, table, report)
 
     print(f"  employees cleaned: {len(df)} rows kept, {df['needs_review'].sum()} flagged for manual review")
+    
     # 14. Sanitize self-referencing manager_id
     if "manager_id" in df.columns:
         # Convert to nullable integer to fix the '3910.0' float issue
@@ -310,7 +320,6 @@ def clean_employees(df, report):
                 report.log(table, "orphan_manager_id_nulled", n_invalid, 
                            "manager_id did not match any known employee_id -> set to null")
     return df
-
 
 # ---------------------------------------------------------------------------
 # Trainings

@@ -25,7 +25,7 @@ public class UserToken {
     @JoinColumn(nullable = false, name = "user_id")
     private User user;
 
-    @Column(name = "expiry_date", nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiryDate;
 
     public UserToken() {}

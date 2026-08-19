@@ -21,12 +21,12 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-
+//send 201 status means created 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
-
+//.ok mens 200 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));

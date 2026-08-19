@@ -3,6 +3,7 @@ employees,columns_dropped,3,"Dropped unused/sensitive columns: ['race_ethnicity'
 employees,unparseable_dob,1823,dob had a value that wasn't a real date -> set to null
 employees,nonstandard_status_kept,456,"employee_status value wasn't in the known set -- kept as-is, title-cased"
 employees,active_with_past_exit_date_fixed,991,Status said Active but exit_date was already in the past -> status set to Terminated
+employees,future_start_with_exit_date,69,"Future Start employee had an exit_date -- impossible, set to null"
 employees,invalid_email_cleared,18,"email didn't look like a real address -- cleared, will be synthesized"
 employees,email_synthesized,18,email was missing/invalid -- synthesized a placeholder (name.id@smarterp.local)
 employees,duplicate_email_deduplicated,2,Two employees ended up with the same email -- made unique with a +employee_id tag
