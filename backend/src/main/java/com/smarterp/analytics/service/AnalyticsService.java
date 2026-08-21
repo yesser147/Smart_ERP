@@ -1,7 +1,9 @@
 package com.smarterp.analytics.service;
 
+import com.smarterp.analytics.domain.DepartmentTypeTurnover;
 import com.smarterp.analytics.dto.AttritionRiskIndicatorsDTO;
 import com.smarterp.analytics.dto.DepartmentTurnoverDTO;
+import com.smarterp.analytics.dto.DepartmentTypeTurnoverDTO;
 import com.smarterp.analytics.dto.EmployeePerformanceEngagementDTO;
 import com.smarterp.analytics.dto.RecruitmentFunnelAtsDTO;
 import com.smarterp.analytics.dto.SalaryDistributionDTO;
@@ -9,6 +11,7 @@ import com.smarterp.analytics.dto.TopPerformerBenchmarksDTO;
 import com.smarterp.analytics.dto.TrainingAnalyticsDTO;
 import com.smarterp.analytics.repository.AttritionRiskIndicatorsRepository;
 import com.smarterp.analytics.repository.DepartmentTurnoverRepository;
+import com.smarterp.analytics.repository.DepartmentTypeTurnoverRepository;
 import com.smarterp.analytics.repository.EmployeePerformanceEngagementRepository;
 import com.smarterp.analytics.repository.RecruitmentFunnelAtsRepository;
 import com.smarterp.analytics.repository.SalaryDistributionRepository;
@@ -39,6 +42,7 @@ public class AnalyticsService {
     private final AttritionRiskIndicatorsRepository attritionRiskIndicatorsRepository;
 
     private final TopPerformerBenchmarksRepository topPerformerBenchmarksRepository;
+    private final DepartmentTypeTurnoverRepository departmentTypeTurnoverRepository;
 
 
     
@@ -46,6 +50,13 @@ public class AnalyticsService {
         return turnoverRepository.findAll()
                 .stream()
                 .map(DepartmentTurnoverDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+     public List<DepartmentTypeTurnoverDTO> getDepartmentTypeTurnoverStats() {
+        return departmentTypeTurnoverRepository.findAll()
+                .stream()
+                .map(DepartmentTypeTurnoverDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 

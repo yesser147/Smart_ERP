@@ -13,7 +13,6 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
-
 -- 1. Security & Governance
 CREATE TABLE IF NOT EXISTS roles (
     id BIGSERIAL PRIMARY KEY, 
@@ -88,7 +87,7 @@ CREATE TABLE IF NOT EXISTS user_tokens (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(255) NOT NULL UNIQUE,
-    token_type VARCHAR(50) NOT NULL, -- 'ACTIVATION', 'PASSWORD_RESET', 'REFRESH'
+    token_type VARCHAR(50) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     is_used BOOLEAN DEFAULT FALSE,
     is_revoked BOOLEAN DEFAULT FALSE,
@@ -126,7 +125,7 @@ CREATE TABLE IF NOT EXISTS engagement_surveys (
 
 -- 5. ATS & AI Recruitment
 CREATE TABLE IF NOT EXISTS applicants (
-    applicant_id VARCHAR(50) PRIMARY KEY,
+    applicant_id BIGSERIAL PRIMARY KEY, -- Changed from VARCHAR to BIGSERIAL
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -157,7 +156,7 @@ CREATE TABLE IF NOT EXISTS job_postings (
 
 CREATE TABLE IF NOT EXISTS job_applications (
     application_id UUID PRIMARY KEY,
-    applicant_id VARCHAR(50) REFERENCES applicants(applicant_id) ON DELETE CASCADE,
+    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE, -- Changed from VARCHAR to BIGINT
     job_id BIGINT REFERENCES job_postings(job_id),
     application_date DATE NOT NULL,
     desired_salary NUMERIC(12, 2),
@@ -168,7 +167,7 @@ CREATE TABLE IF NOT EXISTS job_applications (
 
 CREATE TABLE IF NOT EXISTS applicant_cvs (
     id UUID PRIMARY KEY,
-    applicant_id VARCHAR(50) REFERENCES applicants(applicant_id) ON DELETE CASCADE UNIQUE,
+    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE UNIQUE, -- Changed from VARCHAR to BIGINT
     file_url VARCHAR(255),
     parsed_text TEXT,
     extracted_skills_json JSONB,
@@ -190,4 +189,3 @@ CREATE INDEX IF NOT EXISTS idx_job_apps_applicant ON job_applications(applicant_
 CREATE INDEX IF NOT EXISTS idx_job_apps_job ON job_applications(job_id);
 CREATE INDEX IF NOT EXISTS idx_surveys_emp ON engagement_surveys(employee_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-

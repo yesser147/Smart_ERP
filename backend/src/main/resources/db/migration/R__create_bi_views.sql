@@ -16,6 +16,22 @@ GROUP BY
     d.department_id, 
     d.business_unit;
 
+
+CREATE OR REPLACE VIEW v_department_type_turnover AS
+SELECT 
+    d.department_type,
+    COUNT(e.employee_id) AS total_employees,
+    SUM(CASE WHEN e.employee_status = 'Active' AND e.start_date <= CURRENT_DATE THEN 1 ELSE 0 END) AS active_count,
+    SUM(CASE WHEN e.employee_status = 'Terminated' THEN 1 ELSE 0 END) AS terminated_count,
+    ROUND(
+        SUM(CASE WHEN e.employee_status = 'Terminated' THEN 1 ELSE 0 END) * 100.0 / 
+        NULLIF(COUNT(e.employee_id), 0), 2
+    ) AS turnover_rate_pct
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id 
+    AND e.employee_status != 'Future Start'
+GROUP BY 
+    d.department_type;
 -- 2. Employee Performance & Survey Engagement Metrics
 CREATE OR REPLACE VIEW v_employee_performance_engagement AS
 SELECT 
@@ -150,3 +166,4 @@ GROUP BY
     e.title, 
     e.performance_score, 
     e.gender;
+

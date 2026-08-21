@@ -2,6 +2,7 @@ package com.smarterp.analytics.web;
 
 import com.smarterp.analytics.dto.AttritionRiskIndicatorsDTO;
 import com.smarterp.analytics.dto.DepartmentTurnoverDTO;
+import com.smarterp.analytics.dto.DepartmentTypeTurnoverDTO;
 import com.smarterp.analytics.dto.EmployeePerformanceEngagementDTO;
 import com.smarterp.analytics.dto.RecruitmentFunnelAtsDTO;
 import com.smarterp.analytics.dto.SalaryDistributionDTO;
@@ -27,6 +28,12 @@ public class AnalyticsController {
     public ResponseEntity<List<DepartmentTurnoverDTO>> getTurnoverStats() {
         return ResponseEntity.ok(
                 analyticsService.getDepartmentTurnoverStats()
+        );
+    }
+    @GetMapping("/typeturnover")
+    public ResponseEntity<List<DepartmentTypeTurnoverDTO>> getTurnoverTypeStats() {
+        return ResponseEntity.ok(
+                analyticsService.getDepartmentTypeTurnoverStats()
         );
     }
 

@@ -35,6 +35,7 @@ public class SecurityConfig {
                 // 2. ADD '/api/v1' TO YOUR PATHS SO THEY MATCH ANGULAR
                 .requestMatchers("/auth/login", "/auth/set-password", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 .requestMatchers("/analytics/**").permitAll()
+                .requestMatchers("/hr/**").permitAll()
                 .requestMatchers("/auth/register").hasRole("ADMIN") 
                 .anyRequest().authenticated()
             )
