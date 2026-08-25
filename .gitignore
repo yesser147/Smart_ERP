@@ -1,2 +1,5 @@
 ETL/.env
 ETL/etl_env/
+
+ai_engine/venv/
+ai_engine/.env

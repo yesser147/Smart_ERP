@@ -167,3 +167,29 @@ GROUP BY
     e.performance_score, 
     e.gender;
 
+
+
+CREATE OR REPLACE VIEW v_ai_retention_features AS
+SELECT
+    e.employee_id,
+    e.department_id,
+    d.business_unit,
+    e.job_function,
+    e.performance_score,
+    e.salary,
+    e.start_date,
+    e.gender,
+    e.employee_status,
+    e.is_deleted,
+    AVG(es.engagement_score) AS avg_engagement_score,
+    AVG(es.satisfaction_score) AS avg_satisfaction_score,
+    AVG(es.work_life_balance_score) AS avg_work_life_balance,
+    dt.turnover_rate_pct AS department_turnover_rate
+FROM employees e
+JOIN departments d ON d.department_id = e.department_id
+LEFT JOIN engagement_surveys es ON es.employee_id = e.employee_id
+LEFT JOIN v_department_turnover dt ON dt.department_id = e.department_id
+GROUP BY
+    e.employee_id, e.department_id, d.business_unit, e.job_function,
+    e.performance_score, e.salary, e.start_date, e.gender,
+    e.employee_status, e.is_deleted, dt.turnover_rate_pct;
