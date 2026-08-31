@@ -16,7 +16,7 @@ DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_POR
 # NVIDIA NIM Config
 NIM_API_KEY = os.environ.get("NIM_API_KEY", "")
 NIM_BASE_URL = os.environ.get("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-NIM_MODEL = os.environ.get("NIM_MODEL", "meta/llama-3.3-70b-instruct")
+NIM_MODEL = os.environ.get("NIM_MODEL", "meta/llama-3.2-90b-vision-instruct")
 
 # Artifact Paths
 ARTIFACT_DIR = os.environ.get("AI_ARTIFACT_DIR", "./artifacts")

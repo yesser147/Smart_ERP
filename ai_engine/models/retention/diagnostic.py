@@ -1,86 +1,76 @@
-"""
-Turns a single employee's risk score + raw features into a short
-diagnostic explanation, via NVIDIA NIM (OpenAI-compatible endpoint).
-
-This is deliberately called per-employee, on demand -- not in a loop
-over every active employee. Running an LLM call for all 3000 rows just
-to populate a dashboard would be slow and burns through NIM's free-tier
-quota for no reason; the numeric risk_score from predict.py already
-covers the bulk dashboard view (KPI card, donut chart). This function is
-for the "why is this specific person high-risk" detail view.
-"""
-
+from sqlalchemy import text
+from database import engine
 from openai import OpenAI
 import config
 
 _client = None
 
-
 def _get_client():
     global _client
     if _client is None:
-        if not config.NIM_API_KEY:
-            raise RuntimeError(
-                "NIM_API_KEY is not set. Get a free key at https://build.nvidia.com "
-                "and put it in .env as NIM_API_KEY=..."
-            )
         _client = OpenAI(base_url=config.NIM_BASE_URL, api_key=config.NIM_API_KEY)
     return _client
 
+def fetch_recent_exit_reasons(business_unit):
+    """Pulls historical exit descriptions from the same business unit."""
+    query = text("""
+        SELECT termination_description 
+        FROM v_ai_exit_reason_frequencies
+        WHERE business_unit = :bu
+        ORDER BY exit_count DESC
+        LIMIT 3;
+    """)
+    with engine.connect() as conn:
+        result = conn.execute(query, {"bu": business_unit}).fetchall()
+        return [row[0] for row in result if row[0]]
 
-PROMPT_TEMPLATE = """You are an HR analytics assistant. An XGBoost model has flagged \
-an employee as having a {risk_pct}% probability of leaving the company. \
-Given their profile below, write a short diagnostic for their manager.
+PROMPT_TEMPLATE = """You are an HR Predictive Analytics Assistant. An XGBoost ML model calculated a {risk_pct}% flight risk for this employee.
 
-Employee profile:
-- Department: {business_unit}
-- Job function: {job_function}
-- Performance rating: {performance_score}
-- Tenure: {tenure_days} days
-- Salary: {salary}
-- Average engagement score (1-5): {avg_engagement_score}
-- Average satisfaction score (1-5): {avg_satisfaction_score}
-- Average work-life balance score (1-5): {avg_work_life_balance}
-- Department turnover rate: {department_turnover_rate}%
+Calculated Risk Drivers (XGBoost SHAP Feature Attribution):
+{shap_drivers_text}
 
-Respond in two short parts:
-1. RISK FACTORS: 2-3 sentences on what in this profile likely drives the risk score. \
-If a score is missing (shown as "not available"), don't assume a value -- note that \
-survey data is missing as its own factor if relevant.
-2. SUGGESTED ACTIONS: 2-3 concrete, specific steps the manager could take.
+Employee Metrics:
+- Department: {business_unit} | Job: {job_function}
+- Performance Score: {performance_score} | Tenure: {tenure_days} days
+- Engagement Score: {avg_engagement_score}/5 | Satisfaction: {avg_satisfaction_score}/5 | Work-Life Balance: {avg_work_life_balance}/5
 
-Keep it under 150 words total. Do not repeat the raw numbers back verbatim -- interpret them."""
+Historical Exit Patterns in {business_unit} Department:
+{historical_exits}
 
-
-def _format_value(v):
-    if v is None or (isinstance(v, float) and v != v):  # NaN check without importing math/pandas here
-        return "not available"
-    return v
-
+Task:
+Write an executive diagnostic for the manager in 2 parts:
+1. MATHEMATICAL RISK DRIVERS & HISTORICAL PATTERNS: Explain how the top calculated drivers (with percentages) correlate with historical exit trends in this department.
+2. RECOMMENDED ACTION PLAN: Provide 2 specific, actionable manager interventions addressing these calculated risk drivers. Keep under 170 words total."""
 
 def generate_diagnostic(employee_row):
-    """employee_row: a pandas Series like the one returned by
-    predict.RetentionModel.score_employee() -- must include risk_score
-    and the raw feature columns."""
     client = _get_client()
+    
+    # Format SHAP Drivers
+    drivers = employee_row.get("top_risk_drivers", [])
+    shap_text = "\n".join([f"- {d['feature']}: accounts for {d['impact_pct']}% of elevated risk" for d in drivers])
+    
+    # Fetch department historical exit descriptions
+    bu = employee_row.get("business_unit", "")
+    exit_notes = fetch_recent_exit_reasons(bu)
+    exits_text = "\n".join([f"- Exit Note: '{note}'" for note in exit_notes]) if exit_notes else "- No historical notes available."
 
     prompt = PROMPT_TEMPLATE.format(
         risk_pct=round(employee_row["risk_score"] * 100, 1),
-        business_unit=_format_value(employee_row.get("business_unit")),
-        job_function=_format_value(employee_row.get("job_function")),
-        performance_score=_format_value(employee_row.get("performance_score")),
-        tenure_days=_format_value(employee_row.get("tenure_days")),
-        salary=_format_value(employee_row.get("salary")),
-        avg_engagement_score=_format_value(employee_row.get("avg_engagement_score")),
-        avg_satisfaction_score=_format_value(employee_row.get("avg_satisfaction_score")),
-        avg_work_life_balance=_format_value(employee_row.get("avg_work_life_balance")),
-        department_turnover_rate=_format_value(employee_row.get("department_turnover_rate")),
+        shap_drivers_text=shap_text,
+        business_unit=bu,
+        job_function=employee_row.get("job_function"),
+        performance_score=employee_row.get("performance_score"),
+        tenure_days=employee_row.get("tenure_days"),
+        avg_engagement_score=employee_row.get("avg_engagement_score"),
+        avg_satisfaction_score=employee_row.get("avg_satisfaction_score"),
+        avg_work_life_balance=employee_row.get("avg_work_life_balance"),
+        historical_exits=exits_text
     )
 
     response = client.chat.completions.create(
         model=config.NIM_MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.4,
+        temperature=0.3,
         max_tokens=350,
     )
     return response.choices[0].message.content

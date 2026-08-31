@@ -305,12 +305,56 @@ def enforce_manager_hierarchy(employees, users, report):
     employees["manager_id"] = emp.apply(assign_manager, axis=1).astype("Int64")
     return employees
 
+
+def enrich_termination_descriptions(df: pd.DataFrame) -> pd.DataFrame:
+    """Populates realistic termination_description text during the ETL transform phase
+    for employees where employee_status is 'Terminated'.
+    """
+    df = df.copy()
+
+    # Pre-defined exit reason scenarios
+    eng_reasons = {
+        0: "Resigned due to severe burnout from mandatory weekend on-call rotations and lack of work-life balance.",
+        1: "Accepted a competing offer with a 25% higher base salary and remote flexibility.",
+        2: "Exited due to stagnation in career advancement and limited engineering mentorship opportunities.",
+        3: "Departed following friction with direct manager over tech stack decisions and unrealistic sprint deadlines.",
+    }
+
+    sales_reasons = {
+        0: "Left after quota targets were increased by 40% without adjusting commission structures.",
+        1: "Resigned to join an early-stage competitor offering higher equity and uncapped commission.",
+        2: "Cited low job satisfaction and lack of administrative support for client onboarding.",
+    }
+
+    general_reasons = {
+        0: "Resigned citing below-market compensation and lack of annual salary adjustments.",
+        1: "Left due to lack of flexibility around hybrid work policies and long commute times.",
+        2: "Terminated due to persistent low performance scores and disengagement following team restructuring.",
+    }
+
+    def assign_reason(row):
+        # 1. If not terminated, clear it out
+        if row.get("employee_status") != "Terminated":
+            return None
+
+        # 2. Assign the realistic reason based on department (overwriting the Faker gibberish)
+        emp_id = int(row.get("employee_id", 0))
+        bu = str(row.get("business_unit", ""))
+
+        if bu == "Engineering":
+            return eng_reasons[emp_id % 4]
+        elif bu == "Sales":
+            return sales_reasons[emp_id % 3]
+        else:
+            return general_reasons[emp_id % 3]
+
+    df["termination_description"] = df.apply(assign_reason, axis=1)
+    return df
+
 def run_transform(cleaned, report):
     print("TRANSFORM")
-    
-    # -------------------------------------------------------------------
-    # NEW: Safely enforce employee_id as an integer across all dataframes
-    # -------------------------------------------------------------------
+
+    # 1. Cast numeric IDs
     cleaned["employees"]["employee_id"] = pd.to_numeric(
         cleaned["employees"]["employee_id"], errors="coerce"
     ).astype("Int64")
@@ -324,8 +368,11 @@ def run_transform(cleaned, report):
         cleaned["surveys"]["employee_id"] = pd.to_numeric(
             cleaned["surveys"]["employee_id"], errors="coerce"
         ).astype("Int64")
-    # -------------------------------------------------------------------
 
+   
+    cleaned["employees"] = enrich_termination_descriptions(cleaned["employees"])
+
+    # 3. Process workforce structure
     employees, departments = extract_departments(cleaned["employees"], report)
     employees = link_managers(employees, report)
     roles = build_roles()
@@ -339,6 +386,7 @@ def run_transform(cleaned, report):
     if "email" in employees.columns:
         employees = employees.drop(columns=["email"])
 
+    # 4. Process auxiliary domains
     courses, employee_trainings = normalize_trainings(cleaned["trainings"], report)
     applicants, job_postings, job_applications = normalize_recruitment(cleaned["recruitment"], departments, report)
     cvs = build_applicant_cvs(applicants, report)
