@@ -1,63 +1,61 @@
 import os
 import joblib
 import pandas as pd
-import numpy as np
 import xgboost as xgb
 import shap
 
 import config
-from models.retention.features import fetch_raw, build_features
+from models.retention import preprocess as prep
 
-class RetentionModel:
+class RetentionPredictor:
     def __init__(self):
-        if not os.path.exists(config.RETENTION_MODEL_PATH):
-            raise FileNotFoundError(f"No trained model at {config.RETENTION_MODEL_PATH}")
+        # Load the saved model and schema from Step 2
         self.model = xgb.XGBClassifier()
         self.model.load_model(config.RETENTION_MODEL_PATH)
-
-        saved = joblib.load(config.RETENTION_SCHEMA_PATH)
-        self.category_schema = saved["category_schema"]
-        self.feature_cols = saved["feature_cols"]
         
-        # Initialize SHAP explainer for tree models
+        saved_data = joblib.load(config.RETENTION_SCHEMA_PATH)
+        self.category_schema = saved_data["category_schema"]
+        self.feature_cols = saved_data["feature_cols"]
+        
+        # Initialize SHAP (The math that explains WHY the model made a prediction)
         self.explainer = shap.TreeExplainer(self.model)
 
-    def score_all_active(self):
-        raw = fetch_raw(only_active=True)
-        if raw.empty:
-            return raw
-
-        raw = raw.copy()
-        raw["tenure_days"] = (pd.Timestamp.now().normalize() - pd.to_datetime(raw["start_date"])).dt.days
-        X = build_features(raw, schema=self.category_schema)[self.feature_cols]
-        
-        # Predict probability
-        raw["risk_score"] = self.model.predict_proba(X)[:, 1]
-        
-        # Compute SHAP values for local feature attribution
-        shap_values = self.explainer.shap_values(X)
-        
-        # Extract top 3 features driving risk UP for each employee
-        top_drivers = []
-        for i in range(len(raw)):
-            row_shap = shap_values[i]
-            # Pair feature name with SHAP value
-            feature_impacts = list(zip(self.feature_cols, row_shap))
-            # Sort by highest positive impact on risk
-            positive_impacts = sorted([item for item in feature_impacts if item[1] > 0], key=lambda x: x[1], reverse=True)[:3]
+    def analyze_active_employees(self):
+        """Scores all current employees and finds their risk drivers."""
+        # 1. Fetch current employees and pre-treat their data
+        raw_df = prep.fetch_raw_data(only_active=True)
+        if raw_df.empty:
+            return raw_df
             
-            # Formatted list of top drivers (e.g., [("avg_engagement_score", "+28%"), ...])
+        X_current = prep.format_ml_features(raw_df, schema=self.category_schema)
+
+        # 2. Predict Risk Score (Probability of quitting)
+        """"[
+  [0.95, 0.05],  # Employee 1: 95% chance of Staying (0), 5% chance of Quitting (1)
+  [0.11, 0.89],  # Employee 2: 11% chance of Staying (0), 89% chance of Quitting (1)
+  [0.60, 0.40]   # Employee 3: 60% chance of Staying (0), 40% chance of Quitting (1)
+]""" 
+        raw_df["risk_score"] = self.model.predict_proba(X_current)[:, 1]
+        
+        # 3. Calculate SHAP values to explain the score
+        shap_values = self.explainer.shap_values(X_current)
+        
+        # 4. Find the top 3 reasons pushing the score UP for each person
+        top_drivers_list = []
+        for i in range(len(raw_df)):
+            employee_shap = shap_values[i]
+            impacts = list(zip(self.feature_cols, employee_shap))
+            
+            # Keep only positive impacts (things increasing risk) and sort them
+            positive_impacts = sorted([item for item in impacts if item[1] > 0], key=lambda x: x[1], reverse=True)[:3]
+            
+            # Convert to percentages
             total_pos = sum([val for _, val in positive_impacts]) or 1.0
-            drivers_formatted = [
+            formatted_drivers = [
                 {"feature": feat, "impact_pct": round((val / total_pos) * 100, 1)} 
                 for feat, val in positive_impacts
             ]
-            top_drivers.append(drivers_formatted)
+            top_drivers_list.append(formatted_drivers)
             
-        raw["top_risk_drivers"] = top_drivers
-        return raw
-
-    def score_employee(self, employee_id):
-        scored = self.score_all_active()
-        match = scored[scored["employee_id"] == employee_id]
-        return None if match.empty else match.iloc[0]
+        raw_df["top_risk_drivers"] = top_drivers_list
+        return raw_df

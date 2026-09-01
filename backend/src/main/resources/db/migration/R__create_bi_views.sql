@@ -194,14 +194,15 @@ GROUP BY
     e.performance_score, e.salary, e.start_date, e.gender,
     e.employee_status, e.is_deleted, dt.turnover_rate_pct;
 
-
+DROP VIEW IF EXISTS v_ai_exit_reason_frequencies CASCADE;
 CREATE OR REPLACE VIEW v_ai_exit_reason_frequencies AS
 SELECT 
-    d.business_unit,
+    e.department_id,
+    d.department_type,
     e.termination_description,
     COUNT(*) as exit_count
 FROM employees e
 JOIN departments d ON d.department_id = e.department_id
 WHERE e.employee_status = 'Terminated' 
   AND e.termination_description IS NOT NULL
-GROUP BY d.business_unit, e.termination_description;
+GROUP BY e.department_id, d.department_type, e.termination_description;
