@@ -206,3 +206,23 @@ JOIN departments d ON d.department_id = e.department_id
 WHERE e.employee_status = 'Terminated' 
   AND e.termination_description IS NOT NULL
 GROUP BY e.department_id, d.department_type, e.termination_description;
+
+DROP VIEW IF EXISTS v_ai_training_budget_features CASCADE;
+
+CREATE OR REPLACE VIEW v_ai_training_budget_features AS
+SELECT 
+    d.department_id,
+    d.business_unit,
+    d.department_type,
+    COALESCE(ta.total_training_investment, 0.00) AS training_budget,
+    COUNT(DISTINCT e.employee_id) AS headcount,
+    COALESCE(ROUND(AVG(e.current_employee_rating), 2), 3.00) AS avg_performance,
+    COALESCE(ROUND(AVG(es.engagement_score), 2), 3.00) AS avg_engagement,
+    COALESCE(dt.turnover_rate_pct, 0.00) AS department_turnover_rate
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id AND e.is_deleted = FALSE AND e.employee_status = 'Active'
+LEFT JOIN v_training_analytics ta ON d.department_id = ta.department_id
+LEFT JOIN engagement_surveys es ON e.employee_id = es.employee_id
+LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id
+GROUP BY 
+    d.department_id, d.business_unit, d.department_type, ta.total_training_investment, dt.turnover_rate_pct;

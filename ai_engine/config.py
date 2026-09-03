@@ -14,10 +14,13 @@ DB_PASSWORD = quote_plus(os.environ.get("DB_PASSWORD", "postgres"))
 DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # NVIDIA NIM Config
-NIM_API_KEY = os.environ.get("NIM_API_KEY", "")
-NIM_BASE_URL = os.environ.get("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-NIM_MODEL = os.environ.get("NIM_MODEL", "meta/llama-3.2-90b-vision-instruct")
+NIM_API_KEY = os.environ.get("NIM_API_KEY", "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")
+NIM_BASE_URL = os.environ.get("NIM_BASE_URL", "https://api.groq.com/openai/v1")
+NIM_MODEL = os.environ.get("NIM_MODEL", "llama-3.3-70b-versatile")
 
+
+GROQ_API_KEY = "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"
+GROQ_MODEL = "openai/gpt-oss-120b"
 # Artifact Paths
 ARTIFACT_DIR = os.environ.get("AI_ARTIFACT_DIR", "./artifacts")
 RETENTION_MODEL_PATH = os.path.join(ARTIFACT_DIR, "retention_model.json")
