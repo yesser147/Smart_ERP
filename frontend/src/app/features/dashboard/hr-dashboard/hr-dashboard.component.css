@@ -1,0 +1,20 @@
+/* ApexCharts Dark Tooltip Fix */
+.apexcharts-tooltip {
+  background: #1e293b !important; /* slate-800 */
+  color: #f8fafc !important; /* slate-50 */
+  border: 1px solid #334155 !important; /* slate-700 */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+}
+
+.apexcharts-tooltip-title {
+  background: #0f172a !important; /* slate-900 */
+  border-bottom: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+.apexcharts-tooltip-text-y-value,
+.apexcharts-tooltip-text-y-label,
+.apexcharts-tooltip-text-goals-value,
+.apexcharts-tooltip-text-z-value {
+  color: #f8fafc !important;
+}

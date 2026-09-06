@@ -93,17 +93,17 @@ export interface JobApplicationDTO {
   status: string;
   aiMatchScore: number;
 }
-
 export interface JobPostingDTO {
-  jobId: number;
+  jobId?: number;
   title: string;
-  departmentId: number;
-  departmentName: string;
-  location: string;
-  requiredExperienceYears: number;
-  offeredSalaryMin: number;
-  offeredSalaryMax: number;
-  status: string;
+  departmentId?: number;
+  departmentName?: string;
+  location?: string;
+  requiredExperienceYears?: number;
+  offeredSalaryMin?: number;
+  offeredSalaryMax?: number;
+  status: 'OPEN' | 'CLOSED' | 'DRAFT' | string;
+  applicantCount?: number;
 }
 
 export interface SalaryHistoryDTO {

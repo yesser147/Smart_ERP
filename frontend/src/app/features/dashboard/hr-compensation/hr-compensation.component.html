@@ -1,0 +1,33 @@
+<div class="space-y-6">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Salaire Moyen par Unité</h4>
+      <apx-chart *ngIf="salaryChart" 
+        [series]="salaryChart.series" [chart]="salaryChart.chart" 
+        [xaxis]="salaryChart.xaxis" [plotOptions]="salaryChart.plotOptions" 
+        [colors]="salaryChart.colors" [fill]="salaryChart.fill" [tooltip]="salaryChart.tooltip">
+      </apx-chart>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Investissement Formation par Type de Département</h4>
+      <apx-chart *ngIf="trainingChart" 
+        [series]="trainingChart.series" [chart]="trainingChart.chart" 
+        [xaxis]="trainingChart.xaxis" [plotOptions]="trainingChart.plotOptions" 
+        [colors]="trainingChart.colors" [tooltip]="trainingChart.tooltip">
+      </apx-chart>
+    </div>
+  </div>
+
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h4 class="text-lg font-medium text-white mb-4">Performance vs Engagement (Tous les Rôles)</h4>
+    <div class="w-full overflow-x-auto">
+      <apx-chart *ngIf="performanceChart" 
+        [series]="performanceChart.series" [chart]="performanceChart.chart" 
+        [xaxis]="performanceChart.xaxis" [yaxis]="performanceChart.yaxis" 
+        [stroke]="performanceChart.stroke" [colors]="performanceChart.colors" 
+        [tooltip]="performanceChart.tooltip">
+      </apx-chart>
+    </div>
+  </div>
+</div>

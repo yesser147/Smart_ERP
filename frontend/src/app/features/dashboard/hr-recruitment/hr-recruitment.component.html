@@ -1,0 +1,38 @@
+<div class="space-y-6">
+  <!-- Top Metrics Row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Offres d'Emploi Actives</p>
+      <h3 class="text-3xl font-bold text-sky-400 mt-2">{{ openJobsCount }}</h3>
+      <p class="text-xs text-teal-400 mt-2">Postes ouverts au recrutement</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Total Offres Créées</p>
+      <h3 class="text-3xl font-bold text-white mt-2">{{ jobPostings.length }}</h3>
+      <p class="text-xs text-slate-400 mt-2">Historique complet des postes</p>
+    </div>
+  </div>
+
+  <!-- Side-by-Side Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Entonnoir de Recrutement (ATS)</h4>
+      <apx-chart *ngIf="funnelChart" 
+        [series]="funnelChart.series" [chart]="funnelChart.chart" 
+        [xaxis]="funnelChart.xaxis" [plotOptions]="funnelChart.plotOptions" 
+        [colors]="funnelChart.colors" [tooltip]="funnelChart.tooltip">
+      </apx-chart>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Offres Ouvertes par Département</h4>
+      <apx-chart *ngIf="jobPostingsChart" 
+        [series]="jobPostingsChart.series" [chart]="jobPostingsChart.chart" 
+        [xaxis]="jobPostingsChart.xaxis" [plotOptions]="jobPostingsChart.plotOptions" 
+        [colors]="jobPostingsChart.colors" [dataLabels]="jobPostingsChart.dataLabels"
+        [grid]="jobPostingsChart.grid" [tooltip]="jobPostingsChart.tooltip">
+      </apx-chart>
+    </div>
+  </div>
+</div>

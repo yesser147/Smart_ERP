@@ -13,6 +13,14 @@ DB_PASSWORD = quote_plus(os.environ.get("DB_PASSWORD", "postgres"))
 
 DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+# -------------------------------------------------------------------
+# AI Query Assistant Connection (Strict Read-Only Security)
+# -------------------------------------------------------------------
+AI_DB_USER = os.environ.get("AI_DB_USER", "ai_readonly_user")
+AI_DB_PASSWORD = quote_plus(os.environ.get("AI_DB_PASSWORD", "SecurePassword123!"))
+
+AI_DATABASE_URL = f"postgresql+psycopg2://{AI_DB_USER}:{AI_DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 # NVIDIA NIM Config
 NIM_API_KEY = os.environ.get("NIM_API_KEY", "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")
 NIM_BASE_URL = os.environ.get("NIM_BASE_URL", "https://api.groq.com/openai/v1")

@@ -1,214 +1,38 @@
-<div class="space-y-8">
-
-@if (loading) {
-  <div class="flex flex-col items-center justify-center py-24">
-    <div class="w-10 h-10 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
-    <p class="mt-4 text-slate-400 text-sm">Loading HR analytics...</p>
-  </div>
-} @else {
-
-  <!-- KPI CARDS -->
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 shadow-sm hover:border-slate-600 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-slate-400">Total Employees</p>
-      <p class="text-3xl font-bold text-white mt-1">{{ kpi.totalEmployees }}</p>
-      <p class="text-xs text-teal-400 mt-1">{{ kpi.activeEmployees }} currently active</p>
-    </div>
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 shadow-sm hover:border-slate-600 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-slate-400">Departments</p>
-      <p class="text-3xl font-bold text-white mt-1">{{ kpi.departmentCount }}</p>
-    </div>
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 shadow-sm hover:border-slate-600 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-slate-400">Open Postings</p>
-      <p class="text-3xl font-bold text-white mt-1">{{ kpi.openJobPostings }}</p>
-    </div>
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 shadow-sm hover:border-slate-600 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-slate-400">Company Turnover</p>
-      <p class="text-3xl font-bold text-white mt-1">{{ kpi.companyTurnoverRate }}%</p>
-    </div>
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 shadow-sm hover:border-slate-600 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-slate-400">Avg Engagement</p>
-      <p class="text-3xl font-bold text-white mt-1">{{ kpi.avgEngagement }} <span class="text-sm font-normal text-slate-400">/ 5</span></p>
-    </div>
-    <div class="bg-red-900/20 border border-red-900/50 rounded-xl p-5 shadow-sm hover:border-red-800/50 transition-colors">
-      <p class="text-xs uppercase tracking-wide text-red-300">High Flight Risk</p>
-      <p class="text-3xl font-bold text-red-400 mt-1">{{ kpi.highRiskCount }}</p>
-      <p class="text-xs text-red-400/80 mt-1">Likely to leave soon</p>
-    </div>
-  </div>
-
-  <!-- CHARTS ROW 1 (Updated to grid-cols-4 to fit the 3 charts perfectly) -->
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <div class="lg:col-span-2 bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Turnover Rate by Department</h3>
-        <p class="text-xs text-slate-400 mt-1">Shows the percentage of employees who left the company over the last period. High turnover indicates potential retention issues.</p>
-      </div>
-      <apx-chart
-        [series]="turnoverChart.series" [chart]="turnoverChart.chart" [xaxis]="turnoverChart.xaxis!"
-        [plotOptions]="turnoverChart.plotOptions!" [dataLabels]="turnoverChart.dataLabels"
-        [colors]="turnoverChart.colors" [fill]="turnoverChart.fill!" [grid]="turnoverChart.grid!"
-        [tooltip]="turnoverChart.tooltip" [legend]="turnoverChart.legend">
-      </apx-chart>
-    </div>
-
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Turnover by Type</h3>
-        <p class="text-xs text-slate-400 mt-1">Breakdown of departures by classification (e.g., Voluntary vs. Involuntary).</p>
-      </div>
-      <apx-chart
-        [series]="turnoverTypeChart.series" [chart]="turnoverTypeChart.chart" [xaxis]="turnoverTypeChart.xaxis!"
-        [plotOptions]="turnoverTypeChart.plotOptions!" [dataLabels]="turnoverTypeChart.dataLabels"
-        [colors]="turnoverTypeChart.colors" [fill]="turnoverTypeChart.fill!" [grid]="turnoverTypeChart.grid!"
-        [tooltip]="turnoverTypeChart.tooltip" [legend]="turnoverTypeChart.legend">
-      </apx-chart>
-    </div>
+<div *ngIf="!loading" class="h-full">
+  <ng-container [ngSwitch]="currentView">
     
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 flex flex-col">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Workforce Status</h3>
-        <p class="text-xs text-slate-400 mt-1">Ratio of currently active staff versus those who have departed.</p>
-      </div>
-      <div class="flex-grow flex items-center justify-center">
-        <apx-chart
-          [series]="statusDonut.series" [chart]="statusDonut.chart" [labels]="statusDonut.labels!"
-          [colors]="statusDonut.colors" [legend]="statusDonut.legend" [dataLabels]="statusDonut.dataLabels"
-          [tooltip]="statusDonut.tooltip" [responsive]="statusDonut.responsive!" [stroke]="statusDonut.stroke!">
-        </apx-chart>
-      </div>
-    </div>
-  </div>
+    <!-- Overview -->
+    <app-hr-overview *ngSwitchCase="'overview'" 
+      [kpi]="kpi" 
+      [statusDonut]="statusDonut"
+      [topPerformers]="topPerformers">
+    </app-hr-overview>
 
-  <!-- CHARTS ROW 2 -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Recruitment Funnel</h3>
-        <p class="text-xs text-slate-400 mt-1">Visualizes candidate flow from initial application to final hire. Bottlenecks here indicate where you are losing talent.</p>
-      </div>
-      <apx-chart
-        [series]="funnelChart.series" [chart]="funnelChart.chart" [xaxis]="funnelChart.xaxis!"
-        [plotOptions]="funnelChart.plotOptions!" [dataLabels]="funnelChart.dataLabels"
-        [colors]="funnelChart.colors" [fill]="funnelChart.fill!" [grid]="funnelChart.grid!"
-        [tooltip]="funnelChart.tooltip" [legend]="funnelChart.legend">
-      </apx-chart>
-    </div>
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Performance vs. Engagement</h3>
-        <p class="text-xs text-slate-400 mt-1">Compares output (performance) against employee morale (engagement). Disconnected lines signal burnout or "quiet quitting".</p>
-      </div>
-      <apx-chart
-        [series]="performanceChart.series" [chart]="performanceChart.chart" [xaxis]="performanceChart.xaxis!" [yaxis]="performanceChart.yaxis!"
-        [plotOptions]="performanceChart.plotOptions!" [dataLabels]="performanceChart.dataLabels"
-        [colors]="performanceChart.colors" [stroke]="performanceChart.stroke!" [markers]="performanceChart.markers!"
-        [grid]="performanceChart.grid!" [tooltip]="performanceChart.tooltip" [legend]="performanceChart.legend">
-      </apx-chart>
-    </div>
-  </div>
+    <!-- Turnover -->
+    <app-hr-turnover *ngSwitchCase="'turnover'" 
+      [turnoverChart]="turnoverChart" 
+      [turnoverTypeChart]="turnoverTypeChart"
+      [rawTurnoverData]="turnoverData">
+    </app-hr-turnover>
 
-  <!-- CHARTS ROW 3 -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Avg Salary by Department</h3>
-        <p class="text-xs text-slate-400 mt-1">Helps identify pay equity disparities across different business units.</p>
-      </div>
-      <apx-chart
-        [series]="salaryChart.series" [chart]="salaryChart.chart" [xaxis]="salaryChart.xaxis!"
-        [plotOptions]="salaryChart.plotOptions!" [dataLabels]="salaryChart.dataLabels"
-        [colors]="salaryChart.colors" [fill]="salaryChart.fill!" [grid]="salaryChart.grid!"
-        [tooltip]="salaryChart.tooltip" [legend]="salaryChart.legend">
-      </apx-chart>
-    </div>
-    
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Training Investment</h3>
-        <p class="text-xs text-slate-400 mt-1">Financial resources allocated to upskilling employees per department.</p>
-      </div>
-      <apx-chart
-        [series]="trainingChart.series" [chart]="trainingChart.chart" [xaxis]="trainingChart.xaxis!"
-        [plotOptions]="trainingChart.plotOptions!" [dataLabels]="trainingChart.dataLabels"
-        [colors]="trainingChart.colors" [fill]="trainingChart.fill!" [grid]="trainingChart.grid!"
-        [tooltip]="trainingChart.tooltip" [legend]="trainingChart.legend">
-      </apx-chart>
-    </div>
+    <!-- Compensation -->
+    <app-hr-compensation *ngSwitchCase="'compensation'" 
+      [salaryChart]="salaryChart" 
+      [performanceChart]="performanceChart"
+      [trainingChart]="trainingChart">
+    </app-hr-compensation>
 
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl p-5 flex flex-col">
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-slate-200">Attrition Risk</h3>
-        <p class="text-xs text-slate-400 mt-1">Predictive model showing how likely current staff are to resign.</p>
-      </div>
-      <div class="flex-grow flex items-center justify-center">
-        <apx-chart
-          [series]="riskDonut.series" [chart]="riskDonut.chart" [labels]="riskDonut.labels!"
-          [colors]="riskDonut.colors" [legend]="riskDonut.legend" [dataLabels]="riskDonut.dataLabels"
-          [tooltip]="riskDonut.tooltip" [responsive]="riskDonut.responsive!" [stroke]="riskDonut.stroke!">
-        </apx-chart>
-      </div>
-    </div>
-  </div>
+    <!-- Recruitment -->
+    <app-hr-recruitment *ngSwitchCase="'recruitment'" 
+      [funnelChart]="funnelChart"
+      [jobPostingsChart]="jobPostingsChart"
+      [jobPostings]="jobPostings">
+    </app-hr-recruitment>
 
-  <!-- TABLES ROW -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
-      <div class="px-5 py-4 border-b border-slate-700">
-        <h3 class="text-sm font-semibold text-slate-200">Recent Employees</h3>
-        <p class="text-xs text-slate-400 mt-1">A quick glance at the latest headcount additions.</p>
-      </div>
-      <div class="overflow-x-auto flex-grow">
-        <table class="w-full text-left text-sm whitespace-nowrap">
-          <thead class="bg-slate-800 text-slate-400 uppercase text-xs">
-            <tr><th class="px-5 py-3">Name</th><th class="px-5 py-3">Title</th><th class="px-5 py-3">Status</th></tr>
-          </thead>
-          <tbody>
-            @for (emp of employees.slice(0, 5); track emp.employeeId) {
-              <tr class="border-t border-slate-700/60 hover:bg-slate-700/30 transition-colors">
-                <td class="px-5 py-3 text-white font-medium">{{ emp.firstName }} {{ emp.lastName }}</td>
-                <td class="px-5 py-3 text-slate-300">{{ emp.title }}</td>
-                <td class="px-5 py-3">
-                  <span class="px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full"
-                        [ngClass]="emp.employeeStatus === 'Active' ? 'bg-teal-500/10 text-teal-400' : 'bg-red-500/10 text-red-400'">
-                    {{ emp.employeeStatus }}
-                  </span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
+  </ng-container>
+</div>
 
-    <div class="bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden flex flex-col">
-      <div class="px-5 py-4 border-b border-slate-700">
-        <h3 class="text-sm font-semibold text-slate-200">Current Job Postings</h3>
-        <p class="text-xs text-slate-400 mt-1">Open requisitions actively seeking candidates.</p>
-      </div>
-      <div class="overflow-x-auto flex-grow">
-        <table class="w-full text-left text-sm whitespace-nowrap">
-          <thead class="bg-slate-800 text-slate-400 uppercase text-xs">
-            <tr><th class="px-5 py-3">Job Title</th><th class="px-5 py-3">Department</th><th class="px-5 py-3">Status</th></tr>
-          </thead>
-          <tbody>
-            @for (job of jobPostings.slice(0, 5); track job.jobId) {
-              <tr class="border-t border-slate-700/60 hover:bg-slate-700/30 transition-colors">
-                <td class="px-5 py-3 text-white font-medium">{{ job.title }}</td>
-                <td class="px-5 py-3 text-slate-300">{{ job.departmentName }}</td>
-                <td class="px-5 py-3">
-                  <span class="px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full"
-                        [ngClass]="job.status.toUpperCase() === 'OPEN' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-500/10 text-slate-400'">
-                    {{ job.status }}
-                  </span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-}
+<!-- Loading State -->
+<div *ngIf="loading" class="flex justify-center items-center h-64">
+  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
 </div>

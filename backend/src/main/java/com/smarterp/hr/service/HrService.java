@@ -11,7 +11,6 @@ import com.smarterp.hr.dto.JobApplicationDTO;
 import com.smarterp.hr.dto.JobPostingDTO;
 import com.smarterp.hr.dto.SalaryHistoryDTO;
 import com.smarterp.hr.dto.TrainingCourseDTO;
-
 import com.smarterp.hr.repository.ApplicantCvRepository;
 import com.smarterp.hr.repository.ApplicantRepository;
 import com.smarterp.hr.repository.DepartmentRepository;
@@ -23,7 +22,6 @@ import com.smarterp.hr.repository.JobPostingRepository;
 import com.smarterp.hr.repository.SalaryHistoryRepository;
 import com.smarterp.hr.repository.TrainingCourseRepository;
 import com.smarterp.shared.exception.ResourceNotFoundException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,27 +35,15 @@ import java.util.stream.Collectors;
 public class HrService {
 
     private final DepartmentRepository departmentRepository;
-
     private final EmployeeRepository employeeRepository;
-
     private final SalaryHistoryRepository salaryHistoryRepository;
-
     private final TrainingCourseRepository trainingCourseRepository;
-
     private final EmployeeTrainingRepository employeeTrainingRepository;
-
     private final EngagementSurveyRepository engagementSurveyRepository;
-
     private final ApplicantRepository applicantRepository;
-
     private final JobPostingRepository jobPostingRepository;
-
     private final JobApplicationRepository jobApplicationRepository;
-
     private final ApplicantCvRepository applicantCvRepository;
-
-
-
 
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll()
@@ -66,27 +52,32 @@ public class HrService {
                 .collect(Collectors.toList());
     }
 
-    public List<EmployeeDTO> getAllEmployees() {
-        return employeeRepository.findAll()
-                .stream()
-                .map(EmployeeDTO::fromEntity)
-                .collect(Collectors.toList());
+    public DepartmentDTO getDepartementById(Long id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun Departement trouvé avec l'id : " + id));
+        return DepartmentDTO.fromEntity(department);
     }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeDTO> getAllEmployees() {
+        return employeeRepository.findAllWithRelations().stream()
+                .map(EmployeeDTO::fromEntity)
+                .toList();
+    }
+
     public List<SalaryHistoryDTO> getAllSalaryHistory() {
         return salaryHistoryRepository.findAll()
                 .stream()
                 .map(SalaryHistoryDTO::fromEntity)
                 .collect(Collectors.toList());
     }
+
     public List<TrainingCourseDTO> getAllTrainingCourses() {
         return trainingCourseRepository.findAll()
                 .stream()
                 .map(TrainingCourseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
-
-
 
     public List<EmployeeTrainingDTO> getAllEmployeeTrainings() {
         return employeeTrainingRepository.findAll()
@@ -95,15 +86,12 @@ public class HrService {
                 .collect(Collectors.toList());
     }
 
-
     public List<EngagementSurveyDTO> getAllEngagementSurveys() {
         return engagementSurveyRepository.findAll()
                 .stream()
                 .map(EngagementSurveyDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
-
 
     public List<ApplicantDTO> getAllApplicants() {
         return applicantRepository.findAll()
@@ -112,14 +100,13 @@ public class HrService {
                 .collect(Collectors.toList());
     }
 
-
     public List<JobPostingDTO> getAllJobPostings() {
-        return jobPostingRepository.findAll()
+        // Updated to use findAllWithRelations() to prevent N+1 timeout errors
+        return jobPostingRepository.findAllWithRelations()
                 .stream()
                 .map(JobPostingDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
 
     public List<JobApplicationDTO> getAllJobApplications() {
         return jobApplicationRepository.findAll()
@@ -128,19 +115,10 @@ public class HrService {
                 .collect(Collectors.toList());
     }
 
-
     public List<ApplicantCvDTO> getAllApplicantCvs() {
         return applicantCvRepository.findAll()
                 .stream()
                 .map(ApplicantCvDTO::fromEntity)
                 .collect(Collectors.toList());
-    }
-
-    public DepartmentDTO getDepartementById(Long id){
-
-        Department department = departmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Aucun Departement trouvé"));
-
-        return DepartmentDTO.fromEntity(department);
-
     }
 }

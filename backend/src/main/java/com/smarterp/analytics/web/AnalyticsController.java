@@ -1,11 +1,12 @@
 package com.smarterp.analytics.web;
 
 import com.smarterp.analytics.dto.AttritionRiskIndicatorsDTO;
+import com.smarterp.analytics.dto.DepartmentSalarySummaryDTO;
 import com.smarterp.analytics.dto.DepartmentTurnoverDTO;
 import com.smarterp.analytics.dto.DepartmentTypeTurnoverDTO;
 import com.smarterp.analytics.dto.EmployeePerformanceEngagementDTO;
+import com.smarterp.analytics.dto.KpiSummaryDTO;
 import com.smarterp.analytics.dto.RecruitmentFunnelAtsDTO;
-import com.smarterp.analytics.dto.SalaryDistributionDTO;
 import com.smarterp.analytics.dto.TopPerformerBenchmarksDTO;
 import com.smarterp.analytics.dto.TrainingAnalyticsDTO;
 import com.smarterp.analytics.service.AnalyticsService;
@@ -24,59 +25,48 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    @GetMapping("/turnover")
-    public ResponseEntity<List<DepartmentTurnoverDTO>> getTurnoverStats() {
-        return ResponseEntity.ok(
-                analyticsService.getDepartmentTurnoverStats()
-        );
-    }
-    @GetMapping("/typeturnover")
-    public ResponseEntity<List<DepartmentTypeTurnoverDTO>> getTurnoverTypeStats() {
-        return ResponseEntity.ok(
-                analyticsService.getDepartmentTypeTurnoverStats()
-        );
+    @GetMapping("/kpis")
+    public ResponseEntity<KpiSummaryDTO> getDashboardKpis() {
+        return ResponseEntity.ok(analyticsService.getDashboardKpis());
     }
 
+    @GetMapping("/turnover")
+    public ResponseEntity<List<DepartmentTurnoverDTO>> getTurnoverStats() {
+        return ResponseEntity.ok(analyticsService.getTopTurnoverStats());
+    }
+
+    @GetMapping("/salary-summary")
+    public ResponseEntity<List<DepartmentSalarySummaryDTO>> getSalarySummary() {
+        return ResponseEntity.ok(analyticsService.getSalaryDistributionSummary());
+    }
+
+    @GetMapping("/typeturnover")
+    public ResponseEntity<List<DepartmentTypeTurnoverDTO>> getTurnoverTypeStats() {
+        return ResponseEntity.ok(analyticsService.getDepartmentTypeTurnoverStats());
+    }
 
     @GetMapping("/risk")
     public ResponseEntity<List<AttritionRiskIndicatorsDTO>> getRiskStats() {
-        return ResponseEntity.ok(
-                analyticsService.getAttritionRiskIndicatorsStats()
-        );
+        return ResponseEntity.ok(analyticsService.getAttritionRiskIndicatorsStats());
     }
 
     @GetMapping("/performance-engagement")
     public ResponseEntity<List<EmployeePerformanceEngagementDTO>> getPerformanceEngagementStats() {
-        return ResponseEntity.ok(
-                analyticsService.getEmployeePerformanceEngagementStats()
-        );
-    }
-
-    @GetMapping("/salary-distribution")
-    public ResponseEntity<List<SalaryDistributionDTO>> getSalaryDistributionStats() {
-        return ResponseEntity.ok(
-                analyticsService.getSalaryDistributionStats()
-        );
+        return ResponseEntity.ok(analyticsService.getEmployeePerformanceEngagementStats());
     }
 
     @GetMapping("/recruitment-funnel")
     public ResponseEntity<List<RecruitmentFunnelAtsDTO>> getRecruitmentFunnelStats() {
-        return ResponseEntity.ok(
-                analyticsService.getRecruitmentFunnelAtsStats()
-        );
+        return ResponseEntity.ok(analyticsService.getRecruitmentFunnelAtsStats());
     }
 
     @GetMapping("/training")
     public ResponseEntity<List<TrainingAnalyticsDTO>> getTrainingAnalyticsStats() {
-        return ResponseEntity.ok(
-                analyticsService.getTrainingAnalyticsStats()
-        );
+        return ResponseEntity.ok(analyticsService.getTrainingAnalyticsStats());
     }
 
     @GetMapping("/top-performers")
     public ResponseEntity<List<TopPerformerBenchmarksDTO>> getTopPerformerBenchmarksStats() {
-        return ResponseEntity.ok(
-                analyticsService.getTopPerformerBenchmarksStats()
-        );
+        return ResponseEntity.ok(analyticsService.getTopPerformerBenchmarksStats());
     }
 }

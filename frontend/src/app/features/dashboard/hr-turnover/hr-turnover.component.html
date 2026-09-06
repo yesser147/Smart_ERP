@@ -1,0 +1,47 @@
+<!-- hr-turnover.component.html -->
+<div class="space-y-6">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Rotation par Département</h4>
+      <apx-chart *ngIf="turnoverChart" 
+        [series]="turnoverChart.series" [chart]="turnoverChart.chart" 
+        [xaxis]="turnoverChart.xaxis" [plotOptions]="turnoverChart.plotOptions" 
+        [colors]="turnoverChart.colors" [tooltip]="turnoverChart.tooltip">
+      </apx-chart>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h4 class="text-lg font-medium text-white mb-4">Rotation par Type de Département</h4>
+      <apx-chart *ngIf="turnoverTypeChart" 
+        [series]="turnoverTypeChart.series" [chart]="turnoverTypeChart.chart" 
+        [xaxis]="turnoverTypeChart.xaxis" [plotOptions]="turnoverTypeChart.plotOptions" 
+        [colors]="turnoverTypeChart.colors" [tooltip]="turnoverTypeChart.tooltip">
+      </apx-chart>
+    </div>
+  </div>
+
+  <!-- Detailed Department Breakdown Table -->
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h4 class="text-lg font-medium text-white mb-4">Détails des Départs par Département</h4>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-slate-300 text-sm">
+        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+          <tr>
+            <th class="p-3">Unité / Département</th>
+            <th class="p-3 text-right">Effectif Total</th>
+            <th class="p-3 text-right">Départs</th>
+            <th class="p-3 text-right">Taux de Turnover</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700">
+          <tr *ngFor="let item of rawTurnoverData" class="hover:bg-slate-750">
+  <td class="p-3 font-medium text-white">{{ item.businessUnit || 'ID: ' + item.departmentId }}</td>
+  <td class="p-3 text-right">{{ item.totalEmployees || '-' }}</td>
+  <td class="p-3 text-right text-rose-400">{{ item.terminationsCount || 0 }}</td>
+  <td class="p-3 text-right font-bold text-teal-400">{{ item.turnoverRatePct | number:'1.1-1' }}%</td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

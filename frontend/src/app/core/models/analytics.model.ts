@@ -1,3 +1,18 @@
+export interface KpiSummaryDTO {
+  totalEmployees: number;
+  activeEmployees: number;
+  departmentCount: number;
+  openJobPostings: number;
+  avgEngagement: number;
+  companyTurnoverRate: number;
+  highRiskCount: number;
+}
+
+export interface DepartmentSalarySummaryDTO {
+  businessUnit: string;
+  avgSalary: number;
+}
+
 export interface AttritionRiskIndicatorsDTO {
   employeeId: number;
   departmentId: number;
@@ -9,18 +24,16 @@ export interface AttritionRiskIndicatorsDTO {
   recentEngagement: number;
   recentSatisfaction: number;
   recentWlb: number;
-  heuristicRiskLevel: string; // usually 'HIGH' | 'MEDIUM' | 'LOW'
+  heuristicRiskLevel: string;
 }
 
 export interface DepartmentTurnoverDTO {
-  departmentId: number;
-  businessUnit: string;
-  totalEmployees: number;
-  activeCount: number;
-  terminatedCount: number;
-  turnoverRatePct: number;
+  departmentId?: number;
+  businessUnit?: string;
+  totalEmployees?: number;
+  terminationsCount?: number;
+  turnoverRatePct?: number;
 }
-
 export interface EmployeePerformanceEngagementDTO {
   employeeId: number;
   departmentId: number;
@@ -77,12 +90,10 @@ export interface TrainingAnalyticsDTO {
   avgCourseDurationDays: number;
 }
 
-export interface DepartmentTypeTurnoverDTO{
-
-    departmentType:string;
-    totalEmployees:number;
-    activeCount:number;
-    terminatedCount:number;
-    turnoverRatePct:number;
-
+export interface DepartmentTypeTurnoverDTO {
+  departmentType: string;
+  totalEmployees: number;
+  activeCount: number;
+  terminatedCount: number;
+  turnoverRatePct: number;
 }
