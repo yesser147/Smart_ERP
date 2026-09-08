@@ -25,6 +25,8 @@ import { HrOverviewComponent } from '../hr-overview/hr-overview.component';
 import { HrTurnoverComponent } from '../hr-turnover/hr-turnover.component';
 import { HrCompensationComponent } from '../hr-compensation/hr-compensation.component';
 import { HrRecruitmentComponent } from '../hr-recruitment/hr-recruitment.component';
+import { HrRetentionComponent } from '../hr-retention/hr-retention.component';
+import { HrBudgetAdvisorComponent } from '../hr-budget-advisor/hr-budget-advisor.component';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -59,7 +61,9 @@ const DARK_THEME_BASE: Partial<ApexChart> = {
     HrOverviewComponent,
     HrTurnoverComponent,
     HrCompensationComponent,
-    HrRecruitmentComponent
+    HrRecruitmentComponent,
+    HrBudgetAdvisorComponent,
+    HrRetentionComponent
   ],
   templateUrl: './hr-dashboard.component.html'
 })

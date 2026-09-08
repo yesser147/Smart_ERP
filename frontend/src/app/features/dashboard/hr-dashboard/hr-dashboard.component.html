@@ -28,6 +28,12 @@
       [jobPostingsChart]="jobPostingsChart"
       [jobPostings]="jobPostings">
     </app-hr-recruitment>
+    <app-hr-budget-advisor *ngSwitchCase="'budget'">
+    </app-hr-budget-advisor>
+
+    <!-- Retention Strategy View -->
+    <app-hr-retention *ngSwitchCase="'retention'">
+    </app-hr-retention>
 
   </ng-container>
 </div>

@@ -5,6 +5,9 @@ import { RouterLink } from '@angular/router';
 import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { EmployeeDashboardComponent } from './employee-dashboard/employee-dashboard.component';
+import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
+import { HrBudgetAdvisorComponent } from './hr-budget-advisor/hr-budget-advisor.component';
+import { HrRetentionComponent } from './hr-retention/hr-retention.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,7 +17,10 @@ import { EmployeeDashboardComponent } from './employee-dashboard/employee-dashbo
     RouterLink,
     HrDashboardComponent,
     AdminDashboardComponent,
-    EmployeeDashboardComponent
+    EmployeeDashboardComponent,
+    AiAssistantComponent,
+    HrBudgetAdvisorComponent, // <--- Added
+    HrRetentionComponent
   ],
   templateUrl: './dashboard.component.html'
 })

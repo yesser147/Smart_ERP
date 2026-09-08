@@ -32,6 +32,19 @@
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors font-medium">
           Recrutement & Formation
         </button>
+          <button 
+    (click)="activeMenu = 'budget'" 
+    [ngClass]="activeMenu === 'budget' ? 'bg-teal-600 text-white' : 'text-slate-200 hover:bg-slate-800'"
+    class="w-full text-left px-4 py-3 rounded-lg font-bold transition-colors mt-2">
+    💰 Optimisation Budget IA
+  </button>
+
+  <button 
+    (click)="activeMenu = 'retention'" 
+    [ngClass]="activeMenu === 'retention' ? 'bg-teal-600 text-white' : 'text-slate-200 hover:bg-slate-800'"
+    class="w-full text-left px-4 py-3 rounded-lg font-bold transition-colors mt-2">
+    🛡️ Stratégie Rétention ML
+  </button>
       }
       
       <!-- ADMIN MENU (Expand as needed) -->
@@ -76,6 +89,7 @@
       @if (userInfo?.role === 'ROLE_HR_MANAGER' || userInfo?.role === 'ROLE_MANAGER') {
         <!-- We pass the active menu string down into the HR dashboard -->
         <app-hr-dashboard [currentView]="activeMenu" />
+        <app-ai-assistant></app-ai-assistant>
       } @else if (userInfo?.role === 'ROLE_ADMIN') {
         <app-admin-dashboard />
       } @else {

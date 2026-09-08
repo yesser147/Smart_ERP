@@ -13,8 +13,17 @@ def train_model():
 
     print("2. Pre-treating data...")
     schema = prep.capture_text_categories(raw_df)
-    X = prep.format_ml_features(raw_df, schema=schema) # The Features (inputs)
-    y = raw_df["employee_status"].isin(config.CHURN_STATUSES).astype(int) # The Target (1 for quit, 0 for stayed)
+    X = prep.format_ml_features(raw_df, schema=schema)  # The Features (inputs)
+    # FIXED: was raw_df["employee_status"].isin(config.CHURN_STATUSES) --
+    # see preprocess.is_churned()'s docstring for why that silently
+    # mislabeled real churners.
+    y = prep.is_churned(raw_df["employee_status"]).astype(int)  # The Target (1 for quit, 0 for stayed)
+
+    n_churned = int(y.sum())
+    if n_churned < 10:
+        print(f"WARNING: only {n_churned} churned employees found in the data. "
+              f"XGBoost needs real examples to learn from -- results will be "
+              f"unreliable until there's more termination history.")
 
     print("3. Splitting data into Training (80%) and Validation (20%) sectors...")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -24,7 +33,7 @@ def train_model():
         n_estimators=200,
         max_depth=4,
         learning_rate=0.08,
-        enable_categorical=True, # Tells XGBoost to accept our text categories
+        enable_categorical=True,  # Tells XGBoost to accept our text categories
         eval_metric="logloss",
         random_state=42,
     )

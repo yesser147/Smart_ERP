@@ -1,0 +1,135 @@
+<div *ngIf="loading" class="flex justify-center items-center h-64">
+  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+</div>
+
+<div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-center">
+  <p class="text-rose-400">Impossible de charger les prédictions budgétaires.</p>
+  <button (click)="fetchBudgetAdvice()" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
+    Réessayer
+  </button>
+</div>
+
+<div *ngIf="!loading && !error && data" class="space-y-6">
+
+  <!-- Executive Memo -->
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <div class="flex items-center gap-3 mb-3">
+      <span class="p-2 bg-sky-500/10 text-sky-400 rounded-lg border border-sky-500/20">💰</span>
+      <div>
+        <h3 class="text-lg font-semibold text-white">Conseiller Budgétaire IA (Prescriptif)</h3>
+        <p class="text-xs text-slate-400">Modèle d'élasticité XGBoost & Tests Multi-Prix Targetés</p>
+      </div>
+    </div>
+    <p class="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+      {{ data.executive_proposal_memo }}
+    </p>
+  </div>
+
+  <!-- TARGETED ANALYSIS: Bottom 3 Departments Price Tests -->
+  <div *ngIf="worstDeptsInfo && worstDeptsInfo.length > 0" class="bg-slate-800 p-6 rounded-xl border border-amber-500/30">
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            Cibles Prioritaires
+          </span>
+          <h4 class="text-md font-semibold text-white">
+            Analyse d'Élasticité Prix : Top 3 Départements à Faible Performance
+          </h4>
+        </div>
+        <p class="text-xs text-slate-400">
+          Simulation des gains de performance selon différentes variations d'investissement ($1k à $20k).
+        </p>
+      </div>
+
+      <!-- Quick Metrics Badges for the 3 Departments -->
+      <div class="flex flex-wrap gap-3">
+        <div *ngFor="let dept of worstDeptsInfo" class="bg-slate-900/60 p-2.5 px-3 rounded-lg border border-slate-700 text-xs flex items-center gap-3">
+          <div>
+            <span class="text-white font-bold block">{{ dept.department_name }}</span>
+            <span class="text-slate-400">Score: <strong class="text-amber-400">{{ dept.current_performance }} pts</strong></span>
+          </div>
+          <div class="h-6 w-px bg-slate-700"></div>
+          <div>
+            <span class="text-slate-400 block">Budget</span>
+            <span class="text-slate-200 font-semibold">${{ dept.current_budget | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multi-Series Area Chart -->
+    <div *ngIf="priceVariationChart" class="w-full">
+      <apx-chart
+        [series]="priceVariationChart.series"
+        [chart]="priceVariationChart.chart"
+        [colors]="priceVariationChart.colors"
+        [xaxis]="priceVariationChart.xaxis"
+        [stroke]="priceVariationChart.stroke"
+        [fill]="priceVariationChart.fill"
+        [markers]="priceVariationChart.markers"
+        [grid]="priceVariationChart.grid"
+        [tooltip]="priceVariationChart.tooltip"
+        [legend]="priceVariationChart.legend">
+      </apx-chart>
+    </div>
+  </div>
+
+  <!-- GRAPH: Global Department Budget Comparison -->
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h4 class="text-md font-medium text-white mb-4">Comparaison Globale : Budget Actuel vs Budget Optimisé</h4>
+    <div *ngIf="budgetChart" class="w-full">
+      <apx-chart
+        [series]="budgetChart.series"
+        [chart]="budgetChart.chart"
+        [colors]="budgetChart.colors"
+        [xaxis]="budgetChart.xaxis"
+        [plotOptions]="budgetChart.plotOptions"
+        [grid]="budgetChart.grid"
+        [tooltip]="budgetChart.tooltip"
+        [legend]="budgetChart.legend">
+      </apx-chart>
+    </div>
+  </div>
+
+  <!-- Allocations & Insights -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-2">
+      <h4 class="text-md font-medium text-white mb-4">Allocations Recommandées par Département</h4>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-slate-300 text-sm">
+          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+            <tr>
+              <th class="p-3">Département</th>
+              <th class="p-3 text-right">Augmentation Recommandée</th>
+              <th class="p-3 text-right">Gain Prédictif</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700">
+            <tr *ngFor="let item of data.recommended_allocations" class="hover:bg-slate-750">
+              <td class="p-3 font-medium text-white">{{ item.department_name }}</td>
+              <td class="p-3 text-right text-teal-400 font-semibold">
+                +${{ item.recommended_budget_increase | number:'1.0-0' }}
+              </td>
+              <td class="p-3 text-right text-sky-400 font-semibold">
+                +{{ item.expected_performance_gain }} pts
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-1">
+      <h4 class="text-md font-medium text-white mb-4">Déductions Stratégiques IA</h4>
+      <div class="space-y-3">
+        <div *ngFor="let insight of data.chart_insights; let i = index" 
+             class="p-3 rounded-lg bg-slate-900/60 border border-slate-700 text-xs text-slate-300 flex items-start gap-3">
+          <span class="text-teal-400 font-bold">{{ i + 1 }}.</span>
+          <span>{{ insight }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
