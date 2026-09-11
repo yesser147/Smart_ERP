@@ -14,11 +14,13 @@ import com.smarterp.hr.service.HrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/hr")
@@ -26,9 +28,6 @@ import java.util.List;
 public class HrController {
 
     private final HrService hrService;
-    
-
- 
 
     @GetMapping("/employees")
     public ResponseEntity<List<EmployeeDTO>> getAllEmployees() {
@@ -94,5 +93,24 @@ public class HrController {
     @GetMapping("/applicant-cvs")
     public ResponseEntity<List<ApplicantCvDTO>> getAllApplicantCvs() {
         return ResponseEntity.ok(hrService.getAllApplicantCvs());
+    }
+
+    // =========================
+    // APPLICATION STATUS ACTIONS
+    // =========================
+
+    @PatchMapping("/job-applications/{id}/interview")
+    public ResponseEntity<JobApplicationDTO> moveToInterview(@PathVariable UUID id) {
+        return ResponseEntity.ok(hrService.moveToInterview(id));
+    }
+
+    @PatchMapping("/job-applications/{id}/offer")
+    public ResponseEntity<JobApplicationDTO> moveToOffered(@PathVariable UUID id) {
+        return ResponseEntity.ok(hrService.moveToOffered(id));
+    }
+
+    @PatchMapping("/job-applications/{id}/reject")
+    public ResponseEntity<JobApplicationDTO> rejectApplication(@PathVariable UUID id) {
+        return ResponseEntity.ok(hrService.rejectApplication(id));
     }
 }

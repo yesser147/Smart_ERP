@@ -86,12 +86,13 @@ export interface JobApplicationDTO {
   applicationId: string; // UUID
   applicantId: number;
   applicantName: string;
+  applicantEmail: string;
   jobId: number;
   jobTitle: string;
-  applicationDate: string; // LocalDate
-  desiredSalary: number;
-  status: string;
-  aiMatchScore: number;
+  applicationDate: string;
+  desiredSalary: number | null;
+  status: string; 
+  aiMatchScore: number | null;
 }
 export interface JobPostingDTO {
   jobId?: number;

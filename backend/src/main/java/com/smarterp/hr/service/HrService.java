@@ -1,6 +1,7 @@
 package com.smarterp.hr.service;
 
 import com.smarterp.hr.domain.Department;
+import com.smarterp.hr.domain.JobApplication;
 import com.smarterp.hr.dto.ApplicantCvDTO;
 import com.smarterp.hr.dto.ApplicantDTO;
 import com.smarterp.hr.dto.DepartmentDTO;
@@ -21,12 +22,14 @@ import com.smarterp.hr.repository.JobApplicationRepository;
 import com.smarterp.hr.repository.JobPostingRepository;
 import com.smarterp.hr.repository.SalaryHistoryRepository;
 import com.smarterp.hr.repository.TrainingCourseRepository;
+import com.smarterp.shared.email.EmailService;
 import com.smarterp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +47,7 @@ public class HrService {
     private final JobPostingRepository jobPostingRepository;
     private final JobApplicationRepository jobApplicationRepository;
     private final ApplicantCvRepository applicantCvRepository;
+    private final EmailService emailService;
 
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll()
@@ -101,7 +105,6 @@ public class HrService {
     }
 
     public List<JobPostingDTO> getAllJobPostings() {
-        // Updated to use findAllWithRelations() to prevent N+1 timeout errors
         return jobPostingRepository.findAllWithRelations()
                 .stream()
                 .map(JobPostingDTO::fromEntity)
@@ -120,5 +123,60 @@ public class HrService {
                 .stream()
                 .map(ApplicantCvDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    // =========================
+    // APPLICATION STATUS ACTIONS (interview / offer / reject)
+    // =========================
+
+    @Transactional
+    public JobApplicationDTO moveToInterview(UUID applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
+
+        application.setStatus("INTERVIEWING");
+        JobApplication saved = jobApplicationRepository.save(application);
+
+        emailService.sendInterviewInvitationEmail(
+                saved.getApplicant().getEmail(),
+                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
+                saved.getJobPosting().getTitle()
+        );
+
+        return JobApplicationDTO.fromEntity(saved);
+    }
+
+    @Transactional
+    public JobApplicationDTO moveToOffered(UUID applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
+
+        application.setStatus("OFFERED");
+        JobApplication saved = jobApplicationRepository.save(application);
+
+        emailService.sendOfferEmail(
+                saved.getApplicant().getEmail(),
+                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
+                saved.getJobPosting().getTitle()
+        );
+
+        return JobApplicationDTO.fromEntity(saved);
+    }
+
+    @Transactional
+    public JobApplicationDTO rejectApplication(UUID applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
+
+        application.setStatus("REJECTED");
+        JobApplication saved = jobApplicationRepository.save(application);
+
+        emailService.sendRejectionEmail(
+                saved.getApplicant().getEmail(),
+                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
+                saved.getJobPosting().getTitle()
+        );
+
+        return JobApplicationDTO.fromEntity(saved);
     }
 }

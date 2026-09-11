@@ -15,6 +15,7 @@ import {
   ApexFill
 } from 'ng-apexcharts';
 import { AiService } from '../../../core/services/ai.service';
+import { BudgetWhatifSimulatorComponent } from '../budget-whatif-simulator/budget-whatif-simulator.component'; // adjust path to wherever you saved it
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -40,7 +41,7 @@ const DARK_THEME_BASE: Partial<ApexChart> = {
 @Component({
   selector: 'app-hr-budget-advisor',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule],
+  imports: [CommonModule, NgApexchartsModule, BudgetWhatifSimulatorComponent],
   templateUrl: './hr-budget-advisor.component.html'
 })
 export class HrBudgetAdvisorComponent implements OnInit {
@@ -65,16 +66,15 @@ export class HrBudgetAdvisorComponent implements OnInit {
       next: (res) => {
         this.data = res;
         this.budgetChart = this.buildBudgetComparisonChart(res.recommended_allocations || []);
-        
-        // Handles array of 3 worst departments (with fallback to single department payload)
-        const worstDepts = res.chart_data?.worst_departments_price_tests || 
+
+        const worstDepts = res.chart_data?.worst_departments_price_tests ||
                           (res.chart_data?.worst_department_price_tests ? [res.chart_data.worst_department_price_tests] : []);
 
         if (worstDepts && worstDepts.length > 0) {
           this.worstDeptsInfo = worstDepts;
           this.priceVariationChart = this.buildPriceVariationChart(worstDepts);
         }
-        
+
         this.loading = false;
       },
       error: () => {
@@ -109,11 +109,9 @@ export class HrBudgetAdvisorComponent implements OnInit {
   }
 
   private buildPriceVariationChart(worstDeptsData: any[]): ChartOptions {
-    // Extract price step categories (X-axis) from the first department
     const firstDeptTests = worstDeptsData[0]?.price_variations_tested || [];
     const categories = firstDeptTests.map((t: any) => `+$${t.added_budget.toLocaleString()}`);
 
-    // Map each of the 3 worst departments to its own series
     const multiSeries = worstDeptsData.map((dept: any) => ({
       name: dept.department_name || `Dept #${dept.department_id}`,
       data: (dept.price_variations_tested || []).map((t: any) => t.performance_gain)
@@ -122,7 +120,7 @@ export class HrBudgetAdvisorComponent implements OnInit {
     return {
       series: multiSeries,
       chart: { type: 'area', height: 280, ...DARK_THEME_BASE },
-      colors: ['#f59e0b', '#ec4899', '#3b82f6'], // Amber, Pink, Blue for the 3 departments
+      colors: ['#f59e0b', '#ec4899', '#3b82f6'],
       stroke: { curve: 'smooth', width: 3 },
       fill: {
         type: 'gradient',
@@ -136,9 +134,9 @@ export class HrBudgetAdvisorComponent implements OnInit {
       markers: { size: 4, strokeWidth: 2 },
       plotOptions: { bar: { horizontal: false } },
       dataLabels: { enabled: false },
-      xaxis: { 
-        categories, 
-        title: { text: 'Variations d\'Investissement Supplémentaires', style: { color: '#64748b' } } 
+      xaxis: {
+        categories,
+        title: { text: 'Variations d\'Investissement Supplémentaires', style: { color: '#64748b' } }
       },
       grid: { borderColor: '#334155', strokeDashArray: 4 },
       tooltip: { theme: 'dark', y: { formatter: (v: number) => `+${v.toFixed(3)} pts` } },

@@ -1,4 +1,3 @@
-// hr-compensation.component.ts
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgApexchartsModule } from 'ng-apexcharts';
@@ -13,4 +12,5 @@ export class HrCompensationComponent {
   @Input() salaryChart: any;
   @Input() performanceChart: any;
   @Input() trainingChart: any;
+  @Input() payGapChart: any; // NEW
 }

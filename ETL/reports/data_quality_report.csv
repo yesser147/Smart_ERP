@@ -18,4 +18,4 @@ employee_trainings,linked,3000,Normalized employee training logs
 applicants,extracted,2977,Normalized applicant profiles
 job_postings,generated,636,Extracted job requisitions
 job_applications,linked,2977,Created job application links
-applicant_cvs,synthesized,2977,Generated vector embeddings for pgvector search
+applicant_cvs,synthesized,2977,"Generated real embeddings from job title/education/experience (not random noise, not a uniform skill list)"

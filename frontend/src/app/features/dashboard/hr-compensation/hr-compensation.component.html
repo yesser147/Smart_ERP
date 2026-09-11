@@ -19,6 +19,17 @@
     </div>
   </div>
 
+  <!-- NEW: Gender Pay Gap -->
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h4 class="text-lg font-medium text-white mb-4">Écart Salarial par Genre et Unité</h4>
+    <apx-chart *ngIf="payGapChart" 
+      [series]="payGapChart.series" [chart]="payGapChart.chart" 
+      [xaxis]="payGapChart.xaxis" [plotOptions]="payGapChart.plotOptions" 
+      [colors]="payGapChart.colors" [fill]="payGapChart.fill"
+      [grid]="payGapChart.grid" [tooltip]="payGapChart.tooltip" [legend]="payGapChart.legend">
+    </apx-chart>
+  </div>
+
   <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
     <h4 class="text-lg font-medium text-white mb-4">Performance vs Engagement (Tous les Rôles)</h4>
     <div class="w-full overflow-x-auto">

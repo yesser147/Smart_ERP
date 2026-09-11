@@ -70,4 +70,21 @@ export class HrService {
   getAllApplicantCvs(): Observable<ApplicantCvDTO[]> {
     return this.http.get<ApplicantCvDTO[]>(`${this.apiUrl}/applicant-cvs`);
   }
+
+  // Add to your existing HrService class
+
+moveToInterview(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/interview`, {});
+}
+
+moveToOffered(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/offer`, {});
+}
+
+rejectApplication(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/reject`, {});
+}
+
+
+
 }

@@ -12,7 +12,9 @@ import {
   RecruitmentFunnelAtsDTO, 
   SalaryDistributionDTO, 
   TopPerformerBenchmarksDTO, 
-  TrainingAnalyticsDTO 
+  TrainingAnalyticsDTO ,
+  GenderPayGapDTO,
+  TimeToHireDTO
 } from '../models/analytics.model';
 
 @Injectable({
@@ -61,4 +63,12 @@ export class AnalyticsService {
   getTopPerformerBenchmarksStats(): Observable<TopPerformerBenchmarksDTO[]> {
     return this.http.get<TopPerformerBenchmarksDTO[]>(`${this.apiUrl}/top-performers`);
   }
+  getGenderPayGap(): Observable<GenderPayGapDTO[]> {
+  return this.http.get<GenderPayGapDTO[]>(`${this.apiUrl}/pay-gap`);
 }
+
+getTimeToHire(): Observable<TimeToHireDTO[]> {
+  return this.http.get<TimeToHireDTO[]>(`${this.apiUrl}/time-to-hire`);
+}
+}
+

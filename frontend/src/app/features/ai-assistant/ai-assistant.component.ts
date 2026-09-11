@@ -3,10 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiService } from '../../core/services/ai.service';
 
+export interface ChartConfig {
+  chart_type: 'bar' | 'line' | 'pie' | 'doughnut';
+  title: string;
+  labels: string[];
+  datasets: { label: string; data: number[] }[];
+}
+
 export interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
   data?: Record<string, any>[];
+  chart?: ChartConfig; // NEW: lets a chat reply carry a chart instead of/alongside text
 }
 
 @Component({
@@ -17,7 +25,7 @@ export interface ChatMessage {
 })
 export class AiAssistantComponent {
   private aiService = inject(AiService);
-  
+
   isOpen = false;
   isLoading = false;
   userInput = '';
@@ -39,10 +47,11 @@ export class AiAssistantComponent {
 
     this.aiService.askAssistant(query).subscribe({
       next: (res) => {
-        this.messages.push({ 
-          sender: 'ai', 
+        this.messages.push({
+          sender: 'ai',
           text: res.summary || 'Voici ce que j\'ai trouvé.',
-          data: res.tabular_data
+          data: res.tabular_data,
+          chart: res.chart ?? undefined
         });
         this.isLoading = false;
         this.scrollToBottom();
@@ -57,18 +66,34 @@ export class AiAssistantComponent {
   runBudgetAdvisor(): void {
     this.messages.push({ sender: 'user', text: 'Lance une analyse de budget prescriptive.' });
     this.isLoading = true;
-    this.aiService.getBudgetAdvice().subscribe(res => {
-      this.messages.push({ sender: 'ai', text: res.executive_proposal_memo || 'Analyse budgétaire terminée.' });
-      this.isLoading = false;
+    this.aiService.getBudgetAdvice().subscribe({
+      next: (res) => {
+        this.messages.push({ sender: 'ai', text: res.executive_proposal_memo || 'Analyse budgétaire terminée.' });
+        this.isLoading = false;
+        this.scrollToBottom();
+      },
+      error: () => {
+        // FIX: no error branch before — a failed request left the spinner stuck forever.
+        this.messages.push({ sender: 'ai', text: 'Désolé, l\'analyse budgétaire a échoué.' });
+        this.isLoading = false;
+      }
     });
   }
 
   runRetentionAnalysis(): void {
     this.messages.push({ sender: 'user', text: 'Génère la stratégie macro de rétention.' });
     this.isLoading = true;
-    this.aiService.getRetentionStrategy().subscribe(res => {
-      this.messages.push({ sender: 'ai', text: res.executive_summary || 'Analyse de rétention terminée.' });
-      this.isLoading = false;
+    this.aiService.getRetentionStrategy().subscribe({
+      next: (res) => {
+        this.messages.push({ sender: 'ai', text: res.executive_summary || 'Analyse de rétention terminée.' });
+        this.isLoading = false;
+        this.scrollToBottom();
+      },
+      error: () => {
+        // Same fix as runBudgetAdvisor above.
+        this.messages.push({ sender: 'ai', text: 'Désolé, l\'analyse de rétention a échoué.' });
+        this.isLoading = false;
+      }
     });
   }
 

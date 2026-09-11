@@ -1,44 +1,43 @@
 <div *ngIf="!loading" class="h-full">
   <ng-container [ngSwitch]="currentView">
     
-    <!-- Overview -->
     <app-hr-overview *ngSwitchCase="'overview'" 
       [kpi]="kpi" 
       [statusDonut]="statusDonut"
       [topPerformers]="topPerformers">
     </app-hr-overview>
 
-    <!-- Turnover -->
     <app-hr-turnover *ngSwitchCase="'turnover'" 
       [turnoverChart]="turnoverChart" 
       [turnoverTypeChart]="turnoverTypeChart"
       [rawTurnoverData]="turnoverData">
     </app-hr-turnover>
 
-    <!-- Compensation -->
+    <!-- payGapChart added -->
     <app-hr-compensation *ngSwitchCase="'compensation'" 
       [salaryChart]="salaryChart" 
       [performanceChart]="performanceChart"
-      [trainingChart]="trainingChart">
+      [trainingChart]="trainingChart"
+      [payGapChart]="payGapChart">
     </app-hr-compensation>
 
-    <!-- Recruitment -->
+    <!-- timeToHireData added -->
     <app-hr-recruitment *ngSwitchCase="'recruitment'" 
       [funnelChart]="funnelChart"
       [jobPostingsChart]="jobPostingsChart"
-      [jobPostings]="jobPostings">
+      [jobPostings]="jobPostings"
+      [timeToHireData]="timeToHireData">
     </app-hr-recruitment>
+
     <app-hr-budget-advisor *ngSwitchCase="'budget'">
     </app-hr-budget-advisor>
 
-    <!-- Retention Strategy View -->
     <app-hr-retention *ngSwitchCase="'retention'">
     </app-hr-retention>
 
   </ng-container>
 </div>
 
-<!-- Loading State -->
 <div *ngIf="loading" class="flex justify-center items-center h-64">
   <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
 </div>

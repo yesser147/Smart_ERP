@@ -137,8 +137,10 @@ SELECT
     jp.offered_salary_min,
     jp.offered_salary_max,
     COUNT(ja.application_id) AS total_applications,
-    SUM(CASE WHEN UPPER(ja.status) = 'APPLIED' THEN 1 ELSE 0 END) AS pending_applications,
-    SUM(CASE WHEN UPPER(ja.status) = 'HIRED' THEN 1 ELSE 0 END) AS hired_count,
+    SUM(CASE WHEN UPPER(ja.status) = 'APPLIED' THEN 1 ELSE 0 END) AS applied_count,
+    SUM(CASE WHEN UPPER(ja.status) = 'IN REVIEW' THEN 1 ELSE 0 END) AS in_review_count,
+    SUM(CASE WHEN UPPER(ja.status) = 'INTERVIEWING' THEN 1 ELSE 0 END) AS interviewing_count,
+    SUM(CASE WHEN UPPER(ja.status) = 'OFFERED' THEN 1 ELSE 0 END) AS offered_count,
     SUM(CASE WHEN UPPER(ja.status) = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_count,
     ROUND(AVG(ja.desired_salary), 2) AS avg_desired_salary,
     ROUND(AVG(ja.ai_match_score), 2) AS avg_ai_match_score
@@ -151,7 +153,6 @@ GROUP BY
     jp.status, 
     jp.offered_salary_min, 
     jp.offered_salary_max;
-
 
 -- =============================================================================
 -- 5. Training & Upskilling Analytics
@@ -302,3 +303,26 @@ LEFT JOIN engagement_surveys es ON e.employee_id = es.employee_id
 LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id
 GROUP BY 
     d.department_id, d.business_unit, d.department_type, ta.total_training_investment, dt.turnover_rate_pct;
+
+    CREATE OR REPLACE VIEW v_gender_pay_gap AS
+SELECT 
+    d.business_unit,
+    e.gender,
+    ROUND(AVG(e.salary), 2) AS avg_salary,
+    COUNT(*) AS employee_count
+FROM employees e
+JOIN departments d ON d.department_id = e.department_id
+WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') AND e.is_deleted = FALSE
+GROUP BY d.business_unit, e.gender;
+
+CREATE OR REPLACE VIEW v_time_to_hire AS
+SELECT
+    jp.job_id,
+    jp.title AS job_title,
+    jp.department_id,
+    ROUND(AVG(ja.application_date - jp.created_at::date), 1) AS avg_days_to_hire,
+    COUNT(*) FILTER (WHERE UPPER(ja.status) = 'OFFERED') AS hired_count
+FROM job_postings jp
+JOIN job_applications ja ON ja.job_id = jp.job_id
+WHERE UPPER(ja.status) = 'OFFERED'
+GROUP BY jp.job_id, jp.title, jp.department_id;

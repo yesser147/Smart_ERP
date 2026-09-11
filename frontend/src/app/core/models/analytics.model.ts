@@ -53,8 +53,10 @@ export interface RecruitmentFunnelAtsDTO {
   offeredSalaryMin: number;
   offeredSalaryMax: number;
   totalApplications: number;
-  pendingApplications: number;
-  hiredCount: number;
+  appliedCount: number;
+  inReviewCount: number;
+  interviewingCount: number;
+  offeredCount: number;
   rejectedCount: number;
   avgDesiredSalary: number;
   avgAiMatchScore: number;
@@ -96,4 +98,19 @@ export interface DepartmentTypeTurnoverDTO {
   activeCount: number;
   terminatedCount: number;
   turnoverRatePct: number;
+}
+
+export interface GenderPayGapDTO {
+  businessUnit: string;
+  gender: string;
+  avgSalary: number;
+  employeeCount: number;
+}
+
+export interface TimeToHireDTO {
+  jobId: number;
+  jobTitle: string;
+  departmentId: number;
+  avgDaysToHire: number;
+  hiredCount: number;
 }

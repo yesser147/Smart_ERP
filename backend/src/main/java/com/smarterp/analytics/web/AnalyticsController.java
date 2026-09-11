@@ -5,8 +5,10 @@ import com.smarterp.analytics.dto.DepartmentSalarySummaryDTO;
 import com.smarterp.analytics.dto.DepartmentTurnoverDTO;
 import com.smarterp.analytics.dto.DepartmentTypeTurnoverDTO;
 import com.smarterp.analytics.dto.EmployeePerformanceEngagementDTO;
+import com.smarterp.analytics.dto.GenderPayGapDTO;
 import com.smarterp.analytics.dto.KpiSummaryDTO;
 import com.smarterp.analytics.dto.RecruitmentFunnelAtsDTO;
+import com.smarterp.analytics.dto.TimeToHireDTO;
 import com.smarterp.analytics.dto.TopPerformerBenchmarksDTO;
 import com.smarterp.analytics.dto.TrainingAnalyticsDTO;
 import com.smarterp.analytics.service.AnalyticsService;
@@ -69,4 +71,13 @@ public class AnalyticsController {
     public ResponseEntity<List<TopPerformerBenchmarksDTO>> getTopPerformerBenchmarksStats() {
         return ResponseEntity.ok(analyticsService.getTopPerformerBenchmarksStats());
     }
+    @GetMapping("/pay-gap")
+public ResponseEntity<List<GenderPayGapDTO>> getGenderPayGapStats() {
+    return ResponseEntity.ok(analyticsService.getGenderPayGapStats());
+}
+
+@GetMapping("/time-to-hire")
+public ResponseEntity<List<TimeToHireDTO>> getTimeToHireStats() {
+    return ResponseEntity.ok(analyticsService.getTimeToHireStats());
+}
 }

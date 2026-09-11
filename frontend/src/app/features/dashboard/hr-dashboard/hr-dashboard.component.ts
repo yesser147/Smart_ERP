@@ -18,7 +18,9 @@ import {
   RecruitmentFunnelAtsDTO,
   TrainingAnalyticsDTO,
   EmployeePerformanceEngagementDTO,
-  DepartmentTypeTurnoverDTO
+  DepartmentTypeTurnoverDTO,
+  GenderPayGapDTO,       // NEW
+  TimeToHireDTO          // NEW
 } from '../../../core/models/analytics.model';
 
 import { HrOverviewComponent } from '../hr-overview/hr-overview.component';
@@ -80,6 +82,8 @@ export class HrDashboardComponent implements OnInit {
   jobPostings: JobPostingDTO[] = [];
   topPerformers: TopPerformerBenchmarksDTO[] = [];
   turnoverData: DepartmentTurnoverDTO[] = [];
+  payGapData: GenderPayGapDTO[] = [];       // NEW
+  timeToHireData: TimeToHireDTO[] = [];     // NEW
 
   turnoverChart!: ChartOptions;
   turnoverTypeChart!: ChartOptions;
@@ -89,6 +93,7 @@ export class HrDashboardComponent implements OnInit {
   trainingChart!: ChartOptions;
   performanceChart!: ChartOptions;
   jobPostingsChart!: ChartOptions;
+  payGapChart!: ChartOptions;               // NEW
 
   ngOnInit(): void {
     forkJoin({
@@ -100,14 +105,18 @@ export class HrDashboardComponent implements OnInit {
       training: this.analyticsService.getTrainingAnalyticsStats(),
       topPerformers: this.analyticsService.getTopPerformerBenchmarksStats(),
       performance: this.analyticsService.getPerformanceEngagementStats(),
+      payGap: this.analyticsService.getGenderPayGap(),         // NEW
+      timeToHire: this.analyticsService.getTimeToHire(),       // NEW
       employees: this.hrService.getAllEmployees(),
       jobPostings: this.hrService.getAllJobPostings()
-    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, employees, jobPostings }) => {
+    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings }) => {
       
       this.kpi = kpis;
       this.employees = employees;
       this.jobPostings = jobPostings;
       this.turnoverData = turnover;
+      this.payGapData = payGap;
+      this.timeToHireData = timeToHire;
       
       this.topPerformers = [...topPerformers]
         .sort((a, b) => (b.avgEngagement ?? 0) - (a.avgEngagement ?? 0))
@@ -121,6 +130,7 @@ export class HrDashboardComponent implements OnInit {
       this.trainingChart = this.buildTrainingChart(training);
       this.performanceChart = this.buildPerformanceChart(performance);
       this.jobPostingsChart = this.buildJobPostingsChart(jobPostings);
+      this.payGapChart = this.buildPayGapChart(payGap);        // NEW
 
       this.loading = false;
     });
@@ -181,29 +191,30 @@ export class HrDashboardComponent implements OnInit {
   }
 
   private buildFunnelChart(funnel: RecruitmentFunnelAtsDTO[]): ChartOptions {
-    const totals = funnel.reduce(
-      (acc, f) => {
-        acc.applications += f.totalApplications ?? 0;
-        acc.pending += f.pendingApplications ?? 0;
-        acc.hired += f.hiredCount ?? 0;
-        acc.rejected += f.rejectedCount ?? 0;
-        return acc;
-      },
-      { applications: 0, pending: 0, hired: 0, rejected: 0 }
-    );
-    return {
-      series: [{ name: 'Candidats', data: [totals.applications, totals.pending, totals.hired, totals.rejected] }],
-      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
-      xaxis: { categories: ['Candidatures', 'En Attente', 'Embauchés', 'Rejetés'] },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', distributed: true } },
-      dataLabels: { enabled: true },
-      colors: ['#818cf8', '#facc15', '#4ade80', '#f87171'],
-      fill: { opacity: 0.9 },
-      grid: { borderColor: '#334155', strokeDashArray: 4 },
-      tooltip: { theme: 'dark' },
-      legend: { show: false },
-    };
-  }
+  const totals = funnel.reduce(
+    (acc, f) => {
+      acc.applied += f.appliedCount ?? 0;
+      acc.inReview += f.inReviewCount ?? 0;
+      acc.interviewing += f.interviewingCount ?? 0;
+      acc.offered += f.offeredCount ?? 0;
+      acc.rejected += f.rejectedCount ?? 0;
+      return acc;
+    },
+    { applied: 0, inReview: 0, interviewing: 0, offered: 0, rejected: 0 }
+  );
+  return {
+    series: [{ name: 'Candidats', data: [totals.applied, totals.inReview, totals.interviewing, totals.offered, totals.rejected] }],
+    chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
+    xaxis: { categories: ['Candidatures', 'En Examen', 'Entretien', 'Offre Envoyée', 'Rejetés'] },
+    plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', distributed: true } },
+    dataLabels: { enabled: true },
+    colors: ['#818cf8', '#facc15', '#38bdf8', '#4ade80', '#f87171'],
+    fill: { opacity: 0.9 },
+    grid: { borderColor: '#334155', strokeDashArray: 4 },
+    tooltip: { theme: 'dark' },
+    legend: { show: false },
+  };
+}
 
   private buildTrainingChart(training: TrainingAnalyticsDTO[]): ChartOptions {
     const investmentByType = training.reduce((acc, curr) => {
@@ -310,6 +321,35 @@ export class HrDashboardComponent implements OnInit {
       grid: { borderColor: '#334155', strokeDashArray: 4 },
       tooltip: { theme: 'dark' },
       legend: { show: false }
+    };
+  }
+
+  // NEW
+  private buildPayGapChart(payGap: GenderPayGapDTO[]): ChartOptions {
+    // Group by business unit, one series per gender, so bars sit
+    // side-by-side per department -- the standard way to show a gap.
+    const units = [...new Set(payGap.map(p => p.businessUnit))];
+    const genders = [...new Set(payGap.map(p => p.gender))];
+
+    const series = genders.map(g => ({
+      name: g,
+      data: units.map(u => {
+        const match = payGap.find(p => p.businessUnit === u && p.gender === g);
+        return match ? Math.round(match.avgSalary) : 0;
+      })
+    }));
+
+    return {
+      series,
+      chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
+      xaxis: { categories: units },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+      dataLabels: { enabled: false },
+      colors: ['#38bdf8', '#f472b6', '#a78bfa'],
+      fill: { opacity: 0.9 },
+      grid: { borderColor: '#334155', strokeDashArray: 4 },
+      tooltip: { theme: 'dark', y: { formatter: (v: number) => `$${v.toLocaleString()}` } },
+      legend: { position: 'top', labels: { colors: '#94a3b8' } },
     };
   }
 }
