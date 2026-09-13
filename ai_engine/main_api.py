@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
+from models.recruitment.cv_processing import process_applicant_cv
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from models.nl_assistant.nl_query_assistant import HRQueryAssistant
@@ -154,6 +155,13 @@ def get_candidate_matches(job_id: int, top_k: int = 10):
         logging.error(f"Failed to match candidates for job {job_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
+
+@app.post("/api/ai/recruitment/process-cv/{applicant_id}")
+def process_cv(applicant_id: int):
+    result = process_applicant_cv(applicant_id)
+    if result["status"] == "error":
+        raise HTTPException(status_code=422, detail=result["message"])
+    return result
 
 if __name__ == "__main__":
     print("Starting AI Services API on http://localhost:8000")

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap } from 'rxjs/operators';
-import { AiService, DepartmentBaseline, SimulationResult } from '../../../core/services/ai.service';
+import { AiService } from '../../../core/services/ai.service';
+import { DepartmentBaseline, SimulationResult } from '../../../core/models/ai.model';
 
 interface DeptSliderState extends DepartmentBaseline {
   sliderValue: number;

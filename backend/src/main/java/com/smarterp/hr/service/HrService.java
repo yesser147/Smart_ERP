@@ -1,33 +1,25 @@
 package com.smarterp.hr.service;
 
+
+import com.smarterp.hr.domain.Applicant;
+import com.smarterp.hr.domain.ApplicantCv;
 import com.smarterp.hr.domain.Department;
 import com.smarterp.hr.domain.JobApplication;
-import com.smarterp.hr.dto.ApplicantCvDTO;
-import com.smarterp.hr.dto.ApplicantDTO;
-import com.smarterp.hr.dto.DepartmentDTO;
-import com.smarterp.hr.dto.EmployeeDTO;
-import com.smarterp.hr.dto.EmployeeTrainingDTO;
-import com.smarterp.hr.dto.EngagementSurveyDTO;
-import com.smarterp.hr.dto.JobApplicationDTO;
-import com.smarterp.hr.dto.JobPostingDTO;
-import com.smarterp.hr.dto.SalaryHistoryDTO;
-import com.smarterp.hr.dto.TrainingCourseDTO;
-import com.smarterp.hr.repository.ApplicantCvRepository;
-import com.smarterp.hr.repository.ApplicantRepository;
-import com.smarterp.hr.repository.DepartmentRepository;
-import com.smarterp.hr.repository.EmployeeRepository;
-import com.smarterp.hr.repository.EmployeeTrainingRepository;
-import com.smarterp.hr.repository.EngagementSurveyRepository;
-import com.smarterp.hr.repository.JobApplicationRepository;
-import com.smarterp.hr.repository.JobPostingRepository;
-import com.smarterp.hr.repository.SalaryHistoryRepository;
-import com.smarterp.hr.repository.TrainingCourseRepository;
+import com.smarterp.hr.domain.JobPosting;
+import com.smarterp.hr.dto.*;
+import com.smarterp.hr.repository.*;
 import com.smarterp.shared.email.EmailService;
 import com.smarterp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import com.smarterp.shared.storage.MinioService;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,6 +40,8 @@ public class HrService {
     private final JobApplicationRepository jobApplicationRepository;
     private final ApplicantCvRepository applicantCvRepository;
     private final EmailService emailService;
+    private final JdbcTemplate jdbcTemplate;
+    private final MinioService minioService;
 
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll()
@@ -179,4 +173,163 @@ public class HrService {
 
         return JobApplicationDTO.fromEntity(saved);
     }
+
+    public ApplicantDTO getApplicantById(Long id) {
+        Applicant applicant = applicantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + id));
+        return ApplicantDTO.fromEntity(applicant);
+    }
+
+    /**
+     * Converts an applicant into a real employee + login account.
+     * Uses JdbcTemplate for the employee/user inserts (not JPA entities)
+     * since employees.employee_id is a plain BIGINT seeded by the ETL --
+     * see the schema.sql sequence addition this relies on. Reuses the
+     * applicant's own name/gender/dob rather than asking HR to retype
+     * data already on file.
+     */
+    @Transactional
+    public HireResultDTO hireApplicant(Long applicantId, HireRequestDTO req) {
+        Applicant applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + applicantId));
+
+        if (!departmentRepository.existsById(req.departmentId())) {
+            throw new ResourceNotFoundException("Aucun département trouvé avec l'id : " + req.departmentId());
+        }
+
+        Long employeeId = jdbcTemplate.queryForObject("""
+            INSERT INTO employees
+                (department_id, first_name, last_name, start_date, title,
+                 employee_status, employee_type, employee_classification_type,
+                 dob, state, job_function, gender, location, salary, currency,
+                 is_deleted, needs_review, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, ?, ?, 'USD',
+                    FALSE, FALSE, now(), now())
+            RETURNING employee_id
+            """,
+            Long.class,
+            req.departmentId(), applicant.getFirstName(), applicant.getLastName(),
+            req.startDate(), req.title(), req.employeeType(), req.employeeClassificationType(),
+            applicant.getDob(), req.state(), req.jobFunction(), applicant.getGender(),
+            req.location(), req.salary()
+        );
+
+        jdbcTemplate.update("""
+            INSERT INTO salary_history (employee_id, effective_date, salary, currency, change_reason, created_at)
+            VALUES (?, ?, ?, 'USD', 'INITIAL_HIRE', now())
+            """,
+            employeeId, req.startDate(), req.salary()
+        );
+
+        Long roleId = jdbcTemplate.queryForObject(
+            "SELECT id FROM roles WHERE name = ?", Long.class, req.roleName()
+        );
+
+        UUID userId = UUID.randomUUID();
+        jdbcTemplate.update("""
+            INSERT INTO users (id, employee_id, email, password_hash, is_active, role_id, created_at, updated_at, created_by, updated_by)
+            VALUES (?, ?, ?, NULL, FALSE, ?, now(), now(), 'HIRE_FLOW', 'HIRE_FLOW')
+            """,
+            userId, employeeId, applicant.getEmail(), roleId
+        );
+
+        UUID tokenId = UUID.randomUUID();
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusDays(7);
+        jdbcTemplate.update("""
+            INSERT INTO user_tokens (id, user_id, token, token_type, expires_at, is_used, is_revoked, created_at)
+            VALUES (?, ?, ?, 'ACTIVATION', ?, FALSE, FALSE, now())
+            """,
+            tokenId, userId, token, expiresAt
+        );
+
+        // TODO: point this at your real frontend activation route.
+        String activationUrl = "http://localhost:4200/activate?token=" + token;
+        boolean emailSent = true;
+        try {
+            emailService.sendAccountActivationEmail(applicant.getEmail(), req.roleName(), activationUrl);
+        } catch (Exception e) {
+            emailSent = false;
+        }
+
+        if (req.jobApplicationId() != null) {
+            jobApplicationRepository.findById(req.jobApplicationId()).ifPresent(app -> {
+                app.setStatus("OFFERED");
+                jobApplicationRepository.save(app);
+            });
+        }
+
+        return new HireResultDTO(employeeId, applicant.getEmail(), emailSent);
+    }
+
+     @Transactional
+    public JobApplicationSubmissionDTO submitApplication(
+            String firstName, String lastName, String email, String phoneNumber,
+            String educationLevel, Double yearsOfExperience, Long jobId,
+            Double desiredSalary, MultipartFile cv
+    ) {
+        JobPosting job = jobPostingRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Aucune offre trouvée avec l'id : " + jobId));
+
+        Applicant applicant = applicantRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    Applicant a = new Applicant();
+                    a.setFirstName(firstName);
+                    a.setLastName(lastName);
+                    a.setEmail(email);
+                    a.setPhoneNumber(phoneNumber);
+                    a.setEducationLevel(educationLevel);
+                    a.setYearsOfExperience(
+                            yearsOfExperience != null ? BigDecimal.valueOf(yearsOfExperience) : null
+                    );
+                    return applicantRepository.save(a);
+                });
+
+        String objectName = applicant.getApplicantId() + "_" + System.currentTimeMillis() + ".pdf";
+        String fileUrl = minioService.uploadCv(cv, objectName);
+
+        ApplicantCv applicantCv = applicantCvRepository.findByApplicant(applicant)
+                .orElseGet(ApplicantCv::new);
+        applicantCv.setApplicant(applicant);
+        applicantCv.setFileUrl(fileUrl);
+        // Left null on purpose -- this is the marker "Traiter CV" looks for.
+        applicantCv.setParsedText(null);
+        applicantCv.setExtractedSkillsJson(null);
+        applicantCvRepository.save(applicantCv);
+
+        JobApplication application = new JobApplication();
+        application.setApplicationId(UUID.randomUUID());
+        application.setApplicant(applicant);
+        application.setJobPosting(job);
+        application.setApplicationDate(LocalDate.now());
+        application.setDesiredSalary(
+                desiredSalary != null ? BigDecimal.valueOf(desiredSalary) : null
+        );
+        application.setStatus("APPLIED");
+        jobApplicationRepository.save(application);
+
+        return new JobApplicationSubmissionDTO(
+                applicant.getApplicantId(),
+                application.getApplicationId(),
+                "Candidature reçue. Merci !"
+        );
+    }
+    public EmployeeDTO getEmployeeById(Long id) {
+    return employeeRepository.findById(id)
+            .map(EmployeeDTO::fromEntity)
+            .orElseThrow(() -> new ResourceNotFoundException("Aucun employé trouvé avec l'id : " + id));
+}
+public List<ApplicantWithCvStatusDTO> getAllApplicantsWithCvStatus() {
+    return applicantRepository.findAll().stream()
+            .map(a -> {
+                var cv = applicantCvRepository.findByApplicant(a).orElse(null);
+                boolean hasCv = cv != null && cv.getFileUrl() != null;
+                boolean isProcessed = cv != null && cv.getCvEmbedding() != null;
+                return new ApplicantWithCvStatusDTO(
+                        a.getApplicantId(), a.getFirstName(), a.getLastName(), a.getEmail(),
+                        a.getEducationLevel(), a.getYearsOfExperience(), hasCv, isProcessed
+                );
+            })
+            .collect(Collectors.toList());
+}
 }

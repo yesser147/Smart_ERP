@@ -3,20 +3,20 @@
     <span class="p-2 bg-violet-500/10 text-violet-400 rounded-lg border border-violet-500/20">🎯</span>
     <div>
       <h3 class="text-lg font-semibold text-white">Correspondance de Candidats IA</h3>
-      <p class="text-xs text-slate-400">Recherche sémantique par embeddings vectoriels (pgvector)</p>
+      <p class="text-xs text-slate-400">Recherche sémantique (pgvector) + reclassement par LLM</p>
     </div>
   </div>
 
   <div class="flex flex-col sm:flex-row gap-3 mb-5">
+    
     <select
-  class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white flex-1 focus:outline-none focus:border-violet-400"
-  [(ngModel)]="selectedJobId"
-  (ngModelChange)="runMatch()">
-  <!-- CHANGE [value] to [ngValue] HERE -->
-  <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
-    {{ job.title }} {{ job.status ? '(' + job.status + ')' : '' }}
-  </option>
-</select>
+      class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white flex-1 focus:outline-none focus:border-violet-400"
+      [(ngModel)]="selectedJobId"
+      (ngModelChange)="runMatch()">
+      <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
+        {{ job.title }} {{ job.status ? '(' + job.status + ')' : '' }}
+      </option>
+    </select>
     <button (click)="runMatch()"
             class="px-4 py-2 bg-violet-500 hover:bg-violet-400 text-slate-900 font-semibold rounded-lg text-sm transition-colors">
       Rechercher
@@ -50,16 +50,20 @@
                 {{ skill }}
               </span>
             </div>
+            <p *ngIf="c.ai_reasoning" class="text-xs text-violet-300/80 mt-1.5 italic">
+              💡 {{ c.ai_reasoning }}
+            </p>
           </div>
         </div>
-        <div class="text-right">
+        <div class="text-right shrink-0 ml-3">
           <div class="text-lg font-bold" [ngClass]="scoreClass(c.match_score)">{{ c.match_score }}%</div>
           <div class="text-[10px] text-slate-500">compatibilité</div>
+          <div *ngIf="c.embedding_score !== undefined" class="text-[10px] text-slate-600 mt-0.5">
+            (similarité: {{ c.embedding_score }}%)
+          </div>
         </div>
       </div>
 
-      <!-- Application actions -- only shown if this applicant actually
-           applied to the selected job -->
       <div *ngIf="applicationFor(c.applicant_id) as app" class="flex items-center justify-between mt-3 pt-3 border-t border-slate-700">
         <span class="px-2 py-1 rounded text-xs border" [ngClass]="statusClass(app.status)">
           {{ app.status }}
@@ -74,9 +78,8 @@
           </button>
           <button
             *ngIf="app.status !== 'OFFERED' && app.status !== 'REJECTED'"
-            (click)="offer(c.applicant_id)"
-            [disabled]="actioningApplicantId === c.applicant_id"
-            class="px-3 py-1.5 text-xs bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg transition-colors disabled:opacity-50">
+            (click)="goToHire(c.applicant_id)"
+            class="px-3 py-1.5 text-xs bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg transition-colors">
             Offre
           </button>
           <button

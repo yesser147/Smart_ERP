@@ -42,25 +42,40 @@ class HRQueryAssistant:
         return "\n\n".join(schema_info)
 
     def _validate_sql_safety(self, sql_query: str) -> bool:
-        """Enforces strict read-only constraints and blocks query injection/chaining."""
+        """Enforces strict read-only constraints, blocks query chaining, AND
+        verifies every referenced table is one of the actual allowed views --
+        not just that no destructive keyword appears. Without this last
+        check, a hallucinated table name (the model inventing "v_employees"
+        when no such view exists) reaches Postgres as a live query instead
+        of being rejected here."""
         clean_query = sql_query.strip().rstrip(';')
-        
-        # Prevent query chaining (multiple statements)
+
         if ';' in clean_query:
             return False
 
         clean_upper = clean_query.upper()
         forbidden_keywords = [
-            "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", 
+            "INSERT", "UPDATE", "DELETE", "DROP", "ALTER",
             "TRUNCATE", "CREATE", "GRANT", "REVOKE", "EXEC", "EXECUTE"
         ]
-        
-        # Strict keyword rejection using word boundaries
+
         if any(re.search(rf"\b{kw}\b", clean_upper) for kw in forbidden_keywords):
             return False
 
-        # Query must begin with SELECT or WITH
         if not (clean_upper.startswith("SELECT") or clean_upper.startswith("WITH")):
+            return False
+
+        # NEW: extract every table/view name following FROM or JOIN and
+        # reject the query unless ALL of them are in ALLOWED_VIEWS. This is
+        # the actual security boundary against hallucinated or arbitrary
+        # table names -- the keyword checks above only stop destructive
+        # statements, not reads from the wrong (or nonexistent) table.
+        referenced_tables = re.findall(r'\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?', sql_query, re.IGNORECASE)
+        if not referenced_tables:
+            return False
+
+        allowed_lower = {v.lower() for v in ALLOWED_VIEWS}
+        if any(t.lower() not in allowed_lower for t in referenced_tables):
             return False
 
         return True
@@ -76,7 +91,10 @@ AVAILABLE DATABASE VIEWS:
 {schema_context}
 
 RULES:
-1. Use ONLY the views listed above. Do NOT query raw base tables.
+1. Use ONLY the views listed above. Do NOT query raw base tables. NEVER invent
+   a view or table name that is not listed above -- if no listed view has the
+   data needed to answer the question, pick the closest available view and
+   note the limitation is acceptable; do not fabricate a name.
 2. Produce ONLY a standard PostgreSQL SELECT query.
 3. CONVERSATIONAL MEMORY: Use chat history to resolve references (e.g., if the user asks "What about that department?", filter using the department_id or business_unit from the preceding turn).
 4. OPTIMIZATION: Default to LIMIT 10 unless explicit limits are requested.
@@ -84,6 +102,11 @@ RULES:
    - Active job postings in `v_recruitment_funnel_ats`: Always filter with `UPPER(posting_status) IN ('OPEN', 'ACTIVE')`.
    - Terminated employees: Account for status variations using `UPPER(employee_status) LIKE '%TERMINATED%'`.
    - Defunct / Shut down departments: Query `v_closed_departments`.
+   - Active employee counts / per-employee questions (headcount, individual
+     salary, individual performance, individual engagement): Query
+     `v_ai_retention_features`, which is one row per employee and includes
+     employee_status, salary, performance_score, business_unit, and
+     engagement/satisfaction scores.
 6. CASE-INSENSITIVE MATCHING: Use `ILIKE` or `UPPER()` for string criteria.
 7. OUTPUT FORMAT: Return ONLY valid JSON in this exact structure:
 {{
@@ -136,13 +159,12 @@ Respond directly. Do not repeat raw JSON. Do not explain the SQL."""
         return response.choices[0].message.content.strip()
 
     def ask(self, user_question: str) -> dict:
-        """Executes the pipeline using the read-only engine and updates conversational memory."""
-        sql_query = self.generate_sql(user_question)
-        
-        if not self._validate_sql_safety(sql_query):
-            return {"error": "Query blocked: Only read-only SELECT operations are allowed."}
-
         try:
+            sql_query = self.generate_sql(user_question)
+            
+            if not self._validate_sql_safety(sql_query):
+                return {"error": "Query blocked: Only read-only SELECT operations are allowed."}
+
             with ai_engine.connect() as conn:
                 df = pd.read_sql_query(text(sql_query), conn)
                 
@@ -162,4 +184,11 @@ Respond directly. Do not repeat raw JSON. Do not explain the SQL."""
             }
 
         except Exception as e:
-            return {"error": f"Database execution error: {str(e)}"}
+            # THIS WILL PRINT THE EXACT REASON TO YOUR TERMINAL
+            import traceback
+            print("\n" + "="*30)
+            print("🚨 CRASH DETECTED IN AI CHAT:")
+            traceback.print_exc()
+            print("="*30 + "\n")
+            
+            return {"error": f"Pipeline execution error: {str(e)}"}

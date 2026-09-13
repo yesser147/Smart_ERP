@@ -36,32 +36,10 @@
     </div>
   </div>
 
-  <!-- Time to Hire (renamed: "hire" here means the offer stage) -->
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-    <h4 class="text-lg font-medium text-white mb-4">Délai Moyen jusqu'à l'Offre</h4>
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-slate-300 text-sm">
-        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
-          <tr>
-            <th class="p-3">Poste</th>
-            <th class="p-3 text-right">Délai Moyen</th>
-            <th class="p-3 text-right">Offres Envoyées</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-700">
-          <tr *ngFor="let item of timeToHireData" class="hover:bg-slate-750">
-            <td class="p-3 font-medium text-white">{{ item.jobTitle }}</td>
-            <td class="p-3 text-right text-sky-400 font-semibold">{{ item.avgDaysToHire }} jours</td>
-            <td class="p-3 text-right text-teal-400">{{ item.hiredCount }}</td>
-          </tr>
-          <tr *ngIf="timeToHireData.length === 0">
-            <td colspan="3" class="p-3 text-center text-slate-500">Aucune donnée disponible</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  
 
-  <!-- AI Candidate Matching -->
+
   <app-candidate-match [jobPostings]="jobPostings"></app-candidate-match>
+
+  <app-applicant-cv-manager></app-applicant-cv-manager>
 </div>

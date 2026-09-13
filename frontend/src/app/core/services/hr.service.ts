@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ApplicantCvDTO,
   ApplicantDTO,
+  ApplicantWithCvStatus,
   DepartmentDTO,
   EmployeeDTO,
   EmployeeTrainingDTO,
@@ -85,6 +86,24 @@ rejectApplication(applicationId: string): Observable<JobApplicationDTO> {
   return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/reject`, {});
 }
 
+getApplicantById(id: number): Observable<ApplicantDTO> {
+  return this.http.get<ApplicantDTO>(`${this.apiUrl}/applicants/${id}`);
+}
+
+hireApplicant(applicantId: number, payload: any): Observable<{ employeeId: number; email: string }> {
+  return this.http.post<{ employeeId: number; email: string }>(`${this.apiUrl}/applicants/${applicantId}/hire`, payload);
+}
+
+getEmployeeById(id: number): Observable<EmployeeDTO> {
+  return this.http.get<EmployeeDTO>(`${this.apiUrl}/employees/${id}`);
+}
+
+
+getApplicantsWithCvStatus(): Observable<ApplicantWithCvStatus[]> {
+  return this.http.get<ApplicantWithCvStatus[]>(`${this.apiUrl}/applicants-with-cv-status`);
+}
 
 
 }
+
+export { ApplicantWithCvStatus };

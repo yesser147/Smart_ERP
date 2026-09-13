@@ -171,7 +171,8 @@ def load_to_postgres(tables, apply_schema_first=True):
             ("salary_history", "id"),
             ("employee_trainings", "id"),
             ("engagement_surveys", "id"),
-        ]
+            ("employees", "employee_id"),  # NEW
+             ]
         for tbl, col in serial_tables:
             conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{tbl}', '{col}'), coalesce(max({col}), 1)) FROM {tbl};"))
 

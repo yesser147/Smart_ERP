@@ -125,3 +125,13 @@ export interface TrainingCourseDTO {
   cost: number;
   isActive: boolean;
 }
+export interface ApplicantWithCvStatus {
+  applicantId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  educationLevel: string | null;
+  yearsOfExperience: number | null;
+  hasCv: boolean;
+  isProcessed: boolean;
+}

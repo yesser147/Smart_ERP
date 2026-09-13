@@ -45,3 +45,4 @@ NUMERIC_FEATURES = [
     "avg_work_life_balance",
     "department_turnover_rate",
 ]
+GEMINI_API_KEY="AQ.Ab8RN6L1ekwVKQqgrBTkpzDhkDWK84P4e-zW1NAOw1iCuWGsFw"

@@ -1,49 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { DepartmentBaseline, JobMatchResult, SimulationResult } from '../models/ai.model';
 
-export interface CurvePoint {
-  budget: number;
-  performance: number;
-}
 
-export interface DepartmentBaseline {
-  department_id: number;
-  department_name: string;
-  current_budget: number;
-  current_performance: number;
-  slider_min: number;
-  slider_max: number;
-  curve: CurvePoint[];
-  peak_budget: number;
-  peak_performance: number;
-}
-
-export interface SimulationResult {
-  department_id: number;
-  department_name: string;
-  current_budget: number;
-  current_performance: number;
-  simulated_budget: number;
-  simulated_performance: number;
-  performance_gain: number;
-}
-
-// NEW: recruitment matching
-export interface CandidateMatch {
-  applicant_id: number;
-  name: string;
-  education_level: string | null;
-  years_of_experience: number | null;
-  skills: string; // JSON string, e.g. '["Java","SQL"]'
-  match_score: number; // 0-100
-}
-
-export interface JobMatchResult {
-  job_id: number;
-  job_title: string;
-  candidates: CandidateMatch[];
-}
 
 @Injectable({
   providedIn: 'root'
@@ -84,4 +44,7 @@ export class AiService {
       params: { top_k: topK }
     });
   }
+  processCv(applicantId: number): Observable<any> {
+  return this.http.post<any>(`${this.baseUrl}/recruitment/process-cv/${applicantId}`, {});
+}
 }

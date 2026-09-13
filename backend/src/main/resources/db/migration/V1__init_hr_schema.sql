@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS employees (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE SEQUENCE IF NOT EXISTS employees_employee_id_seq OWNED BY employees.employee_id;
+ALTER TABLE employees ALTER COLUMN employee_id SET DEFAULT nextval('employees_employee_id_seq');
 
 CREATE TABLE IF NOT EXISTS salary_history (
     id BIGSERIAL PRIMARY KEY,

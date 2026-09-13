@@ -4,11 +4,12 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { JobPostingDTO } from '../../../core/models/hr.model';
 import { TimeToHireDTO } from '../../../core/models/analytics.model'; // NEW
 import { CandidateMatchComponent } from '../candidate-match/candidate-match.component';
+import { ApplicantCvManagerComponent } from '../applicant-cv-manager/applicant-cv-manager.component';
 
 @Component({
   selector: 'app-hr-recruitment',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule, CandidateMatchComponent],
+  imports: [CommonModule, NgApexchartsModule, CandidateMatchComponent,ApplicantCvManagerComponent],
   templateUrl: './hr-recruitment.component.html'
 })
 export class HrRecruitmentComponent {

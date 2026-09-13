@@ -1,9 +1,12 @@
 import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AiService, CandidateMatch } from '../../../core/services/ai.service';
+import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { AiService } from '../../../core/services/ai.service';
 import { HrService } from '../../../core/services/hr.service';
 import { JobPostingDTO, JobApplicationDTO } from '../../../core/models/hr.model';
+import { CandidateMatch } from '../../../core/models/ai.model';
 
 @Component({
   selector: 'app-candidate-match',
@@ -14,6 +17,7 @@ import { JobPostingDTO, JobApplicationDTO } from '../../../core/models/hr.model'
 export class CandidateMatchComponent implements OnChanges {
   private aiService = inject(AiService);
   private hrService = inject(HrService);
+  private router = inject(Router);
 
   @Input() jobPostings: JobPostingDTO[] = [];
 
@@ -22,12 +26,11 @@ export class CandidateMatchComponent implements OnChanges {
   error = false;
   jobTitle = '';
   candidates: CandidateMatch[] = [];
+  processingId: number | null = null;  // ADD THIS
 
-  // application_id keyed by applicant_id, for the currently selected job
-  // only -- lets each candidate card know whether it has a real
-  // application to act on, and which one.
   applicationsByApplicantId = new Map<number, JobApplicationDTO>();
   actioningApplicantId: number | null = null;
+  private requestSeq = 0;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['jobPostings'] && this.jobPostings.length > 0 && this.selectedJobId === null) {
@@ -51,44 +54,40 @@ export class CandidateMatchComponent implements OnChanges {
     return 'text-slate-400';
   }
 
-runMatch(): void {
-  if (this.selectedJobId === null) return;
-  
-  // Ensure the ID is always a number
-  this.selectedJobId = Number(this.selectedJobId);
-  
-  this.loading = true;
-  this.error = false;
-  this.applicationsByApplicantId.clear();
-
-  this.aiService.matchCandidates(this.selectedJobId, 10).subscribe({
-    next: (res) => {
-      this.jobTitle = res.job_title;
-      this.candidates = res.candidates;
-      this.loading = false;
-      this.loadApplicationsForJob();
-    },
-    error: () => {
-      this.error = true;
-      this.loading = false;
-    }
-  });
-}
-
-  /** Cross-references matched candidates against real applications for
-   * this job, so buttons only appear for applicants who actually
-   * applied -- a high embedding match score alone doesn't mean they're
-   * in the pipeline. */
-  private loadApplicationsForJob(): void {
+  runMatch(): void {
     if (this.selectedJobId === null) return;
-    this.hrService.getAllJobApplications().subscribe({
-      next: (apps) => {
+    this.selectedJobId = Number(this.selectedJobId);
+
+    const jobId = this.selectedJobId;
+    const mySeq = ++this.requestSeq;
+
+    this.loading = true;
+    this.error = false;
+
+    // Fetch match results and the application list together -- there's
+    // no window where one has updated and the other hasn't.
+    forkJoin({
+      match: this.aiService.matchCandidates(jobId, 10),
+      apps: this.hrService.getAllJobApplications()
+    }).subscribe({
+      next: ({ match, apps }) => {
+        if (mySeq !== this.requestSeq) return; // a newer request started since -- discard
+
+        this.jobTitle = match.job_title;
+        this.candidates = match.candidates;
+
         this.applicationsByApplicantId.clear();
         apps
-          .filter(a => a.jobId === this.selectedJobId)
+          .filter(a => a.jobId === jobId)
           .forEach(a => this.applicationsByApplicantId.set(a.applicantId, a));
+
+        this.loading = false;
       },
-      error: () => { /* leave buttons hidden if this fails -- non-critical */ }
+      error: () => {
+        if (mySeq !== this.requestSeq) return;
+        this.error = true;
+        this.loading = false;
+      }
     });
   }
 
@@ -121,13 +120,17 @@ runMatch(): void {
     });
   }
 
-  offer(applicantId: number): void {
+  /** "Offre" now means "hire this person": instead of firing an email
+   * immediately, it hands off to a form where HR fills in department,
+   * salary, title, etc. The application is marked OFFERED when that
+   * form is submitted, not on this click. */
+  goToHire(applicantId: number): void {
     const app = this.applicationsByApplicantId.get(applicantId);
-    if (!app) return;
-    this.actioningApplicantId = applicantId;
-    this.hrService.moveToOffered(app.applicationId).subscribe({
-      next: (updated) => { this.updateApplication(updated); this.actioningApplicantId = null; },
-      error: () => { this.actioningApplicantId = null; }
+    this.router.navigate(['/recruitment/hire', applicantId], {
+      queryParams: {
+        jobApplicationId: app?.applicationId ?? null,
+        jobId: this.selectedJobId
+      }
     });
   }
 
@@ -140,4 +143,11 @@ runMatch(): void {
       error: () => { this.actioningApplicantId = null; }
     });
   }
+  processCv(applicantId: number): void {
+  this.processingId = applicantId;
+  this.aiService.processCv(applicantId).subscribe({
+    next: () => { this.processingId = null; /* optionally toast success */ },
+    error: () => { this.processingId = null; }
+  });
+}
 }

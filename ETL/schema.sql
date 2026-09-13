@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS employees (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE SEQUENCE IF NOT EXISTS employees_employee_id_seq OWNED BY employees.employee_id;
+ALTER TABLE employees ALTER COLUMN employee_id SET DEFAULT nextval('employees_employee_id_seq');
 
 CREATE TABLE IF NOT EXISTS salary_history (
     id BIGSERIAL PRIMARY KEY,
@@ -209,3 +211,4 @@ CREATE INDEX IF NOT EXISTS idx_job_apps_job ON job_applications(job_id);
 CREATE INDEX IF NOT EXISTS idx_surveys_emp ON engagement_surveys(employee_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_budget_alloc_dept ON department_budget_allocations(department_id, created_at DESC);
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ai_readonly_user;

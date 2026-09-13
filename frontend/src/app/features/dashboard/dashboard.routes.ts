@@ -9,4 +9,9 @@ export const DASHBOARD_ROUTES: Routes = [
     path: 'register',
     loadComponent: () => import('../auth/register/register.component').then(m => m.RegisterComponent)
   },
+    {
+    path: 'apply',
+    loadComponent: () => import('./job-application-form/job-application-form.component').then(m => m.JobApplicationFormComponent)
+  },
+
 ];
