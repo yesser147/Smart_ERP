@@ -1,7 +1,7 @@
 package com.smarterp.hr.web;
 
 import com.smarterp.hr.dto.JobApplicationSubmissionDTO;
-import com.smarterp.hr.service.HrService;
+import com.smarterp.hr.service.PublicApplicationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,9 +10,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/public/applications")
 public class PublicApplicationController {
 
-    private final HrService service;
+    private final PublicApplicationService service;
 
-    public PublicApplicationController(HrService service) {
+    public PublicApplicationController(PublicApplicationService service) {
         this.service = service;
     }
 
@@ -23,14 +23,13 @@ public class PublicApplicationController {
             @RequestParam String email,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String educationLevel,
-            @RequestParam(required = false) Double yearsOfExperience,
             @RequestParam Long jobId,
             @RequestParam(required = false) Double desiredSalary,
             @RequestParam MultipartFile cv
     ) {
         return ResponseEntity.ok(service.submitApplication(
                 firstName, lastName, email, phoneNumber, educationLevel,
-                yearsOfExperience, jobId, desiredSalary, cv
+                jobId, desiredSalary, cv
         ));
     }
 }

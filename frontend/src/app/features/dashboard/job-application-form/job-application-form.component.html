@@ -23,20 +23,19 @@
       <input formControlName="phoneNumber" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">Niveau d'études</label>
-        <input formControlName="educationLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">Années d'expérience</label>
-        <input type="number" formControlName="yearsOfExperience" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
-      </div>
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">Niveau d'études</label>
+      <input formControlName="educationLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">ID du poste</label>
-      <input type="number" formControlName="jobId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      <label class="text-xs text-slate-400 block mb-1">Poste</label>
+      <select formControlName="jobId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        <option [ngValue]="null" disabled>Sélectionner un poste...</option>
+        <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
+          {{ job.title }} — {{ job.departmentName || 'Département #' + job.departmentId }}
+        </option>
+      </select>
     </div>
 
     <div>

@@ -262,58 +262,8 @@ public class HrService {
         return new HireResultDTO(employeeId, applicant.getEmail(), emailSent);
     }
 
-     @Transactional
-    public JobApplicationSubmissionDTO submitApplication(
-            String firstName, String lastName, String email, String phoneNumber,
-            String educationLevel, Double yearsOfExperience, Long jobId,
-            Double desiredSalary, MultipartFile cv
-    ) {
-        JobPosting job = jobPostingRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune offre trouvée avec l'id : " + jobId));
-
-        Applicant applicant = applicantRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    Applicant a = new Applicant();
-                    a.setFirstName(firstName);
-                    a.setLastName(lastName);
-                    a.setEmail(email);
-                    a.setPhoneNumber(phoneNumber);
-                    a.setEducationLevel(educationLevel);
-                    a.setYearsOfExperience(
-                            yearsOfExperience != null ? BigDecimal.valueOf(yearsOfExperience) : null
-                    );
-                    return applicantRepository.save(a);
-                });
-
-        String objectName = applicant.getApplicantId() + "_" + System.currentTimeMillis() + ".pdf";
-        String fileUrl = minioService.uploadCv(cv, objectName);
-
-        ApplicantCv applicantCv = applicantCvRepository.findByApplicant(applicant)
-                .orElseGet(ApplicantCv::new);
-        applicantCv.setApplicant(applicant);
-        applicantCv.setFileUrl(fileUrl);
-        // Left null on purpose -- this is the marker "Traiter CV" looks for.
-        applicantCv.setParsedText(null);
-        applicantCv.setExtractedSkillsJson(null);
-        applicantCvRepository.save(applicantCv);
-
-        JobApplication application = new JobApplication();
-        application.setApplicationId(UUID.randomUUID());
-        application.setApplicant(applicant);
-        application.setJobPosting(job);
-        application.setApplicationDate(LocalDate.now());
-        application.setDesiredSalary(
-                desiredSalary != null ? BigDecimal.valueOf(desiredSalary) : null
-        );
-        application.setStatus("APPLIED");
-        jobApplicationRepository.save(application);
-
-        return new JobApplicationSubmissionDTO(
-                applicant.getApplicantId(),
-                application.getApplicationId(),
-                "Candidature reçue. Merci !"
-        );
-    }
+    
+    
     public EmployeeDTO getEmployeeById(Long id) {
     return employeeRepository.findById(id)
             .map(EmployeeDTO::fromEntity)
@@ -327,7 +277,8 @@ public List<ApplicantWithCvStatusDTO> getAllApplicantsWithCvStatus() {
                 boolean isProcessed = cv != null && cv.getCvEmbedding() != null;
                 return new ApplicantWithCvStatusDTO(
                         a.getApplicantId(), a.getFirstName(), a.getLastName(), a.getEmail(),
-                        a.getEducationLevel(), a.getYearsOfExperience(), hasCv, isProcessed
+                        a.getEducationLevel(), a.getYearsOfExperience(), hasCv, isProcessed,
+                        a.getCreatedAt()
                 );
             })
             .collect(Collectors.toList());

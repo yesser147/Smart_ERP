@@ -138,23 +138,16 @@ def get_retention_risk_scores(threshold: float = RISK_THRESHOLD):
 # --- NEW: Recruitment candidate matching ---
 
 @app.get("/api/ai/recruitment/match/{job_id}")
-def get_candidate_matches(job_id: int, top_k: int = 10):
-    """Embedding-based semantic match: ranks applicants against a specific
-    job posting using pgvector cosine similarity on their real (not
-    random-noise) profile embeddings. Distinct AI technique from the
-    XGBoost regressor/classifier used elsewhere -- this is retrieval, not
-    prediction."""
+def get_candidate_matches(job_id: int, top_k: int = 10, force_refresh: bool = False):
     try:
-        result = match_candidates_to_job(job_id, top_k)
+        result = match_candidates_to_job(job_id, top_k, force_refresh)
         if result is None:
             raise HTTPException(status_code=404, detail=f"No job posting found with id {job_id}")
         return result
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Failed to match candidates for job {job_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
-
 
 @app.post("/api/ai/recruitment/process-cv/{applicant_id}")
 def process_cv(applicant_id: int):

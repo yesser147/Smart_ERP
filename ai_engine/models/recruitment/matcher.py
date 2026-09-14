@@ -1,47 +1,37 @@
 """
-Two-stage candidate matching:
+Two-stage candidate matching with score caching:
   1. Embedding retrieval (pgvector cosine similarity) narrows the full
-     applicant pool down to a manageable shortlist -- fast, scales to
-     thousands of applicants.
-  2. LLM reranking (local Ollama llama3.1) reads each shortlisted
-     candidate's real extracted skills/experience/education against the
-     job's actual requirements and produces a reasoned score + one-line
-     justification -- something cosine similarity alone can't do (it
-     can't tell you a candidate is a great semantic match but missing a
-     hard requirement like years of experience).
+     applicant pool down to a shortlist.
+  2. LLM reranking (local Ollama llama3.1) scores the shortlist against
+     the job's actual requirements.
 
-Stage 2 only runs on the shortlist, not the whole applicant pool, so a
-handful of local LLM calls per search stays fast enough for interactive
-use.
+Scores are persisted onto job_applications.ai_match_score so a page
+refresh reads the saved value instead of recomputing everything (which
+would mean re-running an LLM call on every load). Pass
+force_refresh=True to recompute regardless of cache.
 """
 
 import json
-import time
 import pandas as pd
-import requests
 from sqlalchemy import text
 from database import engine
 from embeddings import embed_text
+import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.1"
 
-SHORTLIST_MULTIPLIER = 3  # retrieve top_k * this many candidates for the LLM to rerank
+SHORTLIST_MULTIPLIER = 3
 
 
 def _embedding_shortlist(job_text: str, shortlist_size: int) -> pd.DataFrame:
-    """Stage 1: fast semantic retrieval via pgvector cosine similarity."""
     query_vec = embed_text(job_text)
     query_literal = "[" + ",".join(map(str, query_vec)) + "]"
 
     query = text("""
         SELECT
-            a.applicant_id,
-            a.first_name,
-            a.last_name,
-            a.education_level,
-            a.years_of_experience,
-            ac.extracted_skills_json,
+            a.applicant_id, a.first_name, a.last_name, a.education_level,
+            a.years_of_experience, ac.extracted_skills_json,
             1 - (ac.cv_embedding <=> :qvec) AS similarity
         FROM applicant_cvs ac
         JOIN applicants a ON a.applicant_id = ac.applicant_id
@@ -55,17 +45,12 @@ def _embedding_shortlist(job_text: str, shortlist_size: int) -> pd.DataFrame:
 
 
 def _rerank_with_llm(job_title: str, required_experience: float, shortlist: pd.DataFrame) -> dict:
-    """Stage 2: asks llama3.1 to score and justify each shortlisted
-    candidate against the job's actual requirements. Returns
-    {applicant_id: {"score": 0-100, "reasoning": "..."}}; falls back to
-    an empty dict (pure embedding score used instead) on any failure, so
-    a local LLM hiccup never breaks the whole match request."""
     candidates_payload = [
         {
             "applicant_id": int(row.applicant_id),
             "years_of_experience": float(row.years_of_experience) if pd.notna(row.years_of_experience) else None,
             "education_level": row.education_level,
-            "skills": _parse_skills(row.extracted_skills_json),
+            "skills": json.loads(row.extracted_skills_json) if row.extracted_skills_json else [],
         }
         for row in shortlist.itertuples()
     ]
@@ -92,13 +77,8 @@ Return ONLY a valid JSON object with no other text, in this exact shape:
     try:
         response = requests.post(
             OLLAMA_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "format": "json",
-                "options": {"temperature": 0.1},
-            },
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                  "format": "json", "options": {"temperature": 0.1}},
             timeout=90,
         )
         response.raise_for_status()
@@ -111,23 +91,56 @@ Return ONLY a valid JSON object with no other text, in this exact shape:
     except Exception as e:
         print(f"  ⚠️  LLM reranking failed, falling back to embedding-only scores: {e}")
         return {}
-def _parse_skills(value):
-    """JSONB columns come back already-parsed (list/dict) via
-    psycopg2/SQLAlchemy -- json.loads() on that raises 'the JSON object
-    must be str, bytes or bytearray, not list'. Only parse if it's
-    genuinely still a string."""
-    if not value:
-        return []
-    if isinstance(value, (list, dict)):
-        return value
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            return []
-    return []
 
-def match_candidates_to_job(job_id: int, top_k: int = 10):
+
+def _persist_scores(job_id: int, candidates: list):
+    """Writes ai_match_score onto job_applications for any candidate who
+    has actually applied to this job."""
+    with engine.begin() as conn:
+        for c in candidates:
+            conn.execute(text("""
+                UPDATE job_applications
+                SET ai_match_score = :score
+                WHERE applicant_id = :aid AND job_id = :jid
+            """), {"score": round(c["match_score"]), "aid": c["applicant_id"], "jid": job_id})
+
+
+def _load_cached_scores(job_id: int, top_k: int):
+    """Returns cached candidates if every applicant for this job already
+    has a saved ai_match_score, else None (meaning: compute fresh)."""
+    query = text("""
+        SELECT
+            a.applicant_id, a.first_name, a.last_name, a.education_level,
+            a.years_of_experience, ac.extracted_skills_json, ja.ai_match_score
+        FROM job_applications ja
+        JOIN applicants a ON a.applicant_id = ja.applicant_id
+        LEFT JOIN applicant_cvs ac ON ac.applicant_id = a.applicant_id
+        WHERE ja.job_id = :jid
+        ORDER BY ja.ai_match_score DESC NULLS LAST
+        LIMIT :k
+    """)
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params={"jid": job_id, "k": top_k})
+
+    if df.empty or df["ai_match_score"].isna().any():
+        return None
+
+    return [
+        {
+            "applicant_id": int(r.applicant_id),
+            "name": f"{r.first_name} {r.last_name}",
+            "education_level": r.education_level,
+            "years_of_experience": float(r.years_of_experience) if pd.notna(r.years_of_experience) else None,
+            "skills": r.extracted_skills_json,
+            "match_score": float(r.ai_match_score),
+            "embedding_score": None,
+            "ai_reasoning": None,
+        }
+        for r in df.itertuples()
+    ]
+
+
+def match_candidates_to_job(job_id: int, top_k: int = 10, force_refresh: bool = False):
     with engine.connect() as conn:
         job = conn.execute(
             text("SELECT job_id, title, required_experience_years FROM job_postings WHERE job_id = :jid"),
@@ -137,8 +150,12 @@ def match_candidates_to_job(job_id: int, top_k: int = 10):
     if job is None:
         return None
 
-    job_text = f"{job.title}. Requires {job.required_experience_years or 0} years of experience."
+    if not force_refresh:
+        cached = _load_cached_scores(job_id, top_k)
+        if cached is not None:
+            return {"job_id": job.job_id, "job_title": job.title, "candidates": cached}
 
+    job_text = f"{job.title}. Requires {job.required_experience_years or 0} years of experience."
     shortlist_size = top_k * SHORTLIST_MULTIPLIER
     shortlist = _embedding_shortlist(job_text, shortlist_size)
 
@@ -154,9 +171,6 @@ def match_candidates_to_job(job_id: int, top_k: int = 10):
 
         llm_result = llm_scores.get(applicant_id)
         if llm_result:
-            # Blend: LLM reasoning carries more weight since it actually
-            # checks hard requirements (experience threshold, specific
-            # skills) that raw cosine similarity can miss entirely.
             final_score = round(0.4 * embedding_score + 0.6 * llm_result["score"], 1)
             reasoning = llm_result["reasoning"]
         else:
@@ -175,9 +189,8 @@ def match_candidates_to_job(job_id: int, top_k: int = 10):
         })
 
     candidates.sort(key=lambda c: c["match_score"], reverse=True)
+    top_candidates = candidates[:top_k]
 
-    return {
-        "job_id": job.job_id,
-        "job_title": job.title,
-        "candidates": candidates[:top_k],
-    }
+    _persist_scores(job_id, top_candidates)
+
+    return {"job_id": job.job_id, "job_title": job.title, "candidates": top_candidates}

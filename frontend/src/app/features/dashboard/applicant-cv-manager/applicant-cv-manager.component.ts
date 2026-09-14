@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AiService } from '../../../core/services/ai.service';
 import { HrService, ApplicantWithCvStatus } from '../../../core/services/hr.service';
 
 @Component({
   selector: 'app-applicant-cv-manager',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './applicant-cv-manager.component.html'
 })
 export class ApplicantCvManagerComponent implements OnInit {
@@ -18,6 +19,9 @@ export class ApplicantCvManagerComponent implements OnInit {
   error = false;
   processingId: number | null = null;
   processErrorId: number | null = null;
+
+  searchTerm = '';
+  showLastTenOnly = false;
 
   ngOnInit(): void {
     this.load();
@@ -32,6 +36,24 @@ export class ApplicantCvManagerComponent implements OnInit {
     });
   }
 
+  get filteredApplicants(): ApplicantWithCvStatus[] {
+    let result = [...this.applicants].sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    if (this.showLastTenOnly) result = result.slice(0, 10);
+
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
+      result = result.filter(a =>
+        `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) ||
+        a.email.toLowerCase().includes(term)
+      );
+    }
+
+    return result;
+  }
+
   processCv(applicantId: number): void {
     this.processingId = applicantId;
     this.processErrorId = null;
@@ -40,7 +62,7 @@ export class ApplicantCvManagerComponent implements OnInit {
       next: () => {
         this.processingId = null;
         const applicant = this.applicants.find(a => a.applicantId === applicantId);
-        if (applicant) applicant.isProcessed = true; // update in place, no full reload needed
+        if (applicant) applicant.isProcessed = true;
       },
       error: () => {
         this.processingId = null;

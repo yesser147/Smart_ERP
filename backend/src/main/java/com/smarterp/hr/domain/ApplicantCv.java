@@ -2,6 +2,10 @@ package com.smarterp.hr.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,11 +26,14 @@ public class ApplicantCv {
     @Column(columnDefinition = "TEXT")
     private String parsedText;
 
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "extracted_skills_json")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String extractedSkillsJson;
-
-    @Column(name = "cv_embedding", columnDefinition = "vector(384)")
-    private String cvEmbedding; // Standard String representation for pgvector data
+ 
+    @Column(name = "cv_embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 384)   // must match vector(384) in schema.sql
+    private float[] cvEmbedding;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 }

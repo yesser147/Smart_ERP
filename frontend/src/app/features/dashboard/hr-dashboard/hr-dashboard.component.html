@@ -21,13 +21,11 @@
       [payGapChart]="payGapChart">
     </app-hr-compensation>
 
-    <!-- timeToHireData added -->
-    <app-hr-recruitment *ngSwitchCase="'recruitment'" 
-      [funnelChart]="funnelChart"
-      [jobPostingsChart]="jobPostingsChart"
-      [jobPostings]="jobPostings"
-      [timeToHireData]="timeToHireData">
-    </app-hr-recruitment>
+<app-hr-recruitment *ngSwitchCase="'recruitment'" 
+  [funnelChart]="funnelChart"
+  [jobPostingsChart]="jobPostingsChart"
+  [jobPostings]="jobPostings">
+</app-hr-recruitment>
 
     <app-hr-budget-advisor *ngSwitchCase="'budget'">
     </app-hr-budget-advisor>

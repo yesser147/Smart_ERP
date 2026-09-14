@@ -39,11 +39,11 @@ export class AiService {
 
   // --- Recruitment candidate matching (NEW) ---
 
-  matchCandidates(jobId: number, topK: number = 10): Observable<JobMatchResult> {
-    return this.http.get<JobMatchResult>(`${this.baseUrl}/recruitment/match/${jobId}`, {
-      params: { top_k: topK }
-    });
-  }
+matchCandidates(jobId: number, topK: number = 10, forceRefresh: boolean = false): Observable<JobMatchResult> {
+  return this.http.get<JobMatchResult>(`${this.baseUrl}/recruitment/match/${jobId}`, {
+    params: { top_k: topK, force_refresh: forceRefresh }
+  });
+}
   processCv(applicantId: number): Observable<any> {
   return this.http.post<any>(`${this.baseUrl}/recruitment/process-cv/${applicantId}`, {});
 }

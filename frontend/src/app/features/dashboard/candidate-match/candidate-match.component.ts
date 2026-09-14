@@ -54,42 +54,40 @@ export class CandidateMatchComponent implements OnChanges {
     return 'text-slate-400';
   }
 
-  runMatch(): void {
-    if (this.selectedJobId === null) return;
-    this.selectedJobId = Number(this.selectedJobId);
+  runMatch(forceRefresh: boolean = false): void {
+  if (this.selectedJobId === null) return;
+  this.selectedJobId = Number(this.selectedJobId);
 
-    const jobId = this.selectedJobId;
-    const mySeq = ++this.requestSeq;
+  const jobId = this.selectedJobId;
+  const mySeq = ++this.requestSeq;
 
-    this.loading = true;
-    this.error = false;
+  this.loading = true;
+  this.error = false;
 
-    // Fetch match results and the application list together -- there's
-    // no window where one has updated and the other hasn't.
-    forkJoin({
-      match: this.aiService.matchCandidates(jobId, 10),
-      apps: this.hrService.getAllJobApplications()
-    }).subscribe({
-      next: ({ match, apps }) => {
-        if (mySeq !== this.requestSeq) return; // a newer request started since -- discard
+  forkJoin({
+    match: this.aiService.matchCandidates(jobId, 10, forceRefresh),
+    apps: this.hrService.getAllJobApplications()
+  }).subscribe({
+    next: ({ match, apps }) => {
+      if (mySeq !== this.requestSeq) return;
 
-        this.jobTitle = match.job_title;
-        this.candidates = match.candidates;
+      this.jobTitle = match.job_title;
+      this.candidates = match.candidates;
 
-        this.applicationsByApplicantId.clear();
-        apps
-          .filter(a => a.jobId === jobId)
-          .forEach(a => this.applicationsByApplicantId.set(a.applicantId, a));
+      this.applicationsByApplicantId.clear();
+      apps
+        .filter(a => a.jobId === jobId)
+        .forEach(a => this.applicationsByApplicantId.set(a.applicantId, a));
 
-        this.loading = false;
-      },
-      error: () => {
-        if (mySeq !== this.requestSeq) return;
-        this.error = true;
-        this.loading = false;
-      }
-    });
-  }
+      this.loading = false;
+    },
+    error: () => {
+      if (mySeq !== this.requestSeq) return;
+      this.error = true;
+      this.loading = false;
+    }
+  });
+}
 
   applicationFor(applicantId: number): JobApplicationDTO | undefined {
     return this.applicationsByApplicantId.get(applicantId);

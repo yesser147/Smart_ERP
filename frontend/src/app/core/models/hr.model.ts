@@ -134,4 +134,5 @@ export interface ApplicantWithCvStatus {
   yearsOfExperience: number | null;
   hasCv: boolean;
   isProcessed: boolean;
+  createdAt: string;
 }
