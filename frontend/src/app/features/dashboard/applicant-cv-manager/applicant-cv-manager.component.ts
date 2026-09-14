@@ -19,6 +19,7 @@ export class ApplicantCvManagerComponent implements OnInit {
   error = false;
   processingId: number | null = null;
   processErrorId: number | null = null;
+  processErrorMessage: string | null = null;
 
   searchTerm = '';
   showLastTenOnly = false;
@@ -57,6 +58,7 @@ export class ApplicantCvManagerComponent implements OnInit {
   processCv(applicantId: number): void {
     this.processingId = applicantId;
     this.processErrorId = null;
+    this.processErrorMessage = null; // NEW field
 
     this.aiService.processCv(applicantId).subscribe({
       next: () => {
@@ -64,9 +66,11 @@ export class ApplicantCvManagerComponent implements OnInit {
         const applicant = this.applicants.find(a => a.applicantId === applicantId);
         if (applicant) applicant.isProcessed = true;
       },
-      error: () => {
+      error: (err) => {
         this.processingId = null;
         this.processErrorId = applicantId;
+        // FastAPI's HTTPException serializes as { "detail": "..." }
+        this.processErrorMessage = err?.error?.detail || 'Erreur inconnue';
       }
     });
   }

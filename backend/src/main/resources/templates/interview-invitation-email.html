@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invitation à un entretien</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 24px;">
+    <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
+        <h2 style="color: #1e293b;">Invitation à un entretien</h2>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Bonjour <span th:text="${applicantName}">Candidat</span>,
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Bonne nouvelle ! Votre candidature au poste de
+            <strong th:text="${jobTitle}">Poste</strong> a retenu notre attention, et nous
+            aimerions vous rencontrer pour un entretien.
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Notre équipe RH vous contactera prochainement pour convenir d'une date et
+            d'une heure qui vous conviennent.
+        </p>
+        <p style="color: #94a3b8; font-size: 13px; margin-top: 32px;">
+            — L'équipe Recrutement, Nexus ERP
+        </p>
+    </div>
+</body>
+</html>

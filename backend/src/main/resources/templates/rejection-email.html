@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Candidature</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 24px;">
+    <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
+        <h2 style="color: #1e293b;">Concernant votre candidature</h2>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Bonjour <span th:text="${applicantName}">Candidat</span>,
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Nous vous remercions pour l'intérêt que vous avez porté au poste de
+            <strong th:text="${jobTitle}">Poste</strong> au sein de notre entreprise.
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Après un examen attentif de votre candidature, nous avons décidé de ne pas
+            donner suite pour ce poste. Cette décision ne remet nullement en cause vos
+            qualifications, et nous vous encourageons à postuler à de futures offres
+            correspondant à votre profil.
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Nous vous souhaitons plein succès dans vos recherches.
+        </p>
+        <p style="color: #94a3b8; font-size: 13px; margin-top: 32px;">
+            — L'équipe Recrutement, Nexus ERP
+        </p>
+    </div>
+</body>
+</html>

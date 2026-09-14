@@ -26,7 +26,7 @@ export class CandidateMatchComponent implements OnChanges {
   error = false;
   jobTitle = '';
   candidates: CandidateMatch[] = [];
-  processingId: number | null = null;  // ADD THIS
+  processingId: number | null = null;
 
   applicationsByApplicantId = new Map<number, JobApplicationDTO>();
   actioningApplicantId: number | null = null;
@@ -54,40 +54,51 @@ export class CandidateMatchComponent implements OnChanges {
     return 'text-slate-400';
   }
 
-  runMatch(forceRefresh: boolean = false): void {
-  if (this.selectedJobId === null) return;
-  this.selectedJobId = Number(this.selectedJobId);
+  /**
+   * recomputeAll=false (default, "Rechercher"): reuses cached
+   * ai_match_score for every applicant who already has one, and only
+   * runs embedding+LLM scoring for applicants who don't (a brand-new
+   * application, or a CV just processed by "Traiter CV"). No wasted
+   * LLM calls on people already scored.
+   *
+   * recomputeAll=true ("Recalculer"): forces every real applicant of
+   * this job to be rescored from scratch -- use when the job's
+   * requirements changed and old scores should be discarded.
+   */
+  runMatch(recomputeAll: boolean = false): void {
+    if (this.selectedJobId === null) return;
+    this.selectedJobId = Number(this.selectedJobId);
 
-  const jobId = this.selectedJobId;
-  const mySeq = ++this.requestSeq;
+    const jobId = this.selectedJobId;
+    const mySeq = ++this.requestSeq;
 
-  this.loading = true;
-  this.error = false;
+    this.loading = true;
+    this.error = false;
 
-  forkJoin({
-    match: this.aiService.matchCandidates(jobId, 10, forceRefresh),
-    apps: this.hrService.getAllJobApplications()
-  }).subscribe({
-    next: ({ match, apps }) => {
-      if (mySeq !== this.requestSeq) return;
+    forkJoin({
+      match: this.aiService.matchCandidates(jobId, 10, recomputeAll),
+      apps: this.hrService.getAllJobApplications()
+    }).subscribe({
+      next: ({ match, apps }) => {
+        if (mySeq !== this.requestSeq) return;
 
-      this.jobTitle = match.job_title;
-      this.candidates = match.candidates;
+        this.jobTitle = match.job_title;
+        this.candidates = match.candidates;
 
-      this.applicationsByApplicantId.clear();
-      apps
-        .filter(a => a.jobId === jobId)
-        .forEach(a => this.applicationsByApplicantId.set(a.applicantId, a));
+        this.applicationsByApplicantId.clear();
+        apps
+          .filter(a => a.jobId === jobId)
+          .forEach(a => this.applicationsByApplicantId.set(a.applicantId, a));
 
-      this.loading = false;
-    },
-    error: () => {
-      if (mySeq !== this.requestSeq) return;
-      this.error = true;
-      this.loading = false;
-    }
-  });
-}
+        this.loading = false;
+      },
+      error: () => {
+        if (mySeq !== this.requestSeq) return;
+        this.error = true;
+        this.loading = false;
+      }
+    });
+  }
 
   applicationFor(applicantId: number): JobApplicationDTO | undefined {
     return this.applicationsByApplicantId.get(applicantId);
@@ -141,11 +152,12 @@ export class CandidateMatchComponent implements OnChanges {
       error: () => { this.actioningApplicantId = null; }
     });
   }
+
   processCv(applicantId: number): void {
-  this.processingId = applicantId;
-  this.aiService.processCv(applicantId).subscribe({
-    next: () => { this.processingId = null; /* optionally toast success */ },
-    error: () => { this.processingId = null; }
-  });
-}
+    this.processingId = applicantId;
+    this.aiService.processCv(applicantId).subscribe({
+      next: () => { this.processingId = null; /* optionally toast success */ },
+      error: () => { this.processingId = null; }
+    });
+  }
 }

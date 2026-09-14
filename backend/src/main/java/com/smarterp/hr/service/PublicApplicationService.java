@@ -53,7 +53,6 @@ public class PublicApplicationService {
 
         String objectName = applicant.getApplicantId() + "_" + System.currentTimeMillis() + ".pdf";
         String fileUrl = minioService.uploadCv(cv, objectName);
-
         ApplicantCv applicantCv = applicantCvRepository.findByApplicant(applicant)
                 .orElseGet(ApplicantCv::new);
         applicantCv.setApplicant(applicant);

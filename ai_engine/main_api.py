@@ -138,9 +138,9 @@ def get_retention_risk_scores(threshold: float = RISK_THRESHOLD):
 # --- NEW: Recruitment candidate matching ---
 
 @app.get("/api/ai/recruitment/match/{job_id}")
-def get_candidate_matches(job_id: int, top_k: int = 10, force_refresh: bool = False):
+def get_candidate_matches(job_id: int, top_k: int = 10, recompute_all: bool = False):
     try:
-        result = match_candidates_to_job(job_id, top_k, force_refresh)
+        result = match_candidates_to_job(job_id, top_k, recompute_all)
         if result is None:
             raise HTTPException(status_code=404, detail=f"No job posting found with id {job_id}")
         return result

@@ -58,7 +58,9 @@
                 class="px-3 py-1.5 text-xs bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20 rounded-lg transition-colors disabled:opacity-50">
                 {{ processingId === a.applicantId ? 'Traitement...' : 'Traiter CV' }}
               </button>
-              <span *ngIf="processErrorId === a.applicantId" class="text-xs text-rose-400 ml-2">Échec</span>
+              <span *ngIf="processErrorId === a.applicantId" class="text-xs text-rose-400 ml-2" [title]="processErrorMessage">
+  Échec: {{ processErrorMessage }}
+</span>
             </td>
           </tr>
           <tr *ngIf="filteredApplicants.length === 0">

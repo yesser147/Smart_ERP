@@ -105,12 +105,12 @@ public class HrService {
                 .collect(Collectors.toList());
     }
 
-    public List<JobApplicationDTO> getAllJobApplications() {
-        return jobApplicationRepository.findAll()
-                .stream()
-                .map(JobApplicationDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
+public List<JobApplicationDTO> getAllJobApplications() {
+    return jobApplicationRepository.findAllWithRelations()
+            .stream()
+            .map(JobApplicationDTO::fromEntity)
+            .collect(Collectors.toList());
+}
 
     public List<ApplicantCvDTO> getAllApplicantCvs() {
         return applicantCvRepository.findAll()
@@ -270,11 +270,19 @@ public class HrService {
             .orElseThrow(() -> new ResourceNotFoundException("Aucun employé trouvé avec l'id : " + id));
 }
 public List<ApplicantWithCvStatusDTO> getAllApplicantsWithCvStatus() {
-    return applicantRepository.findAll().stream()
+    var applicants = applicantRepository.findAll();
+
+    var statusByApplicantId = applicantCvRepository.findAllCvStatus().stream()
+            .collect(Collectors.toMap(
+                    ApplicantCvStatusView::applicantId,
+                    java.util.function.Function.identity()
+            ));
+
+    return applicants.stream()
             .map(a -> {
-                var cv = applicantCvRepository.findByApplicant(a).orElse(null);
-                boolean hasCv = cv != null && cv.getFileUrl() != null;
-                boolean isProcessed = cv != null && cv.getCvEmbedding() != null;
+                var status = statusByApplicantId.get(a.getApplicantId());
+                boolean hasCv = status != null && status.hasCv();
+                boolean isProcessed = status != null && status.isProcessed();
                 return new ApplicantWithCvStatusDTO(
                         a.getApplicantId(), a.getFirstName(), a.getLastName(), a.getEmail(),
                         a.getEducationLevel(), a.getYearsOfExperience(), hasCv, isProcessed,
