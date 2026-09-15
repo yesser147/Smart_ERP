@@ -1,621 +1,621 @@
 department_id,business_unit,department_type,division_description,is_deleted,created_at
-1,CCDR,Production,Finance & Accounting,False,2026-08-31 17:32:04
-2,EW,Production,Aerial,False,2026-08-31 17:32:04
-3,PL,Sales,General - Sga,False,2026-08-31 17:32:04
-4,CCDR,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-5,TNS,Sales,General - Con,False,2026-08-31 17:32:04
-6,BPC,Sales,Field Operations,False,2026-08-31 17:32:04
-7,WBL,Sales,General - Eng,False,2026-08-31 17:32:04
-8,CCDR,Sales,Engineers,False,2026-08-31 17:32:04
-9,NEL,Sales,Executive,False,2026-08-31 17:32:04
-10,BPC,Sales,Engineers,False,2026-08-31 17:32:04
-11,SVG,Sales,Field Operations,False,2026-08-31 17:32:04
-12,MSC,Sales,General - Con,False,2026-08-31 17:32:04
-13,EW,Sales,Splicing,False,2026-08-31 17:32:04
-14,BPC,Sales,General - Con,False,2026-08-31 17:32:04
-15,PYZ,IT/IS,Field Operations,False,2026-08-31 17:32:04
-16,WBL,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-17,NEL,Sales,Engineers,False,2026-08-31 17:32:04
-18,PL,Sales,Project Management - Con,False,2026-08-31 17:32:04
-19,CCDR,Sales,General - Con,False,2026-08-31 17:32:04
-20,SVG,Sales,Engineers,False,2026-08-31 17:32:04
-21,EW,Sales,General - Eng,False,2026-08-31 17:32:04
-22,MSC,Sales,Field Operations,False,2026-08-31 17:32:04
-23,PYZ,Sales,General - Con,False,2026-08-31 17:32:04
-24,WBL,Sales,Fielders,False,2026-08-31 17:32:04
-25,PYZ,IT/IS,General - Con,False,2026-08-31 17:32:04
-26,WBL,Sales,Project Management - Eng,False,2026-08-31 17:32:04
-27,NEL,Sales,Field Operations,False,2026-08-31 17:32:04
-28,PL,Sales,Engineers,False,2026-08-31 17:32:04
-29,SVG,Sales,Aerial,False,2026-08-31 17:32:04
-30,EW,Sales,General - Con,False,2026-08-31 17:32:04
-31,TNS,Sales,Field Operations,False,2026-08-31 17:32:04
-32,PYZ,Sales,Shop (Fleet),False,2026-08-31 17:32:04
-33,WBL,Sales,General - Con,False,2026-08-31 17:32:04
-34,PYZ,IT/IS,Aerial,False,2026-08-31 17:32:04
-35,NEL,Sales,Wireline Construction,False,2026-08-31 17:32:04
-36,PL,Sales,Field Operations,False,2026-08-31 17:32:04
-37,CCDR,Sales,Field Operations,False,2026-08-31 17:32:04
-38,SVG,Sales,Project Management - Con,False,2026-08-31 17:32:04
-39,EW,Sales,Shop (Fleet),False,2026-08-31 17:32:04
-40,MSC,Sales,Catv,False,2026-08-31 17:32:04
-41,PYZ,Sales,Fielders,False,2026-08-31 17:32:04
-42,WBL,Sales,Wireline Construction,False,2026-08-31 17:32:04
-43,NEL,Sales,Project Management - Con,False,2026-08-31 17:32:04
-44,PL,Sales,Catv,False,2026-08-31 17:32:04
-45,BPC,Sales,Wireline Construction,False,2026-08-31 17:32:04
-46,CCDR,Sales,Catv,False,2026-08-31 17:32:04
-47,TNS,Sales,Fielders,False,2026-08-31 17:32:04
-48,BPC,Sales,General - Sga,False,2026-08-31 17:32:04
-49,CCDR,Sales,Wireline Construction,False,2026-08-31 17:32:04
-50,EW,Sales,Field Operations,False,2026-08-31 17:32:04
-51,MSC,Sales,General - Sga,False,2026-08-31 17:32:04
-52,PL,Sales,General - Con,False,2026-08-31 17:32:04
-53,PYZ,Sales,Project Management - Con,False,2026-08-31 17:32:04
-54,SVG,Sales,General - Con,False,2026-08-31 17:32:04
-55,TNS,Sales,Wireline Construction,False,2026-08-31 17:32:04
-56,WBL,Sales,General - Sga,False,2026-08-31 17:32:04
-57,TNS,Sales,Project Management - Con,False,2026-08-31 17:32:04
-58,PYZ,Sales,General - Sga,False,2026-08-31 17:32:04
-59,WBL,Sales,Field Operations,False,2026-08-31 17:32:04
-60,NEL,Sales,Shop (Fleet),False,2026-08-31 17:32:04
-61,BPC,Sales,Splicing,False,2026-08-31 17:32:04
-62,CCDR,Sales,Project Management - Con,False,2026-08-31 17:32:04
-63,CCDR,Sales,Aerial,False,2026-08-31 17:32:04
-64,WBL,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-65,NEL,Sales,Yard (Material Handling),False,2026-08-31 17:32:04
-66,MSC,Sales,General - Eng,False,2026-08-31 17:32:04
-67,TNS,Sales,Aerial,False,2026-08-31 17:32:04
-68,NEL,Sales,General - Con,False,2026-08-31 17:32:04
-69,PL,Sales,Aerial,False,2026-08-31 17:32:04
-70,PYZ,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-71,WBL,Sales,Project Management - Con,False,2026-08-31 17:32:04
-72,EW,IT/IS,Wireless,False,2026-08-31 17:32:04
-73,TNS,Sales,Engineers,False,2026-08-31 17:32:04
-74,PL,Sales,Fielders,False,2026-08-31 17:32:04
-75,CCDR,Sales,Splicing,False,2026-08-31 17:32:04
-76,EW,IT/IS,Field Operations,False,2026-08-31 17:32:04
-77,BPC,Sales,Project Management - Eng,False,2026-08-31 17:32:04
-78,SVG,Sales,Wireline Construction,False,2026-08-31 17:32:04
-79,PYZ,Sales,Engineers,False,2026-08-31 17:32:04
-80,MSC,Sales,People Services,False,2026-08-31 17:32:04
-81,MSC,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-82,NEL,Production,Field Operations,False,2026-08-31 17:32:04
-83,MSC,Production,Field Operations,False,2026-08-31 17:32:04
-84,BPC,Production,General - Con,False,2026-08-31 17:32:04
-85,CCDR,Production,Shop (Fleet),False,2026-08-31 17:32:04
-86,WBL,Production,Field Operations,False,2026-08-31 17:32:04
-87,SVG,Production,Aerial,False,2026-08-31 17:32:04
-88,WBL,Production,General - Con,False,2026-08-31 17:32:04
-89,PL,Production,Aerial,False,2026-08-31 17:32:04
-90,EW,Production,General - Sga,False,2026-08-31 17:32:04
-91,EW,Production,Field Operations,False,2026-08-31 17:32:04
-92,MSC,Production,Catv,False,2026-08-31 17:32:04
-93,TNS,Production,Fielders,False,2026-08-31 17:32:04
-94,WBL,Production,Fielders,False,2026-08-31 17:32:04
-95,WBL,Production,Underground,False,2026-08-31 17:32:04
-96,PL,Production,Engineers,False,2026-08-31 17:32:04
-97,BPC,Production,Field Operations,False,2026-08-31 17:32:04
-98,PYZ,Production,Field Operations,False,2026-08-31 17:32:04
-99,SVG,Production,Wireline Construction,False,2026-08-31 17:32:04
-100,TNS,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-101,CCDR,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-102,EW,Production,People Services,False,2026-08-31 17:32:04
-103,MSC,Production,General - Eng,False,2026-08-31 17:32:04
-104,NEL,Production,Shop (Fleet),False,2026-08-31 17:32:04
-105,PL,Production,Field Operations,False,2026-08-31 17:32:04
-106,SVG,Production,Field Operations,False,2026-08-31 17:32:04
-107,TNS,Production,Field Operations,False,2026-08-31 17:32:04
-108,WBL,Production,Engineers,False,2026-08-31 17:32:04
-109,NEL,Production,Splicing,False,2026-08-31 17:32:04
-110,PYZ,Production,General - Con,False,2026-08-31 17:32:04
-111,SVG,Production,Project Management - Eng,False,2026-08-31 17:32:04
-112,TNS,Production,General - Con,False,2026-08-31 17:32:04
-113,BPC,Production,Wireline Construction,False,2026-08-31 17:32:04
-114,CCDR,Production,Engineers,False,2026-08-31 17:32:04
-115,SVG,Production,Billable Consultants,False,2026-08-31 17:32:04
-116,EW,Production,Project Management - Con,False,2026-08-31 17:32:04
-117,TNS,Production,Shop (Fleet),False,2026-08-31 17:32:04
-118,WBL,Production,Project Management - Con,False,2026-08-31 17:32:04
-119,BPC,Production,Project Management - Con,False,2026-08-31 17:32:04
-120,CCDR,Production,General - Con,False,2026-08-31 17:32:04
-121,SVG,Production,General - Con,False,2026-08-31 17:32:04
-122,EW,Production,Wireline Construction,False,2026-08-31 17:32:04
-123,MSC,Production,Splicing,False,2026-08-31 17:32:04
-124,PYZ,Production,General - Eng,False,2026-08-31 17:32:04
-125,WBL,Production,Wireless,False,2026-08-31 17:32:04
-126,EW,Production,Engineers,False,2026-08-31 17:32:04
-127,MSC,Production,Technology / It,False,2026-08-31 17:32:04
-128,TNS,Production,Engineers,False,2026-08-31 17:32:04
-129,NEL,Production,Engineers,False,2026-08-31 17:32:04
-130,CCDR,Production,Field Operations,False,2026-08-31 17:32:04
-131,BPC,Production,Aerial,False,2026-08-31 17:32:04
-132,PYZ,Production,General - Sga,False,2026-08-31 17:32:04
-133,WBL,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-134,NEL,Production,Catv,False,2026-08-31 17:32:04
-135,EW,Production,General - Con,False,2026-08-31 17:32:04
-136,TNS,Production,Catv,False,2026-08-31 17:32:04
-137,SVG,Production,Splicing,False,2026-08-31 17:32:04
-138,MSC,Production,Aerial,False,2026-08-31 17:32:04
-139,PL,Production,General - Con,False,2026-08-31 17:32:04
-140,PYZ,Production,Aerial,False,2026-08-31 17:32:04
-141,SVG,Production,Engineers,False,2026-08-31 17:32:04
-142,TNS,Production,Underground,False,2026-08-31 17:32:04
-143,MSC,Production,Executive,False,2026-08-31 17:32:04
-144,NEL,Production,Wireline Construction,False,2026-08-31 17:32:04
-145,WBL,Production,Billable Consultants,False,2026-08-31 17:32:04
-146,BPC,Production,Underground,False,2026-08-31 17:32:04
-147,EW,Production,Splicing,False,2026-08-31 17:32:04
-148,MSC,Production,General - Con,False,2026-08-31 17:32:04
-149,TNS,Production,People Services,False,2026-08-31 17:32:04
-150,BPC,Production,Engineers,False,2026-08-31 17:32:04
-151,BPC,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-152,SVG,Production,General - Eng,False,2026-08-31 17:32:04
-153,MSC,Production,Underground,False,2026-08-31 17:32:04
-154,WBL,Production,Finance & Accounting,False,2026-08-31 17:32:04
-155,PL,Production,Project Management - Con,False,2026-08-31 17:32:04
-156,TNS,Production,Finance & Accounting,False,2026-08-31 17:32:04
-157,SVG,Production,Project Management - Con,False,2026-08-31 17:32:04
-158,TNS,Production,Wireless,False,2026-08-31 17:32:04
-159,WBL,Production,Catv,False,2026-08-31 17:32:04
-160,PYZ,Production,Engineers,False,2026-08-31 17:32:04
-161,PL,Production,Wireline Construction,False,2026-08-31 17:32:04
-162,BPC,Production,General - Sga,False,2026-08-31 17:32:04
-163,SVG,Production,Fielders,False,2026-08-31 17:32:04
-164,PYZ,Production,Splicing,False,2026-08-31 17:32:04
-165,NEL,Production,Finance & Accounting,False,2026-08-31 17:32:04
-166,NEL,Production,Fielders,False,2026-08-31 17:32:04
-167,TNS,Production,Splicing,False,2026-08-31 17:32:04
-168,CCDR,Production,Fielders,False,2026-08-31 17:32:04
-169,PL,Production,Technology / It,False,2026-08-31 17:32:04
-170,PYZ,Production,Wireless,False,2026-08-31 17:32:04
-171,MSC,Production,People Services,False,2026-08-31 17:32:04
-172,NEL,Production,Aerial,False,2026-08-31 17:32:04
-173,BPC,Production,Shop (Fleet),False,2026-08-31 17:32:04
-174,CCDR,Production,Technology / It,False,2026-08-31 17:32:04
-175,EW,Production,Project Management - Eng,False,2026-08-31 17:32:04
-176,MSC,Production,Engineers,False,2026-08-31 17:32:04
-177,TNS,Production,Aerial,False,2026-08-31 17:32:04
-178,WBL,Production,Project Management - Eng,False,2026-08-31 17:32:04
-179,NEL,Production,Project Management - Con,False,2026-08-31 17:32:04
-180,PL,Production,Executive,False,2026-08-31 17:32:04
-181,CCDR,Production,Aerial,False,2026-08-31 17:32:04
-182,EW,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-183,CCDR,Production,General - Sga,False,2026-08-31 17:32:04
-184,EW,Production,Finance & Accounting,False,2026-08-31 17:32:04
-185,MSC,Production,General - Sga,False,2026-08-31 17:32:04
-186,PYZ,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-187,SVG,Production,Catv,False,2026-08-31 17:32:04
-188,PYZ,Production,Fielders,False,2026-08-31 17:32:04
-189,NEL,Production,General - Con,False,2026-08-31 17:32:04
-190,WBL,Production,General - Eng,False,2026-08-31 17:32:04
-191,PYZ,Production,Shop (Fleet),False,2026-08-31 17:32:04
-192,EW,Production,Fielders,False,2026-08-31 17:32:04
-193,CCDR,Production,Splicing,False,2026-08-31 17:32:04
-194,SVG,Production,General - Sga,False,2026-08-31 17:32:04
-195,WBL,Production,Wireline Construction,False,2026-08-31 17:32:04
-196,EW,Production,Catv,False,2026-08-31 17:32:04
-197,TNS,Production,Executive,False,2026-08-31 17:32:04
-198,PYZ,IT/IS,General - Sga,False,2026-08-31 17:32:04
-199,TNS,IT/IS,Field Operations,False,2026-08-31 17:32:04
-200,PL,IT/IS,General - Sga,False,2026-08-31 17:32:04
-201,PL,IT/IS,Fielders,False,2026-08-31 17:32:04
-202,BPC,IT/IS,General - Eng,False,2026-08-31 17:32:04
-203,SVG,IT/IS,Engineers,False,2026-08-31 17:32:04
-204,EW,IT/IS,Engineers,False,2026-08-31 17:32:04
-205,SVG,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-206,WBL,IT/IS,Field Operations,False,2026-08-31 17:32:04
-207,CCDR,IT/IS,General - Con,False,2026-08-31 17:32:04
-208,CCDR,IT/IS,Wireless,False,2026-08-31 17:32:04
-209,MSC,IT/IS,Aerial,False,2026-08-31 17:32:04
-210,EW,IT/IS,General - Con,False,2026-08-31 17:32:04
-211,WBL,Executive Office,General - Con,False,2026-08-31 17:32:04
-212,TNS,Executive Office,Shop (Fleet),False,2026-08-31 17:32:04
-213,SVG,IT/IS,General - Sga,False,2026-08-31 17:32:04
-214,PL,IT/IS,Field Operations,False,2026-08-31 17:32:04
-215,NEL,IT/IS,General - Eng,False,2026-08-31 17:32:04
-216,PL,IT/IS,Aerial,False,2026-08-31 17:32:04
-217,BPC,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-218,CCDR,IT/IS,Field Operations,False,2026-08-31 17:32:04
-219,SVG,IT/IS,Field Operations,False,2026-08-31 17:32:04
-220,EW,IT/IS,Project Management - Eng,False,2026-08-31 17:32:04
-221,PYZ,Executive Office,Field Operations,False,2026-08-31 17:32:04
-222,WBL,Executive Office,Field Operations,False,2026-08-31 17:32:04
-223,NEL,IT/IS,Yard (Material Handling),False,2026-08-31 17:32:04
-224,PL,IT/IS,General - Con,False,2026-08-31 17:32:04
-225,BPC,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-226,BPC,IT/IS,Field Operations,False,2026-08-31 17:32:04
-227,CCDR,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-228,SVG,IT/IS,Aerial,False,2026-08-31 17:32:04
-229,PYZ,Executive Office,General - Con,False,2026-08-31 17:32:04
-230,NEL,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-231,MSC,IT/IS,Yard (Material Handling),False,2026-08-31 17:32:04
-232,NEL,IT/IS,Executive,False,2026-08-31 17:32:04
-233,WBL,Executive Office,Technology / It,False,2026-08-31 17:32:04
-234,WBL,Executive Office,People Services,False,2026-08-31 17:32:04
-235,TNS,Executive Office,Wireline Construction,False,2026-08-31 17:32:04
-236,SVG,IT/IS,Fielders,False,2026-08-31 17:32:04
-237,PYZ,IT/IS,Engineers,False,2026-08-31 17:32:04
-238,NEL,IT/IS,Catv,False,2026-08-31 17:32:04
-239,CCDR,IT/IS,Aerial,False,2026-08-31 17:32:04
-240,MSC,Production,Sales & Marketing,False,2026-08-31 17:32:04
-241,TNS,Executive Office,Field Operations,False,2026-08-31 17:32:04
-242,PYZ,Executive Office,Catv,False,2026-08-31 17:32:04
-243,WBL,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-244,NEL,IT/IS,Field Operations,False,2026-08-31 17:32:04
-245,PL,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-246,BPC,IT/IS,General - Con,False,2026-08-31 17:32:04
-247,CCDR,IT/IS,Engineers,False,2026-08-31 17:32:04
-248,BPC,IT/IS,Underground,False,2026-08-31 17:32:04
-249,MSC,Executive Office,General - Con,False,2026-08-31 17:32:04
-250,TNS,Executive Office,Engineers,False,2026-08-31 17:32:04
-251,WBL,IT/IS,General - Con,False,2026-08-31 17:32:04
-252,PL,IT/IS,Wireless,False,2026-08-31 17:32:04
-253,MSC,IT/IS,Wireless,False,2026-08-31 17:32:04
-254,NEL,IT/IS,General - Con,False,2026-08-31 17:32:04
-255,PL,IT/IS,Engineers,False,2026-08-31 17:32:04
-256,TNS,Executive Office,General - Con,False,2026-08-31 17:32:04
-257,BPC,IT/IS,Engineers,False,2026-08-31 17:32:04
-258,NEL,IT/IS,Splicing,False,2026-08-31 17:32:04
-259,NEL,IT/IS,Aerial,False,2026-08-31 17:32:04
-260,EW,Executive Office,Project Management - Eng,False,2026-08-31 17:32:04
-261,MSC,Executive Office,Wireline Construction,False,2026-08-31 17:32:04
-262,WBL,IT/IS,Billable Consultants,False,2026-08-31 17:32:04
-263,BPC,IT/IS,Splicing,False,2026-08-31 17:32:04
-264,CCDR,IT/IS,General - Eng,False,2026-08-31 17:32:04
-265,WBL,IT/IS,Wireless,False,2026-08-31 17:32:04
-266,SVG,Executive Office,Engineers,False,2026-08-31 17:32:04
-267,WBL,IT/IS,Aerial,False,2026-08-31 17:32:04
-268,BPC,IT/IS,Wireless,False,2026-08-31 17:32:04
-269,SVG,Executive Office,Aerial,False,2026-08-31 17:32:04
-270,TNS,IT/IS,General - Con,False,2026-08-31 17:32:04
-271,WBL,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-272,EW,IT/IS,General - Eng,False,2026-08-31 17:32:04
-273,MSC,IT/IS,Engineers,False,2026-08-31 17:32:04
-274,MSC,IT/IS,General - Sga,False,2026-08-31 17:32:04
-275,PYZ,IT/IS,Catv,False,2026-08-31 17:32:04
-276,NEL,IT/IS,Shop (Fleet),False,2026-08-31 17:32:04
-277,SVG,IT/IS,General - Con,False,2026-08-31 17:32:04
-278,CCDR,IT/IS,Fielders,False,2026-08-31 17:32:04
-279,MSC,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-280,EW,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-281,EW,IT/IS,General - Sga,False,2026-08-31 17:32:04
-282,MSC,IT/IS,Field Operations,False,2026-08-31 17:32:04
-283,NEL,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-284,MSC,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-285,NEL,IT/IS,Engineers,False,2026-08-31 17:32:04
-286,TNS,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-287,WBL,IT/IS,Technology / It,False,2026-08-31 17:32:04
-288,EW,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-289,MSC,IT/IS,People Services,False,2026-08-31 17:32:04
-290,TNS,IT/IS,Catv,False,2026-08-31 17:32:04
-291,SVG,IT/IS,Shop (Fleet),False,2026-08-31 17:32:04
-292,WBL,IT/IS,Safety,False,2026-08-31 17:32:04
-293,SVG,IT/IS,General - Eng,False,2026-08-31 17:32:04
-294,MSC,IT/IS,Catv,False,2026-08-31 17:32:04
-295,CCDR,IT/IS,Yard (Material Handling),False,2026-08-31 17:32:04
-296,BPC,Software Engineering,Engineers,False,2026-08-31 17:32:04
-297,NEL,Software Engineering,Catv,False,2026-08-31 17:32:04
-298,WBL,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-299,PYZ,Software Engineering,Project Management - Con,False,2026-08-31 17:32:04
-300,SVG,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-301,MSC,Software Engineering,Engineers,False,2026-08-31 17:32:04
-302,SVG,Software Engineering,General - Con,False,2026-08-31 17:32:04
-303,BPC,Software Engineering,General - Con,False,2026-08-31 17:32:04
-304,NEL,Software Engineering,General - Con,False,2026-08-31 17:32:04
-305,EW,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-306,MSC,Software Engineering,General - Con,False,2026-08-31 17:32:04
-307,TNS,Software Engineering,General - Eng,False,2026-08-31 17:32:04
-308,PYZ,Software Engineering,Engineers,False,2026-08-31 17:32:04
-309,WBL,Software Engineering,Catv,False,2026-08-31 17:32:04
-310,NEL,Software Engineering,People Services,False,2026-08-31 17:32:04
-311,PL,Admin Offices,Shop (Fleet),False,2026-08-31 17:32:04
-312,BPC,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-313,CCDR,Admin Offices,General - Con,False,2026-08-31 17:32:04
-314,EW,Software Engineering,Fielders,False,2026-08-31 17:32:04
-315,MSC,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-316,PYZ,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-317,WBL,Software Engineering,General - Con,False,2026-08-31 17:32:04
-318,NEL,Software Engineering,Fielders,False,2026-08-31 17:32:04
-319,PL,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-320,BPC,Admin Offices,Engineers,False,2026-08-31 17:32:04
-321,PYZ,Software Engineering,General - Con,False,2026-08-31 17:32:04
-322,TNS,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-323,PYZ,Software Engineering,Aerial,False,2026-08-31 17:32:04
-324,NEL,Software Engineering,Project Management - Con,False,2026-08-31 17:32:04
-325,PL,Admin Offices,Underground,False,2026-08-31 17:32:04
-326,CCDR,Software Engineering,Fielders,False,2026-08-31 17:32:04
-327,EW,Software Engineering,Finance & Accounting,False,2026-08-31 17:32:04
-328,TNS,Software Engineering,Engineers,False,2026-08-31 17:32:04
-329,WBL,Software Engineering,Splicing,False,2026-08-31 17:32:04
-330,PL,Admin Offices,Catv,False,2026-08-31 17:32:04
-331,CCDR,Software Engineering,Underground,False,2026-08-31 17:32:04
-332,EW,Software Engineering,General - Con,False,2026-08-31 17:32:04
-333,TNS,Software Engineering,Finance & Accounting,False,2026-08-31 17:32:04
-334,PL,Software Engineering,Engineers,False,2026-08-31 17:32:04
-335,SVG,Software Engineering,Wireline Construction,False,2026-08-31 17:32:04
-336,TNS,Software Engineering,Wireline Construction,False,2026-08-31 17:32:04
-337,WBL,Software Engineering,Billable Consultants,False,2026-08-31 17:32:04
-338,CCDR,Software Engineering,General - Con,False,2026-08-31 17:32:04
-339,EW,Software Engineering,General - Sga,False,2026-08-31 17:32:04
-340,CCDR,Software Engineering,Aerial,False,2026-08-31 17:32:04
-341,EW,Software Engineering,Engineers,False,2026-08-31 17:32:04
-342,MSC,Software Engineering,Catv,False,2026-08-31 17:32:04
-343,PYZ,Software Engineering,Wireline Construction,False,2026-08-31 17:32:04
-344,NEL,Software Engineering,General - Sga,False,2026-08-31 17:32:04
-345,PL,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-346,BPC,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-347,CCDR,Software Engineering,Field Operations,False,2026-08-31 17:32:04
-348,MSC,Software Engineering,General - Eng,False,2026-08-31 17:32:04
-349,TNS,Software Engineering,Wireless,False,2026-08-31 17:32:04
-350,WBL,Software Engineering,Project Management - Eng,False,2026-08-31 17:32:04
-351,NEL,Software Engineering,Aerial,False,2026-08-31 17:32:04
-352,PL,Software Engineering,Executive,False,2026-08-31 17:32:04
-353,BPC,Software Engineering,Wireline Construction,False,2026-08-31 17:32:04
-354,PL,Production,General - Eng,False,2026-08-31 17:32:04
-355,BPC,Production,Splicing,False,2026-08-31 17:32:04
-356,CCDR,Production,People Services,False,2026-08-31 17:32:04
-357,WBL,Production,Aerial,False,2026-08-31 17:32:04
-358,SVG,Production,Technology / It,False,2026-08-31 17:32:04
-359,PL,Production,Billable Consultants,False,2026-08-31 17:32:04
-360,PYZ,Production,Wireline Construction,False,2026-08-31 17:32:04
-361,PL,Production,General - Sga,False,2026-08-31 17:32:04
-362,CCDR,Production,Underground,False,2026-08-31 17:32:04
-363,BPC,Production,Isp,False,2026-08-31 17:32:04
-364,SVG,Production,Underground,False,2026-08-31 17:32:04
-365,TNS,Production,Wireline Construction,False,2026-08-31 17:32:04
-366,WBL,Production,Splicing,False,2026-08-31 17:32:04
-367,BPC,Production,Catv,False,2026-08-31 17:32:04
-368,CCDR,Production,Wireline Construction,False,2026-08-31 17:32:04
-369,WBL,Production,General - Sga,False,2026-08-31 17:32:04
-370,NEL,Production,General - Eng,False,2026-08-31 17:32:04
-371,PL,Production,Project Management - Eng,False,2026-08-31 17:32:04
-372,WBL,Production,Safety,False,2026-08-31 17:32:04
-373,MSC,Production,Project Management - Con,False,2026-08-31 17:32:04
-374,CCDR,Production,Executive,False,2026-08-31 17:32:04
-375,PYZ,Production,Finance & Accounting,False,2026-08-31 17:32:04
-376,TNS,Production,Billable Consultants,False,2026-08-31 17:32:04
-377,EW,Production,Wireless,False,2026-08-31 17:32:04
-378,NEL,Production,Sales & Marketing,False,2026-08-31 17:32:04
-379,PYZ,Production,Isp,False,2026-08-31 17:32:04
-380,TNS,Production,Project Management - Con,False,2026-08-31 17:32:04
-381,CCDR,Production,Project Management - Con,False,2026-08-31 17:32:04
-382,NEL,Production,General - Sga,False,2026-08-31 17:32:04
-383,CCDR,Production,General - Eng,False,2026-08-31 17:32:04
-384,EW,Production,General - Eng,False,2026-08-31 17:32:04
-385,TNS,Production,General - Sga,False,2026-08-31 17:32:04
-386,NEL,Production,Isp,False,2026-08-31 17:32:04
-387,TNS,Production,General - Eng,False,2026-08-31 17:32:04
-388,NEL,Admin Offices,Splicing,False,2026-08-31 17:32:04
-389,CCDR,Executive Office,Aerial,False,2026-08-31 17:32:04
-390,MSC,Admin Offices,Aerial,False,2026-08-31 17:32:04
-391,WBL,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-392,EW,Admin Offices,Finance & Accounting,False,2026-08-31 17:32:04
-393,WBL,Admin Offices,Wireline Construction,False,2026-08-31 17:32:04
-394,TNS,Admin Offices,Project Management - Con,False,2026-08-31 17:32:04
-395,TNS,Admin Offices,Executive,False,2026-08-31 17:32:04
-396,PL,Admin Offices,Aerial,False,2026-08-31 17:32:04
-397,MSC,Admin Offices,General - Con,False,2026-08-31 17:32:04
-398,TNS,Admin Offices,Engineers,False,2026-08-31 17:32:04
-399,PYZ,Admin Offices,General - Eng,False,2026-08-31 17:32:04
-400,WBL,Admin Offices,Engineers,False,2026-08-31 17:32:04
-401,TNS,Admin Offices,People Services,False,2026-08-31 17:32:04
-402,PYZ,Admin Offices,Wireline Construction,False,2026-08-31 17:32:04
-403,NEL,IT/IS,Underground,False,2026-08-31 17:32:04
-404,TNS,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-405,WBL,Admin Offices,General - Con,False,2026-08-31 17:32:04
-406,BPC,Admin Offices,Shop (Fleet),False,2026-08-31 17:32:04
-407,CCDR,Software Engineering,Engineers,False,2026-08-31 17:32:04
-408,EW,Admin Offices,Aerial,False,2026-08-31 17:32:04
-409,MSC,Admin Offices,Shop (Fleet),False,2026-08-31 17:32:04
-410,TNS,Admin Offices,General - Con,False,2026-08-31 17:32:04
-411,PYZ,Admin Offices,Fielders,False,2026-08-31 17:32:04
-412,EW,Admin Offices,Safety,False,2026-08-31 17:32:04
-413,MSC,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-414,PYZ,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-415,SVG,Admin Offices,General - Con,False,2026-08-31 17:32:04
-416,EW,Admin Offices,Engineers,False,2026-08-31 17:32:04
-417,MSC,Admin Offices,Engineers,False,2026-08-31 17:32:04
-418,BPC,Admin Offices,Catv,False,2026-08-31 17:32:04
-419,BPC,Admin Offices,Aerial,False,2026-08-31 17:32:04
-420,EW,Admin Offices,General - Con,False,2026-08-31 17:32:04
-421,MSC,Admin Offices,Finance & Accounting,False,2026-08-31 17:32:04
-422,WBL,IT/IS,Executive,False,2026-08-31 17:32:04
-423,PYZ,Admin Offices,General - Sga,False,2026-08-31 17:32:04
-424,EW,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-425,PYZ,Admin Offices,Technology / It,False,2026-08-31 17:32:04
-426,EW,Admin Offices,Fielders,False,2026-08-31 17:32:04
-427,MSC,Admin Offices,General - Sga,False,2026-08-31 17:32:04
-428,BPC,Admin Offices,General - Con,False,2026-08-31 17:32:04
-429,CCDR,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-430,SVG,Admin Offices,Field Operations,False,2026-08-31 17:32:04
-431,MSC,Production,Wireless,False,2026-08-31 17:32:04
-432,PL,Production,Splicing,False,2026-08-31 17:32:04
-433,BPC,Production,Finance & Accounting,False,2026-08-31 17:32:04
-434,PYZ,Production,Project Management - Con,False,2026-08-31 17:32:04
-435,TNS,Production,Technology / It,False,2026-08-31 17:32:04
-436,SVG,Production,Executive,False,2026-08-31 17:32:04
-437,CCDR,Production,Safety,False,2026-08-31 17:32:04
-438,PYZ,Production,Billable Consultants,False,2026-08-31 17:32:04
-439,SVG,Production,People Services,False,2026-08-31 17:32:04
-440,MSC,Production,Shop (Fleet),False,2026-08-31 17:32:04
-441,WBL,Production,Shop (Fleet),False,2026-08-31 17:32:04
-442,BPC,Production,Fielders,False,2026-08-31 17:32:04
-443,CCDR,Production,Sales & Marketing,False,2026-08-31 17:32:04
-444,BPC,Production,Technology / It,False,2026-08-31 17:32:04
-445,WBL,Production,Technology / It,False,2026-08-31 17:32:04
-446,PL,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-447,PL,Production,Finance & Accounting,False,2026-08-31 17:32:04
-448,PL,Production,Fielders,False,2026-08-31 17:32:04
-449,BPC,Production,General - Eng,False,2026-08-31 17:32:04
-450,EW,Production,Executive,False,2026-08-31 17:32:04
-451,TNS,IT/IS,Aerial,False,2026-08-31 17:32:04
-452,PYZ,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-453,CCDR,IT/IS,Catv,False,2026-08-31 17:32:04
-454,CCDR,IT/IS,Executive,False,2026-08-31 17:32:04
-455,TNS,IT/IS,Safety,False,2026-08-31 17:32:04
-456,SVG,Admin Offices,Aerial,False,2026-08-31 17:32:04
-457,MSC,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-458,PL,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-459,WBL,IT/IS,Fielders,False,2026-08-31 17:32:04
-460,SVG,Admin Offices,General - Sga,False,2026-08-31 17:32:04
-461,EW,IT/IS,Catv,False,2026-08-31 17:32:04
-462,MSC,Sales,Aerial,False,2026-08-31 17:32:04
-463,NEL,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-464,BPC,IT/IS,Aerial,False,2026-08-31 17:32:04
-465,EW,IT/IS,Splicing,False,2026-08-31 17:32:04
-466,MSC,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-467,BPC,Admin Offices,Splicing,False,2026-08-31 17:32:04
-468,CCDR,Admin Offices,Aerial,False,2026-08-31 17:32:04
-469,MSC,Sales,Project Management - Con,False,2026-08-31 17:32:04
-470,EW,IT/IS,Aerial,False,2026-08-31 17:32:04
-471,WBL,IT/IS,Engineers,False,2026-08-31 17:32:04
-472,SVG,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-473,MSC,IT/IS,Shop (Fleet),False,2026-08-31 17:32:04
-474,NEL,Admin Offices,Yard (Material Handling),False,2026-08-31 17:32:04
-475,SVG,IT/IS,Isp,False,2026-08-31 17:32:04
-476,MSC,IT/IS,General - Con,False,2026-08-31 17:32:04
-477,EW,IT/IS,Billable Consultants,False,2026-08-31 17:32:04
-478,PL,Admin Offices,Executive,False,2026-08-31 17:32:04
-479,CCDR,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-480,EW,Sales,Aerial,False,2026-08-31 17:32:04
-481,EW,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-482,PYZ,IT/IS,Splicing,False,2026-08-31 17:32:04
-483,PYZ,Sales,General - Eng,False,2026-08-31 17:32:04
-484,TNS,IT/IS,Yard (Material Handling),False,2026-08-31 17:32:04
-485,PYZ,Production,Underground,False,2026-08-31 17:32:04
-486,MSC,Production,Finance & Accounting,False,2026-08-31 17:32:04
-487,PL,Production,Wireless,False,2026-08-31 17:32:04
-488,NEL,Production,Technology / It,False,2026-08-31 17:32:04
-489,MSC,Production,Wireline Construction,False,2026-08-31 17:32:04
-490,TNS,Production,Project Management - Eng,False,2026-08-31 17:32:04
-491,BPC,Production,Executive,False,2026-08-31 17:32:04
-492,SVG,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-493,PYZ,Production,Technology / It,False,2026-08-31 17:32:04
-494,WBL,Production,Isp,False,2026-08-31 17:32:04
-495,PYZ,Production,People Services,False,2026-08-31 17:32:04
-496,BPC,Production,Billable Consultants,False,2026-08-31 17:32:04
-497,PYZ,Production,Catv,False,2026-08-31 17:32:04
-498,MSC,Production,Fielders,False,2026-08-31 17:32:04
-499,PL,Production,People Services,False,2026-08-31 17:32:04
-500,NEL,Sales,Aerial,False,2026-08-31 17:32:04
-501,TNS,Sales,Yard (Material Handling),False,2026-08-31 17:32:04
-502,TNS,Sales,Splicing,False,2026-08-31 17:32:04
-503,PYZ,Sales,Field Operations,False,2026-08-31 17:32:04
-504,WBL,Sales,Aerial,False,2026-08-31 17:32:04
-505,TNS,Sales,Underground,False,2026-08-31 17:32:04
-506,SVG,Production,Finance & Accounting,False,2026-08-31 17:32:04
-507,PYZ,Production,Sales & Marketing,False,2026-08-31 17:32:04
-508,CCDR,Production,Catv,False,2026-08-31 17:32:04
-509,NEL,Production,Executive,False,2026-08-31 17:32:04
-510,BPC,Production,Wireless,False,2026-08-31 17:32:04
-511,CCDR,Production,Isp,False,2026-08-31 17:32:04
-512,NEL,Production,Wireless,False,2026-08-31 17:32:04
-513,PL,Production,Shop (Fleet),False,2026-08-31 17:32:04
-514,PYZ,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-515,EW,IT/IS,Shop (Fleet),False,2026-08-31 17:32:04
-516,TNS,IT/IS,People Services,False,2026-08-31 17:32:04
-517,SVG,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-518,BPC,IT/IS,Executive,False,2026-08-31 17:32:04
-519,TNS,IT/IS,Underground,False,2026-08-31 17:32:04
-520,MSC,IT/IS,Splicing,False,2026-08-31 17:32:04
-521,CCDR,IT/IS,Shop (Fleet),False,2026-08-31 17:32:04
-522,WBL,IT/IS,Underground,False,2026-08-31 17:32:04
-523,TNS,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-524,SVG,IT/IS,Catv,False,2026-08-31 17:32:04
-525,EW,IT/IS,Technology / It,False,2026-08-31 17:32:04
-526,TNS,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-527,PYZ,IT/IS,Project Management - Con,False,2026-08-31 17:32:04
-528,WBL,IT/IS,General - Eng,False,2026-08-31 17:32:04
-529,TNS,IT/IS,Engineers,False,2026-08-31 17:32:04
-530,PYZ,IT/IS,Executive,False,2026-08-31 17:32:04
-531,WBL,IT/IS,Project Management - Eng,False,2026-08-31 17:32:04
-532,CCDR,Production,Wireless,False,2026-08-31 17:32:04
-533,EW,Production,Safety,False,2026-08-31 17:32:04
-534,EW,Sales,Wireline Construction,False,2026-08-31 17:32:04
-535,BPC,Executive Office,Project Management - Con,False,2026-08-31 17:32:04
-536,TNS,Executive Office,Aerial,False,2026-08-31 17:32:04
-537,BPC,IT/IS,Yard (Material Handling),False,2026-08-31 17:32:04
-538,PYZ,Production,Executive,False,2026-08-31 17:32:04
-539,BPC,IT/IS,Catv,False,2026-08-31 17:32:04
-540,SVG,Production,Safety,False,2026-08-31 17:32:04
-541,TNS,IT/IS,Splicing,False,2026-08-31 17:32:04
-542,BPC,IT/IS,People Services,False,2026-08-31 17:32:04
-543,EW,Admin Offices,Splicing,False,2026-08-31 17:32:04
-544,MSC,Production,Corp Operations,False,2026-08-31 17:32:04
-545,PYZ,Executive Office,Yard (Material Handling),False,2026-08-31 17:32:04
-546,CCDR,IT/IS,Splicing,False,2026-08-31 17:32:04
-547,PYZ,IT/IS,Isp,False,2026-08-31 17:32:04
-548,NEL,Software Engineering,Wireless,False,2026-08-31 17:32:04
-549,NEL,IT/IS,Fielders,False,2026-08-31 17:32:04
-550,PL,IT/IS,Underground,False,2026-08-31 17:32:04
-551,PL,Software Engineering,Project Management - Con,False,2026-08-31 17:32:04
-552,CCDR,Software Engineering,Finance & Accounting,False,2026-08-31 17:32:04
-553,EW,Software Engineering,Billable Consultants,False,2026-08-31 17:32:04
-554,MSC,Software Engineering,Aerial,False,2026-08-31 17:32:04
-555,NEL,Software Engineering,Engineers,False,2026-08-31 17:32:04
-556,PYZ,IT/IS,General - Eng,False,2026-08-31 17:32:04
-557,NEL,IT/IS,General - Sga,False,2026-08-31 17:32:04
-558,NEL,Software Engineering,Splicing,False,2026-08-31 17:32:04
-559,CCDR,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-560,NEL,Software Engineering,Underground,False,2026-08-31 17:32:04
-561,PL,Software Engineering,Yard (Material Handling),False,2026-08-31 17:32:04
-562,BPC,Software Engineering,Executive,False,2026-08-31 17:32:04
-563,BPC,IT/IS,Wireline Construction,False,2026-08-31 17:32:04
-564,SVG,IT/IS,Splicing,False,2026-08-31 17:32:04
-565,PL,IT/IS,Finance & Accounting,False,2026-08-31 17:32:04
-566,PL,IT/IS,General - Eng,False,2026-08-31 17:32:04
-567,CCDR,Sales,Project Management - Eng,False,2026-08-31 17:32:04
-568,BPC,IT/IS,Fielders,False,2026-08-31 17:32:04
-569,EW,Sales,Billable Consultants,False,2026-08-31 17:32:04
-570,PYZ,Sales,Splicing,False,2026-08-31 17:32:04
-571,CCDR,Sales,General - Sga,False,2026-08-31 17:32:04
-572,PYZ,Sales,Wireline Construction,False,2026-08-31 17:32:04
-573,MSC,Sales,Shop (Fleet),False,2026-08-31 17:32:04
-574,BPC,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-575,MSC,Sales,Wireline Construction,False,2026-08-31 17:32:04
-576,BPC,Sales,Fielders,False,2026-08-31 17:32:04
-577,PYZ,Sales,Aerial,False,2026-08-31 17:32:04
-578,WBL,Sales,Corp Operations,False,2026-08-31 17:32:04
-579,BPC,Sales,Yard (Material Handling),False,2026-08-31 17:32:04
-580,EW,Admin Offices,Wireline Construction,False,2026-08-31 17:32:04
-581,NEL,Sales,Splicing,False,2026-08-31 17:32:04
-582,SVG,Sales,Fielders,False,2026-08-31 17:32:04
-583,NEL,Sales,Project Management - Eng,False,2026-08-31 17:32:04
-584,SVG,Sales,Catv,False,2026-08-31 17:32:04
-585,PL,Sales,Technology / It,False,2026-08-31 17:32:04
-586,BPC,Sales,Executive,False,2026-08-31 17:32:04
-587,BPC,Sales,Sales & Marketing,False,2026-08-31 17:32:04
-588,CCDR,Sales,Underground,False,2026-08-31 17:32:04
-589,NEL,Sales,Catv,False,2026-08-31 17:32:04
-590,NEL,Sales,Fielders,False,2026-08-31 17:32:04
-591,BPC,Sales,Project Management - Con,False,2026-08-31 17:32:04
-592,SVG,Sales,General - Sga,False,2026-08-31 17:32:04
-593,BPC,Sales,Isp,False,2026-08-31 17:32:04
-594,MSC,Sales,Engineers,False,2026-08-31 17:32:04
-595,PL,Sales,Yard (Material Handling),False,2026-08-31 17:32:04
-596,BPC,Sales,Billable Consultants,False,2026-08-31 17:32:04
-597,PL,Sales,Splicing,False,2026-08-31 17:32:04
-598,PYZ,Sales,Billable Consultants,False,2026-08-31 17:32:04
-599,WBL,Sales,Engineers,False,2026-08-31 17:32:04
-600,PL,Sales,Wireline Construction,False,2026-08-31 17:32:04
-601,SVG,Sales,Underground,False,2026-08-31 17:32:04
-602,EW,Sales,General - Sga,False,2026-08-31 17:32:04
-603,WBL,Sales,Splicing,False,2026-08-31 17:32:04
-604,BPC,Sales,Aerial,False,2026-08-31 17:32:04
-605,NEL,Sales,Finance & Accounting,False,2026-08-31 17:32:04
-606,BPC,Sales,Shop (Fleet),False,2026-08-31 17:32:04
-607,EW,Sales,Catv,False,2026-08-31 17:32:04
-608,PL,Sales,Underground,False,2026-08-31 17:32:04
-609,PL,Sales,Executive,False,2026-08-31 17:32:04
-610,WBL,Production,Executive,False,2026-08-31 17:32:04
-611,CCDR,Production,Billable Consultants,False,2026-08-31 17:32:04
-612,MSC,Production,Project Management - Eng,False,2026-08-31 17:32:04
-613,TNS,Production,Sales & Marketing,False,2026-08-31 17:32:04
-614,WBL,Production,Sales & Marketing,False,2026-08-31 17:32:04
-615,SVG,Production,Shop (Fleet),False,2026-08-31 17:32:04
-616,NEL,Production,Yard (Material Handling),False,2026-08-31 17:32:04
-617,EW,Production,Billable Consultants,False,2026-08-31 17:32:04
-618,PL,Production,Catv,False,2026-08-31 17:32:04
-619,NEL,Production,People Services,False,2026-08-31 17:32:04
-620,BPC,Production,People Services,False,2026-08-31 17:32:04
+1,CCDR,Production,Finance & Accounting,False,2026-09-12 19:39:45
+2,EW,Production,Aerial,False,2026-09-12 19:39:45
+3,PL,Sales,General - Sga,False,2026-09-12 19:39:45
+4,CCDR,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+5,TNS,Sales,General - Con,False,2026-09-12 19:39:45
+6,BPC,Sales,Field Operations,False,2026-09-12 19:39:45
+7,WBL,Sales,General - Eng,False,2026-09-12 19:39:45
+8,CCDR,Sales,Engineers,False,2026-09-12 19:39:45
+9,NEL,Sales,Executive,False,2026-09-12 19:39:45
+10,BPC,Sales,Engineers,False,2026-09-12 19:39:45
+11,SVG,Sales,Field Operations,False,2026-09-12 19:39:45
+12,MSC,Sales,General - Con,False,2026-09-12 19:39:45
+13,EW,Sales,Splicing,False,2026-09-12 19:39:45
+14,BPC,Sales,General - Con,False,2026-09-12 19:39:45
+15,PYZ,IT/IS,Field Operations,False,2026-09-12 19:39:45
+16,WBL,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+17,NEL,Sales,Engineers,False,2026-09-12 19:39:45
+18,PL,Sales,Project Management - Con,False,2026-09-12 19:39:45
+19,CCDR,Sales,General - Con,False,2026-09-12 19:39:45
+20,SVG,Sales,Engineers,False,2026-09-12 19:39:45
+21,EW,Sales,General - Eng,False,2026-09-12 19:39:45
+22,MSC,Sales,Field Operations,False,2026-09-12 19:39:45
+23,PYZ,Sales,General - Con,False,2026-09-12 19:39:45
+24,WBL,Sales,Fielders,False,2026-09-12 19:39:45
+25,PYZ,IT/IS,General - Con,False,2026-09-12 19:39:45
+26,WBL,Sales,Project Management - Eng,False,2026-09-12 19:39:45
+27,NEL,Sales,Field Operations,False,2026-09-12 19:39:45
+28,PL,Sales,Engineers,False,2026-09-12 19:39:45
+29,SVG,Sales,Aerial,False,2026-09-12 19:39:45
+30,EW,Sales,General - Con,False,2026-09-12 19:39:45
+31,TNS,Sales,Field Operations,False,2026-09-12 19:39:45
+32,PYZ,Sales,Shop (Fleet),False,2026-09-12 19:39:45
+33,WBL,Sales,General - Con,False,2026-09-12 19:39:45
+34,PYZ,IT/IS,Aerial,False,2026-09-12 19:39:45
+35,NEL,Sales,Wireline Construction,False,2026-09-12 19:39:45
+36,PL,Sales,Field Operations,False,2026-09-12 19:39:45
+37,CCDR,Sales,Field Operations,False,2026-09-12 19:39:45
+38,SVG,Sales,Project Management - Con,False,2026-09-12 19:39:45
+39,EW,Sales,Shop (Fleet),False,2026-09-12 19:39:45
+40,MSC,Sales,Catv,False,2026-09-12 19:39:45
+41,PYZ,Sales,Fielders,False,2026-09-12 19:39:45
+42,WBL,Sales,Wireline Construction,False,2026-09-12 19:39:45
+43,NEL,Sales,Project Management - Con,False,2026-09-12 19:39:45
+44,PL,Sales,Catv,False,2026-09-12 19:39:45
+45,BPC,Sales,Wireline Construction,False,2026-09-12 19:39:45
+46,CCDR,Sales,Catv,False,2026-09-12 19:39:45
+47,TNS,Sales,Fielders,False,2026-09-12 19:39:45
+48,BPC,Sales,General - Sga,False,2026-09-12 19:39:45
+49,CCDR,Sales,Wireline Construction,False,2026-09-12 19:39:45
+50,EW,Sales,Field Operations,False,2026-09-12 19:39:45
+51,MSC,Sales,General - Sga,False,2026-09-12 19:39:45
+52,PL,Sales,General - Con,False,2026-09-12 19:39:45
+53,PYZ,Sales,Project Management - Con,False,2026-09-12 19:39:45
+54,SVG,Sales,General - Con,False,2026-09-12 19:39:45
+55,TNS,Sales,Wireline Construction,False,2026-09-12 19:39:45
+56,WBL,Sales,General - Sga,False,2026-09-12 19:39:45
+57,TNS,Sales,Project Management - Con,False,2026-09-12 19:39:45
+58,PYZ,Sales,General - Sga,False,2026-09-12 19:39:45
+59,WBL,Sales,Field Operations,False,2026-09-12 19:39:45
+60,NEL,Sales,Shop (Fleet),False,2026-09-12 19:39:45
+61,BPC,Sales,Splicing,False,2026-09-12 19:39:45
+62,CCDR,Sales,Project Management - Con,False,2026-09-12 19:39:45
+63,CCDR,Sales,Aerial,False,2026-09-12 19:39:45
+64,WBL,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+65,NEL,Sales,Yard (Material Handling),False,2026-09-12 19:39:45
+66,MSC,Sales,General - Eng,False,2026-09-12 19:39:45
+67,TNS,Sales,Aerial,False,2026-09-12 19:39:45
+68,NEL,Sales,General - Con,False,2026-09-12 19:39:45
+69,PL,Sales,Aerial,False,2026-09-12 19:39:45
+70,PYZ,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+71,WBL,Sales,Project Management - Con,False,2026-09-12 19:39:45
+72,EW,IT/IS,Wireless,False,2026-09-12 19:39:45
+73,TNS,Sales,Engineers,False,2026-09-12 19:39:45
+74,PL,Sales,Fielders,False,2026-09-12 19:39:45
+75,CCDR,Sales,Splicing,False,2026-09-12 19:39:45
+76,EW,IT/IS,Field Operations,False,2026-09-12 19:39:45
+77,BPC,Sales,Project Management - Eng,False,2026-09-12 19:39:45
+78,SVG,Sales,Wireline Construction,False,2026-09-12 19:39:45
+79,PYZ,Sales,Engineers,False,2026-09-12 19:39:45
+80,MSC,Sales,People Services,False,2026-09-12 19:39:45
+81,MSC,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+82,NEL,Production,Field Operations,False,2026-09-12 19:39:45
+83,MSC,Production,Field Operations,False,2026-09-12 19:39:45
+84,BPC,Production,General - Con,False,2026-09-12 19:39:45
+85,CCDR,Production,Shop (Fleet),False,2026-09-12 19:39:45
+86,WBL,Production,Field Operations,False,2026-09-12 19:39:45
+87,SVG,Production,Aerial,False,2026-09-12 19:39:45
+88,WBL,Production,General - Con,False,2026-09-12 19:39:45
+89,PL,Production,Aerial,False,2026-09-12 19:39:45
+90,EW,Production,General - Sga,False,2026-09-12 19:39:45
+91,EW,Production,Field Operations,False,2026-09-12 19:39:45
+92,MSC,Production,Catv,False,2026-09-12 19:39:45
+93,TNS,Production,Fielders,False,2026-09-12 19:39:45
+94,WBL,Production,Fielders,False,2026-09-12 19:39:45
+95,WBL,Production,Underground,False,2026-09-12 19:39:45
+96,PL,Production,Engineers,False,2026-09-12 19:39:45
+97,BPC,Production,Field Operations,False,2026-09-12 19:39:45
+98,PYZ,Production,Field Operations,False,2026-09-12 19:39:45
+99,SVG,Production,Wireline Construction,False,2026-09-12 19:39:45
+100,TNS,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+101,CCDR,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+102,EW,Production,People Services,False,2026-09-12 19:39:45
+103,MSC,Production,General - Eng,False,2026-09-12 19:39:45
+104,NEL,Production,Shop (Fleet),False,2026-09-12 19:39:45
+105,PL,Production,Field Operations,False,2026-09-12 19:39:45
+106,SVG,Production,Field Operations,False,2026-09-12 19:39:45
+107,TNS,Production,Field Operations,False,2026-09-12 19:39:45
+108,WBL,Production,Engineers,False,2026-09-12 19:39:45
+109,NEL,Production,Splicing,False,2026-09-12 19:39:45
+110,PYZ,Production,General - Con,False,2026-09-12 19:39:45
+111,SVG,Production,Project Management - Eng,False,2026-09-12 19:39:45
+112,TNS,Production,General - Con,False,2026-09-12 19:39:45
+113,BPC,Production,Wireline Construction,False,2026-09-12 19:39:45
+114,CCDR,Production,Engineers,False,2026-09-12 19:39:45
+115,SVG,Production,Billable Consultants,False,2026-09-12 19:39:45
+116,EW,Production,Project Management - Con,False,2026-09-12 19:39:45
+117,TNS,Production,Shop (Fleet),False,2026-09-12 19:39:45
+118,WBL,Production,Project Management - Con,False,2026-09-12 19:39:45
+119,BPC,Production,Project Management - Con,False,2026-09-12 19:39:45
+120,CCDR,Production,General - Con,False,2026-09-12 19:39:45
+121,SVG,Production,General - Con,False,2026-09-12 19:39:45
+122,EW,Production,Wireline Construction,False,2026-09-12 19:39:45
+123,MSC,Production,Splicing,False,2026-09-12 19:39:45
+124,PYZ,Production,General - Eng,False,2026-09-12 19:39:45
+125,WBL,Production,Wireless,False,2026-09-12 19:39:45
+126,EW,Production,Engineers,False,2026-09-12 19:39:45
+127,MSC,Production,Technology / It,False,2026-09-12 19:39:45
+128,TNS,Production,Engineers,False,2026-09-12 19:39:45
+129,NEL,Production,Engineers,False,2026-09-12 19:39:45
+130,CCDR,Production,Field Operations,False,2026-09-12 19:39:45
+131,BPC,Production,Aerial,False,2026-09-12 19:39:45
+132,PYZ,Production,General - Sga,False,2026-09-12 19:39:45
+133,WBL,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+134,NEL,Production,Catv,False,2026-09-12 19:39:45
+135,EW,Production,General - Con,False,2026-09-12 19:39:45
+136,TNS,Production,Catv,False,2026-09-12 19:39:45
+137,SVG,Production,Splicing,False,2026-09-12 19:39:45
+138,MSC,Production,Aerial,False,2026-09-12 19:39:45
+139,PL,Production,General - Con,False,2026-09-12 19:39:45
+140,PYZ,Production,Aerial,False,2026-09-12 19:39:45
+141,SVG,Production,Engineers,False,2026-09-12 19:39:45
+142,TNS,Production,Underground,False,2026-09-12 19:39:45
+143,MSC,Production,Executive,False,2026-09-12 19:39:45
+144,NEL,Production,Wireline Construction,False,2026-09-12 19:39:45
+145,WBL,Production,Billable Consultants,False,2026-09-12 19:39:45
+146,BPC,Production,Underground,False,2026-09-12 19:39:45
+147,EW,Production,Splicing,False,2026-09-12 19:39:45
+148,MSC,Production,General - Con,False,2026-09-12 19:39:45
+149,TNS,Production,People Services,False,2026-09-12 19:39:45
+150,BPC,Production,Engineers,False,2026-09-12 19:39:45
+151,BPC,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+152,SVG,Production,General - Eng,False,2026-09-12 19:39:45
+153,MSC,Production,Underground,False,2026-09-12 19:39:45
+154,WBL,Production,Finance & Accounting,False,2026-09-12 19:39:45
+155,PL,Production,Project Management - Con,False,2026-09-12 19:39:45
+156,TNS,Production,Finance & Accounting,False,2026-09-12 19:39:45
+157,SVG,Production,Project Management - Con,False,2026-09-12 19:39:45
+158,TNS,Production,Wireless,False,2026-09-12 19:39:45
+159,WBL,Production,Catv,False,2026-09-12 19:39:45
+160,PYZ,Production,Engineers,False,2026-09-12 19:39:45
+161,PL,Production,Wireline Construction,False,2026-09-12 19:39:45
+162,BPC,Production,General - Sga,False,2026-09-12 19:39:45
+163,SVG,Production,Fielders,False,2026-09-12 19:39:45
+164,PYZ,Production,Splicing,False,2026-09-12 19:39:45
+165,NEL,Production,Finance & Accounting,False,2026-09-12 19:39:45
+166,NEL,Production,Fielders,False,2026-09-12 19:39:45
+167,TNS,Production,Splicing,False,2026-09-12 19:39:45
+168,CCDR,Production,Fielders,False,2026-09-12 19:39:45
+169,PL,Production,Technology / It,False,2026-09-12 19:39:45
+170,PYZ,Production,Wireless,False,2026-09-12 19:39:45
+171,MSC,Production,People Services,False,2026-09-12 19:39:45
+172,NEL,Production,Aerial,False,2026-09-12 19:39:45
+173,BPC,Production,Shop (Fleet),False,2026-09-12 19:39:45
+174,CCDR,Production,Technology / It,False,2026-09-12 19:39:45
+175,EW,Production,Project Management - Eng,False,2026-09-12 19:39:45
+176,MSC,Production,Engineers,False,2026-09-12 19:39:45
+177,TNS,Production,Aerial,False,2026-09-12 19:39:45
+178,WBL,Production,Project Management - Eng,False,2026-09-12 19:39:45
+179,NEL,Production,Project Management - Con,False,2026-09-12 19:39:45
+180,PL,Production,Executive,False,2026-09-12 19:39:45
+181,CCDR,Production,Aerial,False,2026-09-12 19:39:45
+182,EW,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+183,CCDR,Production,General - Sga,False,2026-09-12 19:39:45
+184,EW,Production,Finance & Accounting,False,2026-09-12 19:39:45
+185,MSC,Production,General - Sga,False,2026-09-12 19:39:45
+186,PYZ,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+187,SVG,Production,Catv,False,2026-09-12 19:39:45
+188,PYZ,Production,Fielders,False,2026-09-12 19:39:45
+189,NEL,Production,General - Con,False,2026-09-12 19:39:45
+190,WBL,Production,General - Eng,False,2026-09-12 19:39:45
+191,PYZ,Production,Shop (Fleet),False,2026-09-12 19:39:45
+192,EW,Production,Fielders,False,2026-09-12 19:39:45
+193,CCDR,Production,Splicing,False,2026-09-12 19:39:45
+194,SVG,Production,General - Sga,False,2026-09-12 19:39:45
+195,WBL,Production,Wireline Construction,False,2026-09-12 19:39:45
+196,EW,Production,Catv,False,2026-09-12 19:39:45
+197,TNS,Production,Executive,False,2026-09-12 19:39:45
+198,PYZ,IT/IS,General - Sga,False,2026-09-12 19:39:45
+199,TNS,IT/IS,Field Operations,False,2026-09-12 19:39:45
+200,PL,IT/IS,General - Sga,False,2026-09-12 19:39:45
+201,PL,IT/IS,Fielders,False,2026-09-12 19:39:45
+202,BPC,IT/IS,General - Eng,False,2026-09-12 19:39:45
+203,SVG,IT/IS,Engineers,False,2026-09-12 19:39:45
+204,EW,IT/IS,Engineers,False,2026-09-12 19:39:45
+205,SVG,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+206,WBL,IT/IS,Field Operations,False,2026-09-12 19:39:45
+207,CCDR,IT/IS,General - Con,False,2026-09-12 19:39:45
+208,CCDR,IT/IS,Wireless,False,2026-09-12 19:39:45
+209,MSC,IT/IS,Aerial,False,2026-09-12 19:39:45
+210,EW,IT/IS,General - Con,False,2026-09-12 19:39:45
+211,WBL,Executive Office,General - Con,False,2026-09-12 19:39:45
+212,TNS,Executive Office,Shop (Fleet),False,2026-09-12 19:39:45
+213,SVG,IT/IS,General - Sga,False,2026-09-12 19:39:45
+214,PL,IT/IS,Field Operations,False,2026-09-12 19:39:45
+215,NEL,IT/IS,General - Eng,False,2026-09-12 19:39:45
+216,PL,IT/IS,Aerial,False,2026-09-12 19:39:45
+217,BPC,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+218,CCDR,IT/IS,Field Operations,False,2026-09-12 19:39:45
+219,SVG,IT/IS,Field Operations,False,2026-09-12 19:39:45
+220,EW,IT/IS,Project Management - Eng,False,2026-09-12 19:39:45
+221,PYZ,Executive Office,Field Operations,False,2026-09-12 19:39:45
+222,WBL,Executive Office,Field Operations,False,2026-09-12 19:39:45
+223,NEL,IT/IS,Yard (Material Handling),False,2026-09-12 19:39:45
+224,PL,IT/IS,General - Con,False,2026-09-12 19:39:45
+225,BPC,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+226,BPC,IT/IS,Field Operations,False,2026-09-12 19:39:45
+227,CCDR,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+228,SVG,IT/IS,Aerial,False,2026-09-12 19:39:45
+229,PYZ,Executive Office,General - Con,False,2026-09-12 19:39:45
+230,NEL,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+231,MSC,IT/IS,Yard (Material Handling),False,2026-09-12 19:39:45
+232,NEL,IT/IS,Executive,False,2026-09-12 19:39:45
+233,WBL,Executive Office,Technology / It,False,2026-09-12 19:39:45
+234,WBL,Executive Office,People Services,False,2026-09-12 19:39:45
+235,TNS,Executive Office,Wireline Construction,False,2026-09-12 19:39:45
+236,SVG,IT/IS,Fielders,False,2026-09-12 19:39:45
+237,PYZ,IT/IS,Engineers,False,2026-09-12 19:39:45
+238,NEL,IT/IS,Catv,False,2026-09-12 19:39:45
+239,CCDR,IT/IS,Aerial,False,2026-09-12 19:39:45
+240,MSC,Production,Sales & Marketing,False,2026-09-12 19:39:45
+241,TNS,Executive Office,Field Operations,False,2026-09-12 19:39:45
+242,PYZ,Executive Office,Catv,False,2026-09-12 19:39:45
+243,WBL,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+244,NEL,IT/IS,Field Operations,False,2026-09-12 19:39:45
+245,PL,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+246,BPC,IT/IS,General - Con,False,2026-09-12 19:39:45
+247,CCDR,IT/IS,Engineers,False,2026-09-12 19:39:45
+248,BPC,IT/IS,Underground,False,2026-09-12 19:39:45
+249,MSC,Executive Office,General - Con,False,2026-09-12 19:39:45
+250,TNS,Executive Office,Engineers,False,2026-09-12 19:39:45
+251,WBL,IT/IS,General - Con,False,2026-09-12 19:39:45
+252,PL,IT/IS,Wireless,False,2026-09-12 19:39:45
+253,MSC,IT/IS,Wireless,False,2026-09-12 19:39:45
+254,NEL,IT/IS,General - Con,False,2026-09-12 19:39:45
+255,PL,IT/IS,Engineers,False,2026-09-12 19:39:45
+256,TNS,Executive Office,General - Con,False,2026-09-12 19:39:45
+257,BPC,IT/IS,Engineers,False,2026-09-12 19:39:45
+258,NEL,IT/IS,Splicing,False,2026-09-12 19:39:45
+259,NEL,IT/IS,Aerial,False,2026-09-12 19:39:45
+260,EW,Executive Office,Project Management - Eng,False,2026-09-12 19:39:45
+261,MSC,Executive Office,Wireline Construction,False,2026-09-12 19:39:45
+262,WBL,IT/IS,Billable Consultants,False,2026-09-12 19:39:45
+263,BPC,IT/IS,Splicing,False,2026-09-12 19:39:45
+264,CCDR,IT/IS,General - Eng,False,2026-09-12 19:39:45
+265,WBL,IT/IS,Wireless,False,2026-09-12 19:39:45
+266,SVG,Executive Office,Engineers,False,2026-09-12 19:39:45
+267,WBL,IT/IS,Aerial,False,2026-09-12 19:39:45
+268,BPC,IT/IS,Wireless,False,2026-09-12 19:39:45
+269,SVG,Executive Office,Aerial,False,2026-09-12 19:39:45
+270,TNS,IT/IS,General - Con,False,2026-09-12 19:39:45
+271,WBL,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+272,EW,IT/IS,General - Eng,False,2026-09-12 19:39:45
+273,MSC,IT/IS,Engineers,False,2026-09-12 19:39:45
+274,MSC,IT/IS,General - Sga,False,2026-09-12 19:39:45
+275,PYZ,IT/IS,Catv,False,2026-09-12 19:39:45
+276,NEL,IT/IS,Shop (Fleet),False,2026-09-12 19:39:45
+277,SVG,IT/IS,General - Con,False,2026-09-12 19:39:45
+278,CCDR,IT/IS,Fielders,False,2026-09-12 19:39:45
+279,MSC,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+280,EW,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+281,EW,IT/IS,General - Sga,False,2026-09-12 19:39:45
+282,MSC,IT/IS,Field Operations,False,2026-09-12 19:39:45
+283,NEL,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+284,MSC,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+285,NEL,IT/IS,Engineers,False,2026-09-12 19:39:45
+286,TNS,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+287,WBL,IT/IS,Technology / It,False,2026-09-12 19:39:45
+288,EW,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+289,MSC,IT/IS,People Services,False,2026-09-12 19:39:45
+290,TNS,IT/IS,Catv,False,2026-09-12 19:39:45
+291,SVG,IT/IS,Shop (Fleet),False,2026-09-12 19:39:45
+292,WBL,IT/IS,Safety,False,2026-09-12 19:39:45
+293,SVG,IT/IS,General - Eng,False,2026-09-12 19:39:45
+294,MSC,IT/IS,Catv,False,2026-09-12 19:39:45
+295,CCDR,IT/IS,Yard (Material Handling),False,2026-09-12 19:39:45
+296,BPC,Software Engineering,Engineers,False,2026-09-12 19:39:45
+297,NEL,Software Engineering,Catv,False,2026-09-12 19:39:45
+298,WBL,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+299,PYZ,Software Engineering,Project Management - Con,False,2026-09-12 19:39:45
+300,SVG,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+301,MSC,Software Engineering,Engineers,False,2026-09-12 19:39:45
+302,SVG,Software Engineering,General - Con,False,2026-09-12 19:39:45
+303,BPC,Software Engineering,General - Con,False,2026-09-12 19:39:45
+304,NEL,Software Engineering,General - Con,False,2026-09-12 19:39:45
+305,EW,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+306,MSC,Software Engineering,General - Con,False,2026-09-12 19:39:45
+307,TNS,Software Engineering,General - Eng,False,2026-09-12 19:39:45
+308,PYZ,Software Engineering,Engineers,False,2026-09-12 19:39:45
+309,WBL,Software Engineering,Catv,False,2026-09-12 19:39:45
+310,NEL,Software Engineering,People Services,False,2026-09-12 19:39:45
+311,PL,Admin Offices,Shop (Fleet),False,2026-09-12 19:39:45
+312,BPC,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+313,CCDR,Admin Offices,General - Con,False,2026-09-12 19:39:45
+314,EW,Software Engineering,Fielders,False,2026-09-12 19:39:45
+315,MSC,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+316,PYZ,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+317,WBL,Software Engineering,General - Con,False,2026-09-12 19:39:45
+318,NEL,Software Engineering,Fielders,False,2026-09-12 19:39:45
+319,PL,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+320,BPC,Admin Offices,Engineers,False,2026-09-12 19:39:45
+321,PYZ,Software Engineering,General - Con,False,2026-09-12 19:39:45
+322,TNS,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+323,PYZ,Software Engineering,Aerial,False,2026-09-12 19:39:45
+324,NEL,Software Engineering,Project Management - Con,False,2026-09-12 19:39:45
+325,PL,Admin Offices,Underground,False,2026-09-12 19:39:45
+326,CCDR,Software Engineering,Fielders,False,2026-09-12 19:39:45
+327,EW,Software Engineering,Finance & Accounting,False,2026-09-12 19:39:45
+328,TNS,Software Engineering,Engineers,False,2026-09-12 19:39:45
+329,WBL,Software Engineering,Splicing,False,2026-09-12 19:39:45
+330,PL,Admin Offices,Catv,False,2026-09-12 19:39:45
+331,CCDR,Software Engineering,Underground,False,2026-09-12 19:39:45
+332,EW,Software Engineering,General - Con,False,2026-09-12 19:39:45
+333,TNS,Software Engineering,Finance & Accounting,False,2026-09-12 19:39:45
+334,PL,Software Engineering,Engineers,False,2026-09-12 19:39:45
+335,SVG,Software Engineering,Wireline Construction,False,2026-09-12 19:39:45
+336,TNS,Software Engineering,Wireline Construction,False,2026-09-12 19:39:45
+337,WBL,Software Engineering,Billable Consultants,False,2026-09-12 19:39:45
+338,CCDR,Software Engineering,General - Con,False,2026-09-12 19:39:45
+339,EW,Software Engineering,General - Sga,False,2026-09-12 19:39:45
+340,CCDR,Software Engineering,Aerial,False,2026-09-12 19:39:45
+341,EW,Software Engineering,Engineers,False,2026-09-12 19:39:45
+342,MSC,Software Engineering,Catv,False,2026-09-12 19:39:45
+343,PYZ,Software Engineering,Wireline Construction,False,2026-09-12 19:39:45
+344,NEL,Software Engineering,General - Sga,False,2026-09-12 19:39:45
+345,PL,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+346,BPC,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+347,CCDR,Software Engineering,Field Operations,False,2026-09-12 19:39:45
+348,MSC,Software Engineering,General - Eng,False,2026-09-12 19:39:45
+349,TNS,Software Engineering,Wireless,False,2026-09-12 19:39:45
+350,WBL,Software Engineering,Project Management - Eng,False,2026-09-12 19:39:45
+351,NEL,Software Engineering,Aerial,False,2026-09-12 19:39:45
+352,PL,Software Engineering,Executive,False,2026-09-12 19:39:45
+353,BPC,Software Engineering,Wireline Construction,False,2026-09-12 19:39:45
+354,PL,Production,General - Eng,False,2026-09-12 19:39:45
+355,BPC,Production,Splicing,False,2026-09-12 19:39:45
+356,CCDR,Production,People Services,False,2026-09-12 19:39:45
+357,WBL,Production,Aerial,False,2026-09-12 19:39:45
+358,SVG,Production,Technology / It,False,2026-09-12 19:39:45
+359,PL,Production,Billable Consultants,False,2026-09-12 19:39:45
+360,PYZ,Production,Wireline Construction,False,2026-09-12 19:39:45
+361,PL,Production,General - Sga,False,2026-09-12 19:39:45
+362,CCDR,Production,Underground,False,2026-09-12 19:39:45
+363,BPC,Production,Isp,False,2026-09-12 19:39:45
+364,SVG,Production,Underground,False,2026-09-12 19:39:45
+365,TNS,Production,Wireline Construction,False,2026-09-12 19:39:45
+366,WBL,Production,Splicing,False,2026-09-12 19:39:45
+367,BPC,Production,Catv,False,2026-09-12 19:39:45
+368,CCDR,Production,Wireline Construction,False,2026-09-12 19:39:45
+369,WBL,Production,General - Sga,False,2026-09-12 19:39:45
+370,NEL,Production,General - Eng,False,2026-09-12 19:39:45
+371,PL,Production,Project Management - Eng,False,2026-09-12 19:39:45
+372,WBL,Production,Safety,False,2026-09-12 19:39:45
+373,MSC,Production,Project Management - Con,False,2026-09-12 19:39:45
+374,CCDR,Production,Executive,False,2026-09-12 19:39:45
+375,PYZ,Production,Finance & Accounting,False,2026-09-12 19:39:45
+376,TNS,Production,Billable Consultants,False,2026-09-12 19:39:45
+377,EW,Production,Wireless,False,2026-09-12 19:39:45
+378,NEL,Production,Sales & Marketing,False,2026-09-12 19:39:45
+379,PYZ,Production,Isp,False,2026-09-12 19:39:45
+380,TNS,Production,Project Management - Con,False,2026-09-12 19:39:45
+381,CCDR,Production,Project Management - Con,False,2026-09-12 19:39:45
+382,NEL,Production,General - Sga,False,2026-09-12 19:39:45
+383,CCDR,Production,General - Eng,False,2026-09-12 19:39:45
+384,EW,Production,General - Eng,False,2026-09-12 19:39:45
+385,TNS,Production,General - Sga,False,2026-09-12 19:39:45
+386,NEL,Production,Isp,False,2026-09-12 19:39:45
+387,TNS,Production,General - Eng,False,2026-09-12 19:39:45
+388,NEL,Admin Offices,Splicing,False,2026-09-12 19:39:45
+389,CCDR,Executive Office,Aerial,False,2026-09-12 19:39:45
+390,MSC,Admin Offices,Aerial,False,2026-09-12 19:39:45
+391,WBL,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+392,EW,Admin Offices,Finance & Accounting,False,2026-09-12 19:39:45
+393,WBL,Admin Offices,Wireline Construction,False,2026-09-12 19:39:45
+394,TNS,Admin Offices,Project Management - Con,False,2026-09-12 19:39:45
+395,TNS,Admin Offices,Executive,False,2026-09-12 19:39:45
+396,PL,Admin Offices,Aerial,False,2026-09-12 19:39:45
+397,MSC,Admin Offices,General - Con,False,2026-09-12 19:39:45
+398,TNS,Admin Offices,Engineers,False,2026-09-12 19:39:45
+399,PYZ,Admin Offices,General - Eng,False,2026-09-12 19:39:45
+400,WBL,Admin Offices,Engineers,False,2026-09-12 19:39:45
+401,TNS,Admin Offices,People Services,False,2026-09-12 19:39:45
+402,PYZ,Admin Offices,Wireline Construction,False,2026-09-12 19:39:45
+403,NEL,IT/IS,Underground,False,2026-09-12 19:39:45
+404,TNS,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+405,WBL,Admin Offices,General - Con,False,2026-09-12 19:39:45
+406,BPC,Admin Offices,Shop (Fleet),False,2026-09-12 19:39:45
+407,CCDR,Software Engineering,Engineers,False,2026-09-12 19:39:45
+408,EW,Admin Offices,Aerial,False,2026-09-12 19:39:45
+409,MSC,Admin Offices,Shop (Fleet),False,2026-09-12 19:39:45
+410,TNS,Admin Offices,General - Con,False,2026-09-12 19:39:45
+411,PYZ,Admin Offices,Fielders,False,2026-09-12 19:39:45
+412,EW,Admin Offices,Safety,False,2026-09-12 19:39:45
+413,MSC,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+414,PYZ,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+415,SVG,Admin Offices,General - Con,False,2026-09-12 19:39:45
+416,EW,Admin Offices,Engineers,False,2026-09-12 19:39:45
+417,MSC,Admin Offices,Engineers,False,2026-09-12 19:39:45
+418,BPC,Admin Offices,Catv,False,2026-09-12 19:39:45
+419,BPC,Admin Offices,Aerial,False,2026-09-12 19:39:45
+420,EW,Admin Offices,General - Con,False,2026-09-12 19:39:45
+421,MSC,Admin Offices,Finance & Accounting,False,2026-09-12 19:39:45
+422,WBL,IT/IS,Executive,False,2026-09-12 19:39:45
+423,PYZ,Admin Offices,General - Sga,False,2026-09-12 19:39:45
+424,EW,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+425,PYZ,Admin Offices,Technology / It,False,2026-09-12 19:39:45
+426,EW,Admin Offices,Fielders,False,2026-09-12 19:39:45
+427,MSC,Admin Offices,General - Sga,False,2026-09-12 19:39:45
+428,BPC,Admin Offices,General - Con,False,2026-09-12 19:39:45
+429,CCDR,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+430,SVG,Admin Offices,Field Operations,False,2026-09-12 19:39:45
+431,MSC,Production,Wireless,False,2026-09-12 19:39:45
+432,PL,Production,Splicing,False,2026-09-12 19:39:45
+433,BPC,Production,Finance & Accounting,False,2026-09-12 19:39:45
+434,PYZ,Production,Project Management - Con,False,2026-09-12 19:39:45
+435,TNS,Production,Technology / It,False,2026-09-12 19:39:45
+436,SVG,Production,Executive,False,2026-09-12 19:39:45
+437,CCDR,Production,Safety,False,2026-09-12 19:39:45
+438,PYZ,Production,Billable Consultants,False,2026-09-12 19:39:45
+439,SVG,Production,People Services,False,2026-09-12 19:39:45
+440,MSC,Production,Shop (Fleet),False,2026-09-12 19:39:45
+441,WBL,Production,Shop (Fleet),False,2026-09-12 19:39:45
+442,BPC,Production,Fielders,False,2026-09-12 19:39:45
+443,CCDR,Production,Sales & Marketing,False,2026-09-12 19:39:45
+444,BPC,Production,Technology / It,False,2026-09-12 19:39:45
+445,WBL,Production,Technology / It,False,2026-09-12 19:39:45
+446,PL,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+447,PL,Production,Finance & Accounting,False,2026-09-12 19:39:45
+448,PL,Production,Fielders,False,2026-09-12 19:39:45
+449,BPC,Production,General - Eng,False,2026-09-12 19:39:45
+450,EW,Production,Executive,False,2026-09-12 19:39:45
+451,TNS,IT/IS,Aerial,False,2026-09-12 19:39:45
+452,PYZ,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+453,CCDR,IT/IS,Catv,False,2026-09-12 19:39:45
+454,CCDR,IT/IS,Executive,False,2026-09-12 19:39:45
+455,TNS,IT/IS,Safety,False,2026-09-12 19:39:45
+456,SVG,Admin Offices,Aerial,False,2026-09-12 19:39:45
+457,MSC,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+458,PL,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+459,WBL,IT/IS,Fielders,False,2026-09-12 19:39:45
+460,SVG,Admin Offices,General - Sga,False,2026-09-12 19:39:45
+461,EW,IT/IS,Catv,False,2026-09-12 19:39:45
+462,MSC,Sales,Aerial,False,2026-09-12 19:39:45
+463,NEL,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+464,BPC,IT/IS,Aerial,False,2026-09-12 19:39:45
+465,EW,IT/IS,Splicing,False,2026-09-12 19:39:45
+466,MSC,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+467,BPC,Admin Offices,Splicing,False,2026-09-12 19:39:45
+468,CCDR,Admin Offices,Aerial,False,2026-09-12 19:39:45
+469,MSC,Sales,Project Management - Con,False,2026-09-12 19:39:45
+470,EW,IT/IS,Aerial,False,2026-09-12 19:39:45
+471,WBL,IT/IS,Engineers,False,2026-09-12 19:39:45
+472,SVG,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+473,MSC,IT/IS,Shop (Fleet),False,2026-09-12 19:39:45
+474,NEL,Admin Offices,Yard (Material Handling),False,2026-09-12 19:39:45
+475,SVG,IT/IS,Isp,False,2026-09-12 19:39:45
+476,MSC,IT/IS,General - Con,False,2026-09-12 19:39:45
+477,EW,IT/IS,Billable Consultants,False,2026-09-12 19:39:45
+478,PL,Admin Offices,Executive,False,2026-09-12 19:39:45
+479,CCDR,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+480,EW,Sales,Aerial,False,2026-09-12 19:39:45
+481,EW,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+482,PYZ,IT/IS,Splicing,False,2026-09-12 19:39:45
+483,PYZ,Sales,General - Eng,False,2026-09-12 19:39:45
+484,TNS,IT/IS,Yard (Material Handling),False,2026-09-12 19:39:45
+485,PYZ,Production,Underground,False,2026-09-12 19:39:45
+486,MSC,Production,Finance & Accounting,False,2026-09-12 19:39:45
+487,PL,Production,Wireless,False,2026-09-12 19:39:45
+488,NEL,Production,Technology / It,False,2026-09-12 19:39:45
+489,MSC,Production,Wireline Construction,False,2026-09-12 19:39:45
+490,TNS,Production,Project Management - Eng,False,2026-09-12 19:39:45
+491,BPC,Production,Executive,False,2026-09-12 19:39:45
+492,SVG,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+493,PYZ,Production,Technology / It,False,2026-09-12 19:39:45
+494,WBL,Production,Isp,False,2026-09-12 19:39:45
+495,PYZ,Production,People Services,False,2026-09-12 19:39:45
+496,BPC,Production,Billable Consultants,False,2026-09-12 19:39:45
+497,PYZ,Production,Catv,False,2026-09-12 19:39:45
+498,MSC,Production,Fielders,False,2026-09-12 19:39:45
+499,PL,Production,People Services,False,2026-09-12 19:39:45
+500,NEL,Sales,Aerial,False,2026-09-12 19:39:45
+501,TNS,Sales,Yard (Material Handling),False,2026-09-12 19:39:45
+502,TNS,Sales,Splicing,False,2026-09-12 19:39:45
+503,PYZ,Sales,Field Operations,False,2026-09-12 19:39:45
+504,WBL,Sales,Aerial,False,2026-09-12 19:39:45
+505,TNS,Sales,Underground,False,2026-09-12 19:39:45
+506,SVG,Production,Finance & Accounting,False,2026-09-12 19:39:45
+507,PYZ,Production,Sales & Marketing,False,2026-09-12 19:39:45
+508,CCDR,Production,Catv,False,2026-09-12 19:39:45
+509,NEL,Production,Executive,False,2026-09-12 19:39:45
+510,BPC,Production,Wireless,False,2026-09-12 19:39:45
+511,CCDR,Production,Isp,False,2026-09-12 19:39:45
+512,NEL,Production,Wireless,False,2026-09-12 19:39:45
+513,PL,Production,Shop (Fleet),False,2026-09-12 19:39:45
+514,PYZ,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+515,EW,IT/IS,Shop (Fleet),False,2026-09-12 19:39:45
+516,TNS,IT/IS,People Services,False,2026-09-12 19:39:45
+517,SVG,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+518,BPC,IT/IS,Executive,False,2026-09-12 19:39:45
+519,TNS,IT/IS,Underground,False,2026-09-12 19:39:45
+520,MSC,IT/IS,Splicing,False,2026-09-12 19:39:45
+521,CCDR,IT/IS,Shop (Fleet),False,2026-09-12 19:39:45
+522,WBL,IT/IS,Underground,False,2026-09-12 19:39:45
+523,TNS,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+524,SVG,IT/IS,Catv,False,2026-09-12 19:39:45
+525,EW,IT/IS,Technology / It,False,2026-09-12 19:39:45
+526,TNS,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+527,PYZ,IT/IS,Project Management - Con,False,2026-09-12 19:39:45
+528,WBL,IT/IS,General - Eng,False,2026-09-12 19:39:45
+529,TNS,IT/IS,Engineers,False,2026-09-12 19:39:45
+530,PYZ,IT/IS,Executive,False,2026-09-12 19:39:45
+531,WBL,IT/IS,Project Management - Eng,False,2026-09-12 19:39:45
+532,CCDR,Production,Wireless,False,2026-09-12 19:39:45
+533,EW,Production,Safety,False,2026-09-12 19:39:45
+534,EW,Sales,Wireline Construction,False,2026-09-12 19:39:45
+535,BPC,Executive Office,Project Management - Con,False,2026-09-12 19:39:45
+536,TNS,Executive Office,Aerial,False,2026-09-12 19:39:45
+537,BPC,IT/IS,Yard (Material Handling),False,2026-09-12 19:39:45
+538,PYZ,Production,Executive,False,2026-09-12 19:39:45
+539,BPC,IT/IS,Catv,False,2026-09-12 19:39:45
+540,SVG,Production,Safety,False,2026-09-12 19:39:45
+541,TNS,IT/IS,Splicing,False,2026-09-12 19:39:45
+542,BPC,IT/IS,People Services,False,2026-09-12 19:39:45
+543,EW,Admin Offices,Splicing,False,2026-09-12 19:39:45
+544,MSC,Production,Corp Operations,False,2026-09-12 19:39:45
+545,PYZ,Executive Office,Yard (Material Handling),False,2026-09-12 19:39:45
+546,CCDR,IT/IS,Splicing,False,2026-09-12 19:39:45
+547,PYZ,IT/IS,Isp,False,2026-09-12 19:39:45
+548,NEL,Software Engineering,Wireless,False,2026-09-12 19:39:45
+549,NEL,IT/IS,Fielders,False,2026-09-12 19:39:45
+550,PL,IT/IS,Underground,False,2026-09-12 19:39:45
+551,PL,Software Engineering,Project Management - Con,False,2026-09-12 19:39:45
+552,CCDR,Software Engineering,Finance & Accounting,False,2026-09-12 19:39:45
+553,EW,Software Engineering,Billable Consultants,False,2026-09-12 19:39:45
+554,MSC,Software Engineering,Aerial,False,2026-09-12 19:39:45
+555,NEL,Software Engineering,Engineers,False,2026-09-12 19:39:45
+556,PYZ,IT/IS,General - Eng,False,2026-09-12 19:39:45
+557,NEL,IT/IS,General - Sga,False,2026-09-12 19:39:45
+558,NEL,Software Engineering,Splicing,False,2026-09-12 19:39:45
+559,CCDR,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+560,NEL,Software Engineering,Underground,False,2026-09-12 19:39:45
+561,PL,Software Engineering,Yard (Material Handling),False,2026-09-12 19:39:45
+562,BPC,Software Engineering,Executive,False,2026-09-12 19:39:45
+563,BPC,IT/IS,Wireline Construction,False,2026-09-12 19:39:45
+564,SVG,IT/IS,Splicing,False,2026-09-12 19:39:45
+565,PL,IT/IS,Finance & Accounting,False,2026-09-12 19:39:45
+566,PL,IT/IS,General - Eng,False,2026-09-12 19:39:45
+567,CCDR,Sales,Project Management - Eng,False,2026-09-12 19:39:45
+568,BPC,IT/IS,Fielders,False,2026-09-12 19:39:45
+569,EW,Sales,Billable Consultants,False,2026-09-12 19:39:45
+570,PYZ,Sales,Splicing,False,2026-09-12 19:39:45
+571,CCDR,Sales,General - Sga,False,2026-09-12 19:39:45
+572,PYZ,Sales,Wireline Construction,False,2026-09-12 19:39:45
+573,MSC,Sales,Shop (Fleet),False,2026-09-12 19:39:45
+574,BPC,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+575,MSC,Sales,Wireline Construction,False,2026-09-12 19:39:45
+576,BPC,Sales,Fielders,False,2026-09-12 19:39:45
+577,PYZ,Sales,Aerial,False,2026-09-12 19:39:45
+578,WBL,Sales,Corp Operations,False,2026-09-12 19:39:45
+579,BPC,Sales,Yard (Material Handling),False,2026-09-12 19:39:45
+580,EW,Admin Offices,Wireline Construction,False,2026-09-12 19:39:45
+581,NEL,Sales,Splicing,False,2026-09-12 19:39:45
+582,SVG,Sales,Fielders,False,2026-09-12 19:39:45
+583,NEL,Sales,Project Management - Eng,False,2026-09-12 19:39:45
+584,SVG,Sales,Catv,False,2026-09-12 19:39:45
+585,PL,Sales,Technology / It,False,2026-09-12 19:39:45
+586,BPC,Sales,Executive,False,2026-09-12 19:39:45
+587,BPC,Sales,Sales & Marketing,False,2026-09-12 19:39:45
+588,CCDR,Sales,Underground,False,2026-09-12 19:39:45
+589,NEL,Sales,Catv,False,2026-09-12 19:39:45
+590,NEL,Sales,Fielders,False,2026-09-12 19:39:45
+591,BPC,Sales,Project Management - Con,False,2026-09-12 19:39:45
+592,SVG,Sales,General - Sga,False,2026-09-12 19:39:45
+593,BPC,Sales,Isp,False,2026-09-12 19:39:45
+594,MSC,Sales,Engineers,False,2026-09-12 19:39:45
+595,PL,Sales,Yard (Material Handling),False,2026-09-12 19:39:45
+596,BPC,Sales,Billable Consultants,False,2026-09-12 19:39:45
+597,PL,Sales,Splicing,False,2026-09-12 19:39:45
+598,PYZ,Sales,Billable Consultants,False,2026-09-12 19:39:45
+599,WBL,Sales,Engineers,False,2026-09-12 19:39:45
+600,PL,Sales,Wireline Construction,False,2026-09-12 19:39:45
+601,SVG,Sales,Underground,False,2026-09-12 19:39:45
+602,EW,Sales,General - Sga,False,2026-09-12 19:39:45
+603,WBL,Sales,Splicing,False,2026-09-12 19:39:45
+604,BPC,Sales,Aerial,False,2026-09-12 19:39:45
+605,NEL,Sales,Finance & Accounting,False,2026-09-12 19:39:45
+606,BPC,Sales,Shop (Fleet),False,2026-09-12 19:39:45
+607,EW,Sales,Catv,False,2026-09-12 19:39:45
+608,PL,Sales,Underground,False,2026-09-12 19:39:45
+609,PL,Sales,Executive,False,2026-09-12 19:39:45
+610,WBL,Production,Executive,False,2026-09-12 19:39:45
+611,CCDR,Production,Billable Consultants,False,2026-09-12 19:39:45
+612,MSC,Production,Project Management - Eng,False,2026-09-12 19:39:45
+613,TNS,Production,Sales & Marketing,False,2026-09-12 19:39:45
+614,WBL,Production,Sales & Marketing,False,2026-09-12 19:39:45
+615,SVG,Production,Shop (Fleet),False,2026-09-12 19:39:45
+616,NEL,Production,Yard (Material Handling),False,2026-09-12 19:39:45
+617,EW,Production,Billable Consultants,False,2026-09-12 19:39:45
+618,PL,Production,Catv,False,2026-09-12 19:39:45
+619,NEL,Production,People Services,False,2026-09-12 19:39:45
+620,BPC,Production,People Services,False,2026-09-12 19:39:45

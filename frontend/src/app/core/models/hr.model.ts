@@ -86,24 +86,25 @@ export interface JobApplicationDTO {
   applicationId: string; // UUID
   applicantId: number;
   applicantName: string;
+  applicantEmail: string;
   jobId: number;
   jobTitle: string;
-  applicationDate: string; // LocalDate
-  desiredSalary: number;
-  status: string;
-  aiMatchScore: number;
+  applicationDate: string;
+  desiredSalary: number | null;
+  status: string; 
+  aiMatchScore: number | null;
 }
-
 export interface JobPostingDTO {
-  jobId: number;
+  jobId?: number;
   title: string;
-  departmentId: number;
-  departmentName: string;
-  location: string;
-  requiredExperienceYears: number;
-  offeredSalaryMin: number;
-  offeredSalaryMax: number;
-  status: string;
+  departmentId?: number;
+  departmentName?: string;
+  location?: string;
+  requiredExperienceYears?: number;
+  offeredSalaryMin?: number;
+  offeredSalaryMax?: number;
+  status: 'OPEN' | 'CLOSED' | 'DRAFT' | string;
+  applicantCount?: number;
 }
 
 export interface SalaryHistoryDTO {
@@ -123,4 +124,15 @@ export interface TrainingCourseDTO {
   durationDays: number;
   cost: number;
   isActive: boolean;
+}
+export interface ApplicantWithCvStatus {
+  applicantId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  educationLevel: string | null;
+  yearsOfExperience: number | null;
+  hasCv: boolean;
+  isProcessed: boolean;
+  createdAt: string;
 }

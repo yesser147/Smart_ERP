@@ -14,6 +14,13 @@ DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS flyway_schema_history CASCADE;
+-- NOTE: department_budget_allocations is NOT in this DROP list on purpose.
+-- It holds live data written by the Spring Boot app (confirmed budget
+-- allocations), not data sourced from the Kaggle CSVs. Dropping departments
+-- CASCADE below will still take it down if it already exists, because it
+-- has a FK to departments -- see load.py's backup_budget_allocations() /
+-- restore_budget_allocations() for how reruns preserve it anyway.
+
 -- 1. Security & Governance
 CREATE TABLE IF NOT EXISTS roles (
     id BIGSERIAL PRIMARY KEY, 
@@ -59,6 +66,8 @@ CREATE TABLE IF NOT EXISTS employees (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE SEQUENCE IF NOT EXISTS employees_employee_id_seq OWNED BY employees.employee_id;
+ALTER TABLE employees ALTER COLUMN employee_id SET DEFAULT nextval('employees_employee_id_seq');
 
 CREATE TABLE IF NOT EXISTS salary_history (
     id BIGSERIAL PRIMARY KEY,
@@ -126,7 +135,7 @@ CREATE TABLE IF NOT EXISTS engagement_surveys (
 
 -- 5. ATS & AI Recruitment
 CREATE TABLE IF NOT EXISTS applicants (
-    applicant_id BIGSERIAL PRIMARY KEY, -- Changed from VARCHAR to BIGSERIAL
+    applicant_id BIGSERIAL PRIMARY KEY,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -157,7 +166,7 @@ CREATE TABLE IF NOT EXISTS job_postings (
 
 CREATE TABLE IF NOT EXISTS job_applications (
     application_id UUID PRIMARY KEY,
-    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE, -- Changed from VARCHAR to BIGINT
+    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE,
     job_id BIGINT REFERENCES job_postings(job_id),
     application_date DATE NOT NULL,
     desired_salary NUMERIC(12, 2),
@@ -168,11 +177,22 @@ CREATE TABLE IF NOT EXISTS job_applications (
 
 CREATE TABLE IF NOT EXISTS applicant_cvs (
     id UUID PRIMARY KEY,
-    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE UNIQUE, -- Changed from VARCHAR to BIGINT
+    applicant_id BIGINT REFERENCES applicants(applicant_id) ON DELETE CASCADE UNIQUE,
     file_url VARCHAR(255),
     parsed_text TEXT,
     extracted_skills_json JSONB,
     cv_embedding vector(384),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. AI Budget Advisor: confirmed allocations (app-owned, not ETL-sourced)
+CREATE TABLE IF NOT EXISTS department_budget_allocations (
+    id BIGSERIAL PRIMARY KEY,
+    department_id BIGINT NOT NULL REFERENCES departments(department_id),
+    allocated_budget NUMERIC(12, 2) NOT NULL,
+    predicted_performance NUMERIC(6, 3),
+    approved_by UUID REFERENCES users(id),
+    fiscal_period VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -190,3 +210,5 @@ CREATE INDEX IF NOT EXISTS idx_job_apps_applicant ON job_applications(applicant_
 CREATE INDEX IF NOT EXISTS idx_job_apps_job ON job_applications(job_id);
 CREATE INDEX IF NOT EXISTS idx_surveys_emp ON engagement_surveys(employee_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_budget_alloc_dept ON department_budget_allocations(department_id, created_at DESC);
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ai_readonly_user;

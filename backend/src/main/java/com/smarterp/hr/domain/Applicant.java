@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Applicant {
     @Id
-    @Column(name = "applicant_id", length = 50)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "applicant_id")
     private Long applicantId;
 
     private String firstName;

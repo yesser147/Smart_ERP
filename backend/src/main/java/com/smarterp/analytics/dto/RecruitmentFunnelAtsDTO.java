@@ -20,9 +20,13 @@ public record RecruitmentFunnelAtsDTO(
 
     Long totalApplications,
 
-    Long pendingApplications,
+    Long appliedCount,
 
-    Long hiredCount,
+    Long inReviewCount,
+
+    Long interviewingCount,
+
+    Long offeredCount,
 
     Long rejectedCount,
 
@@ -43,8 +47,10 @@ public record RecruitmentFunnelAtsDTO(
             entity.getOfferedSalaryMin(),
             entity.getOfferedSalaryMax(),
             entity.getTotalApplications(),
-            entity.getPendingApplications(),
-            entity.getHiredCount(),
+            entity.getAppliedCount(),
+            entity.getInReviewCount(),
+            entity.getInterviewingCount(),
+            entity.getOfferedCount(),
             entity.getRejectedCount(),
             entity.getAvgDesiredSalary(),
             entity.getAvgAiMatchScore()

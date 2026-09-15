@@ -1,0 +1,85 @@
+<div *ngIf="loading" class="flex justify-center items-center h-64">
+  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+</div>
+
+<div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-center">
+  <p class="text-rose-400">Impossible de charger la stratégie de rétention ML.</p>
+  <button (click)="fetchRetentionStrategy()" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
+    Réessayer
+  </button>
+</div>
+
+<div *ngIf="!loading && !error && data" class="space-y-6">
+  <!-- Top Risk Exposure Metrics -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Effectif Actif Total</p>
+      <h3 class="text-3xl font-bold text-white mt-2">{{ data.macro_metrics?.total_active_employees || 0 }}</h3>
+      <p class="text-xs text-slate-400 mt-2">Employés sous analyse ML</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Population à Risque Élevé</p>
+      <h3 class="text-3xl font-bold text-rose-400 mt-2">{{ data.macro_metrics?.high_risk_count || 0 }}</h3>
+      <p class="text-xs text-rose-400/80 mt-2">Score de risque ≥ 70%</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Taux d'Exposition au Risque</p>
+      <h3 class="text-3xl font-bold text-amber-400 mt-2">{{ data.macro_metrics?.high_risk_percentage || 0 }}%</h3>
+      <p class="text-xs text-slate-400 mt-2">Part de l'effectif menacée</p>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <h4 class="text-md font-medium text-white mb-2 flex items-center gap-2">
+      <span>🛡️</span> Résumé Exécutif de Rétention
+    </h4>
+    <p class="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+      {{ data.executive_summary }}
+    </p>
+  </div>
+
+  <!-- Causes Root & Interventions Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Root Causes (SHAP Drivers) -->
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-1">
+      <h4 class="text-md font-medium text-white mb-4">Facteurs de Risque Majeurs (SHAP)</h4>
+      <div class="space-y-3">
+        <div *ngFor="let cause of data.generalized_root_causes; let i = index" 
+             class="p-3 rounded-lg bg-slate-900/60 border border-slate-700 text-xs text-slate-300 flex items-start gap-3">
+          <span class="text-rose-400 font-bold">{{ i + 1 }}.</span>
+          <span>{{ cause }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategic Interventions Table -->
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-2">
+      <h4 class="text-md font-medium text-white mb-4">Interventions Systémiques Recommandées</h4>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-slate-300 text-sm">
+          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+            <tr>
+              <th class="p-3">Initiative</th>
+              <th class="p-3">Action Proposée</th>
+              <th class="p-3">Objectif d'Amélioration</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700">
+            <tr *ngFor="let init of data.systemic_interventions" class="hover:bg-slate-750">
+              <td class="p-3 font-medium text-white">{{ init.initiative_name }}</td>
+              <td class="p-3 text-xs text-slate-300">{{ init.description }}</td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded text-xs bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                  {{ init.target_metric_to_improve }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

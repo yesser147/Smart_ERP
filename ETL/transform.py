@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 import config
+from embeddings import embed_text
 
 
 def extract_departments(employees, report):
@@ -240,34 +241,92 @@ def normalize_recruitment(raw_recruitment, departments, report):
     return applicants, job_postings, applications
 
 
-def build_applicant_cvs(applicants, report):
-    """Generates applicant CV records with 384-dimension embeddings."""
-    rng = np.random.default_rng(42)
-    
-    def generate_vector():
-        vec = rng.normal(0, 1, 384)
-        vec_norm = vec / np.linalg.norm(vec)
-        return "[" + ",".join(map(str, np.round(vec_norm, 6))) + "]"
+JOB_TITLE_SKILL_MAP = {
+    "engineer": ["Software Engineering", "Problem Solving", "System Design"],
+    "developer": ["Programming", "Debugging", "Version Control"],
+    "java": ["Java", "Spring Boot", "SQL"],
+    "python": ["Python", "Data Processing", "Automation"],
+    "data": ["Data Analysis", "SQL", "Statistics"],
+    "analyst": ["Analytical Thinking", "Reporting", "Excel"],
+    "sales": ["Negotiation", "CRM Tools", "Client Relations"],
+    "marketing": ["Campaign Strategy", "Content Creation", "Analytics"],
+    "manager": ["Leadership", "Project Planning", "Stakeholder Management"],
+    "hr": ["Recruitment", "Employee Relations", "Compliance"],
+    "finance": ["Financial Modeling", "Budgeting", "Excel"],
+    "accountant": ["Bookkeeping", "Reconciliation", "Compliance"],
+    "designer": ["UI/UX Design", "Prototyping", "Creativity"],
+    "support": ["Customer Service", "Troubleshooting", "Communication"],
+    "operations": ["Process Optimization", "Logistics", "Coordination"],
+}
+DEFAULT_SKILLS = ["Communication", "Teamwork", "Adaptability"]
+
+
+def _infer_skills(job_title: str) -> list[str]:
+    title = str(job_title).lower()
+    for keyword, skills in JOB_TITLE_SKILL_MAP.items():
+        if keyword in title:
+            return skills
+    return DEFAULT_SKILLS
+
+
+def build_applicant_cvs(applicants, raw_recruitment, report):
+    """Generates applicant CV records with REAL 384-dim embeddings derived
+    from each applicant's actual data (job title applied for, education,
+    experience, inferred skills) -- not random noise, and not an identical
+    skill list copy-pasted across every row.
+
+    This is honest synthetic enrichment, not real CV parsing: Kaggle's
+    recruitment CSV has no résumé text or skills field, so job_title is
+    the only signal available to differentiate applicants at all. If real
+    CV files ever become available, replace this with actual text
+    extraction feeding the same embed_text() call.
+    """
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    # job_title lives on raw_recruitment (the application), not on
+    # applicants directly -- join it in. Same applicant can have multiple
+    # applications; take the first for profile text purposes.
+    title_by_applicant = (
+        raw_recruitment[["applicant_id", "job_title"]]
+        .dropna(subset=["applicant_id"])
+        .drop_duplicates(subset=["applicant_id"], keep="first")
+        .set_index("applicant_id")["job_title"]
+    )
+
+    ids, urls, texts, skills_json, embeddings = [], [], [], [], []
+
+    print(f"  computing real embeddings for {len(applicants)} applicant CVs...")
+    for row in applicants.itertuples():
+        job_title = title_by_applicant.get(row.applicant_id, "General Application")
+        skills = _infer_skills(job_title)
+        education = row.education_level if pd.notna(row.education_level) else "unspecified education"
+        experience = row.years_of_experience if pd.notna(row.years_of_experience) else "unspecified"
+
+        profile_text = (
+            f"{row.first_name} {row.last_name} applied for {job_title}. "
+            f"Education: {education}. Experience: {experience} years. "
+            f"Skills: {', '.join(skills)}."
+        )
+
+        ids.append(str(uuid.uuid4()))
+        urls.append(f"/storage/cvs/{row.applicant_id}_cv.pdf")
+        texts.append(profile_text)
+        skills_json.append(json.dumps(skills))
+        embeddings.append("[" + ",".join(map(str, embed_text(profile_text))) + "]")
 
     cvs = pd.DataFrame({
-        "id": [str(uuid.uuid4()) for _ in range(len(applicants))],
+        "id": ids,
         "applicant_id": applicants["applicant_id"].values,
-        "file_url": [f"/storage/cvs/{aid}_cv.pdf" for aid in applicants["applicant_id"]],
-        "parsed_text": [
-            f"{row.first_name} {row.last_name} with "
-            f"{row.years_of_experience if pd.notna(row.years_of_experience) else 'unspecified'} "
-            f"years experience."
-            for row in applicants.itertuples()
-        ],
-        "extracted_skills_json": [
-            json.dumps(["Java", "Spring Boot", "SQL", "Problem Solving"])
-            for _ in range(len(applicants))
-        ],
-        "cv_embedding": [generate_vector() for _ in range(len(applicants))],
-        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        "file_url": urls,
+        "parsed_text": texts,
+        "extracted_skills_json": skills_json,
+        "cv_embedding": embeddings,
+        "created_at": now_str
     })
 
-    report.log("applicant_cvs", "synthesized", len(cvs), "Generated vector embeddings for pgvector search")
+    report.log("applicant_cvs", "synthesized", len(cvs),
+               "Generated real embeddings from job title/education/experience "
+               "(not random noise, not a uniform skill list)")
     return cvs
 
 
@@ -389,7 +448,7 @@ def run_transform(cleaned, report):
     # 4. Process auxiliary domains
     courses, employee_trainings = normalize_trainings(cleaned["trainings"], report)
     applicants, job_postings, job_applications = normalize_recruitment(cleaned["recruitment"], departments, report)
-    cvs = build_applicant_cvs(applicants, report)
+    cvs = build_applicant_cvs(applicants, cleaned["recruitment"], report)
 
     return {
         "roles": roles,

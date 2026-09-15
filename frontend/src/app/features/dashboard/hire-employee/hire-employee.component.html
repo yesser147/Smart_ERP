@@ -1,0 +1,89 @@
+<div class="max-w-2xl mx-auto p-6 space-y-6">
+  <h2 class="text-xl font-semibold text-white">Transformer le Candidat en Employé</h2>
+
+  <div *ngIf="isLoading()" class="text-slate-400">Chargement...</div>
+
+  <div *ngIf="applicant() as a" class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-2">
+    <h3 class="text-sm font-medium text-teal-400 mb-2">Informations du candidat (déjà complètes)</h3>
+    <div class="grid grid-cols-2 gap-3 text-sm">
+      <div><span class="text-slate-400">Nom : </span><span class="text-white">{{ a.firstName }} {{ a.lastName }}</span></div>
+      <div><span class="text-slate-400">Email : </span><span class="text-white">{{ a.email }}</span></div>
+      <div><span class="text-slate-400">Genre : </span><span class="text-white">{{ a.gender || 'N/A' }}</span></div>
+      <div><span class="text-slate-400">Éducation : </span><span class="text-white">{{ a.educationLevel || 'N/A' }}</span></div>
+      <div><span class="text-slate-400">Expérience : </span><span class="text-white">{{ a.yearsOfExperience ?? 'N/A' }} ans</span></div>
+    </div>
+  </div>
+
+  <form [formGroup]="hireForm" (ngSubmit)="onSubmit()" class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+    <h3 class="text-sm font-medium text-sky-400">Détails du poste (à compléter)</h3>
+
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">Département</label>
+      <select formControlName="departmentId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        <option [ngValue]="null" disabled>Sélectionner...</option>
+        <option *ngFor="let d of departments()" [ngValue]="d.departmentId">
+          {{ d.businessUnit }} - {{ d.departmentType }}
+        </option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Titre du poste</label>
+        <input formControlName="title" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Fonction</label>
+        <input formControlName="jobFunction" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Type d'emploi</label>
+        <select formControlName="employeeType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          <option value="Full-time">Temps plein</option>
+          <option value="Part-time">Temps partiel</option>
+          <option value="Contract">Contrat</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Classification</label>
+        <select formControlName="employeeClassificationType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          <option value="Exempt">Exempt</option>
+          <option value="Non-exempt">Non-exempt</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">État</label>
+        <input formControlName="state" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Localisation</label>
+        <input formControlName="location" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Date de début</label>
+        <input type="date" formControlName="startDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Salaire annuel ($)</label>
+        <input type="number" formControlName="salary" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">Rôle système</label>
+      <select formControlName="roleName" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+        <option value="ROLE_EMPLOYEE">Employé</option>
+        <option value="ROLE_HR_MANAGER">Responsable RH</option>
+        <option value="ROLE_ADMIN">Administrateur</option>
+      </select>
+    </div>
+
+    <p *ngIf="errorMessage()" class="text-rose-400 text-sm">{{ errorMessage() }}</p>
+    <p *ngIf="successMessage()" class="text-teal-400 text-sm">{{ successMessage() }}</p>
+
+    <button type="submit" [disabled]="isSubmitting()"
+            class="w-full py-2.5 bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-slate-900 font-semibold rounded-lg transition-colors">
+      {{ isSubmitting() ? 'Création en cours...' : "Confirmer l'embauche" }}
+    </button>
+  </form>
+</div>

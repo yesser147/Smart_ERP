@@ -1,0 +1,73 @@
+<div class="space-y-6">
+  <!-- Top KPI Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Total Effectif</p>
+      <h3 class="text-3xl font-bold text-white mt-2">{{ kpi?.totalEmployees || 0 }}</h3>
+      <p class="text-xs text-teal-400 mt-2">Actifs: {{ kpi?.activeEmployees || 0 }}</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Taux de Turnover</p>
+      <h3 class="text-3xl font-bold text-rose-400 mt-2">
+        {{ (kpi?.companyTurnoverRate || 0) | number:'1.1-1' }}%
+      </h3>
+      <p class="text-xs text-slate-400 mt-2">Moyenne entreprise</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Postes Ouverts</p>
+      <h3 class="text-3xl font-bold text-sky-400 mt-2">{{ kpi?.openJobPostings || 0 }}</h3>
+      <p class="text-xs text-slate-400 mt-2">Sur {{ kpi?.departmentCount || 0 }} départements</p>
+    </div>
+
+    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+      <p class="text-sm text-slate-400 font-medium">Score d'Engagement</p>
+      <h3 class="text-3xl font-bold text-amber-400 mt-2">
+        {{ ((kpi?.avgEngagement ?? 0) > 5 ? ((kpi?.avgEngagement ?? 0) / 20) : (kpi?.avgEngagement ?? 0)) | number:'1.1-1' }}/5
+      </h3>
+      <p class="text-xs text-rose-400/80 mt-2">
+        Risque élevé: {{ kpi?.highRiskCount || 0 }} employés
+      </p>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-1">
+      <h4 class="text-lg font-medium text-white mb-4">Répartition de l'Effectif</h4>
+      <apx-chart *ngIf="statusDonut" 
+        [series]="statusDonut.series" [chart]="statusDonut.chart" 
+        [labels]="statusDonut.labels" [colors]="statusDonut.colors" 
+        [legend]="statusDonut.legend" [tooltip]="statusDonut.tooltip">
+      </apx-chart>
+    </div>
+
+    <!-- Top Performers Table -->
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-2">
+      <h4 class="text-lg font-medium text-white mb-4">Top Performers</h4>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-slate-300 text-sm">
+          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+            <tr>
+              <th class="p-3">Poste / Fonction</th>
+              <th class="p-3">Performance</th>
+              <th class="p-3">Engagement</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700">
+            <tr *ngFor="let item of topPerformers" class="hover:bg-slate-750">
+              <td class="p-3 font-medium text-white">{{ item.title || item.jobFunction || 'N/A' }}</td>
+              <td class="p-3 text-sky-400 font-semibold">{{ item.performanceScore || 'N/A' }}</td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  {{ ((item.avgEngagement ?? 0) > 5 ? (item.avgEngagement ?? 0) / 20 : (item.avgEngagement ?? 0)) | number:'1.1-1' }}/5
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

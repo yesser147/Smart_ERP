@@ -1,35 +1,35 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router'; // Required for routerLink in HTML
-import { AuthService } from '../../core/services/auth.service'; // Adjust path if needed
+import { RouterLink } from '@angular/router';
 
-// 1. IMPORT YOUR NEW COMPONENTS HERE
 import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { EmployeeDashboardComponent } from './employee-dashboard/employee-dashboard.component';
+import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
+import { HrBudgetAdvisorComponent } from './hr-budget-advisor/hr-budget-advisor.component';
+import { HrRetentionComponent } from './hr-retention/hr-retention.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  // 2. ADD THEM TO THE IMPORTS ARRAY HERE
   imports: [
     CommonModule,
     RouterLink,
     HrDashboardComponent,
     AdminDashboardComponent,
-    EmployeeDashboardComponent
+    EmployeeDashboardComponent,
+    AiAssistantComponent,
+    HrBudgetAdvisorComponent, // <--- Added
+    HrRetentionComponent
   ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss' // Change to .css if you use CSS
+  templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
   
-  // Example properties based on your HTML
   userInfo: any = null; 
+  activeMenu: string = 'overview'; // Tracks which sidebar menu is clicked
 
   ngOnInit() {
-    // Mock user for now so you can see the HR Dashboard
-    // Replace this with your actual AuthService call later
     this.userInfo = {
       email: 'hr@smarterp.com',
       role: 'ROLE_HR_MANAGER' 
@@ -38,6 +38,5 @@ export class DashboardComponent implements OnInit {
 
   logout() {
     console.log('Logout clicked');
-    // this.authService.logout();
   }
 }

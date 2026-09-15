@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ApplicantCvDTO,
   ApplicantDTO,
+  ApplicantWithCvStatus,
   DepartmentDTO,
   EmployeeDTO,
   EmployeeTrainingDTO,
@@ -70,4 +71,39 @@ export class HrService {
   getAllApplicantCvs(): Observable<ApplicantCvDTO[]> {
     return this.http.get<ApplicantCvDTO[]>(`${this.apiUrl}/applicant-cvs`);
   }
+
+  // Add to your existing HrService class
+
+moveToInterview(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/interview`, {});
 }
+
+moveToOffered(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/offer`, {});
+}
+
+rejectApplication(applicationId: string): Observable<JobApplicationDTO> {
+  return this.http.patch<JobApplicationDTO>(`${this.apiUrl}/job-applications/${applicationId}/reject`, {});
+}
+
+getApplicantById(id: number): Observable<ApplicantDTO> {
+  return this.http.get<ApplicantDTO>(`${this.apiUrl}/applicants/${id}`);
+}
+
+hireApplicant(applicantId: number, payload: any): Observable<{ employeeId: number; email: string }> {
+  return this.http.post<{ employeeId: number; email: string }>(`${this.apiUrl}/applicants/${applicantId}/hire`, payload);
+}
+
+getEmployeeById(id: number): Observable<EmployeeDTO> {
+  return this.http.get<EmployeeDTO>(`${this.apiUrl}/employees/${id}`);
+}
+
+
+getApplicantsWithCvStatus(): Observable<ApplicantWithCvStatus[]> {
+  return this.http.get<ApplicantWithCvStatus[]>(`${this.apiUrl}/applicants-with-cv-status`);
+}
+
+
+}
+
+export { ApplicantWithCvStatus };

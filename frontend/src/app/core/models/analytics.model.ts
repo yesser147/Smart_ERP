@@ -1,3 +1,18 @@
+export interface KpiSummaryDTO {
+  totalEmployees: number;
+  activeEmployees: number;
+  departmentCount: number;
+  openJobPostings: number;
+  avgEngagement: number;
+  companyTurnoverRate: number;
+  highRiskCount: number;
+}
+
+export interface DepartmentSalarySummaryDTO {
+  businessUnit: string;
+  avgSalary: number;
+}
+
 export interface AttritionRiskIndicatorsDTO {
   employeeId: number;
   departmentId: number;
@@ -9,18 +24,16 @@ export interface AttritionRiskIndicatorsDTO {
   recentEngagement: number;
   recentSatisfaction: number;
   recentWlb: number;
-  heuristicRiskLevel: string; // usually 'HIGH' | 'MEDIUM' | 'LOW'
+  heuristicRiskLevel: string;
 }
 
 export interface DepartmentTurnoverDTO {
-  departmentId: number;
-  businessUnit: string;
-  totalEmployees: number;
-  activeCount: number;
-  terminatedCount: number;
-  turnoverRatePct: number;
+  departmentId?: number;
+  businessUnit?: string;
+  totalEmployees?: number;
+  terminationsCount?: number;
+  turnoverRatePct?: number;
 }
-
 export interface EmployeePerformanceEngagementDTO {
   employeeId: number;
   departmentId: number;
@@ -40,8 +53,10 @@ export interface RecruitmentFunnelAtsDTO {
   offeredSalaryMin: number;
   offeredSalaryMax: number;
   totalApplications: number;
-  pendingApplications: number;
-  hiredCount: number;
+  appliedCount: number;
+  inReviewCount: number;
+  interviewingCount: number;
+  offeredCount: number;
   rejectedCount: number;
   avgDesiredSalary: number;
   avgAiMatchScore: number;
@@ -77,12 +92,25 @@ export interface TrainingAnalyticsDTO {
   avgCourseDurationDays: number;
 }
 
-export interface DepartmentTypeTurnoverDTO{
+export interface DepartmentTypeTurnoverDTO {
+  departmentType: string;
+  totalEmployees: number;
+  activeCount: number;
+  terminatedCount: number;
+  turnoverRatePct: number;
+}
 
-    departmentType:string;
-    totalEmployees:number;
-    activeCount:number;
-    terminatedCount:number;
-    turnoverRatePct:number;
+export interface GenderPayGapDTO {
+  businessUnit: string;
+  gender: string;
+  avgSalary: number;
+  employeeCount: number;
+}
 
+export interface TimeToHireDTO {
+  jobId: number;
+  jobTitle: string;
+  departmentId: number;
+  avgDaysToHire: number;
+  hiredCount: number;
 }

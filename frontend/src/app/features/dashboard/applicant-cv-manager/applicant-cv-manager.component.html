@@ -1,0 +1,73 @@
+<div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h3 class="text-lg font-semibold text-white">Gestion des CV</h3>
+      <p class="text-xs text-slate-400">Extraction de texte, compétences et embedding via LLM local</p>
+    </div>
+    <button (click)="load()" class="text-xs text-slate-400 hover:text-white underline">Rafraîchir</button>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center items-center h-32">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
+  </div>
+
+  <div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4 text-center text-rose-400 text-sm">
+    Impossible de charger les candidats.
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div class="flex gap-3 mb-4">
+      <input [(ngModel)]="searchTerm" placeholder="Rechercher par nom ou email..."
+             class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-400" />
+      <label class="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap">
+        <input type="checkbox" [(ngModel)]="showLastTenOnly" />
+        10 derniers seulement
+      </label>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-slate-300 text-sm">
+        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+          <tr>
+            <th class="p-3">Candidat</th>
+            <th class="p-3">Email</th>
+            <th class="p-3">Statut CV</th>
+            <th class="p-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700">
+          <tr *ngFor="let a of filteredApplicants" class="hover:bg-slate-750">
+            <td class="p-3 font-medium text-white">{{ a.firstName }} {{ a.lastName }}</td>
+            <td class="p-3 text-slate-400">{{ a.email }}</td>
+            <td class="p-3">
+              <span *ngIf="!a.hasCv" class="px-2 py-1 rounded text-xs bg-slate-700 text-slate-400 border border-slate-600">
+                Aucun CV
+              </span>
+              <span *ngIf="a.hasCv && !a.isProcessed" class="px-2 py-1 rounded text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                Non traité
+              </span>
+              <span *ngIf="a.hasCv && a.isProcessed" class="px-2 py-1 rounded text-xs bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                Traité
+              </span>
+            </td>
+            <td class="p-3 text-right">
+              <button
+                *ngIf="a.hasCv && !a.isProcessed"
+                (click)="processCv(a.applicantId)"
+                [disabled]="processingId === a.applicantId"
+                class="px-3 py-1.5 text-xs bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20 rounded-lg transition-colors disabled:opacity-50">
+                {{ processingId === a.applicantId ? 'Traitement...' : 'Traiter CV' }}
+              </button>
+              <span *ngIf="processErrorId === a.applicantId" class="text-xs text-rose-400 ml-2" [title]="processErrorMessage">
+  Échec: {{ processErrorMessage }}
+</span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredApplicants.length === 0">
+            <td colspan="4" class="p-3 text-center text-slate-500">Aucun candidat trouvé.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
