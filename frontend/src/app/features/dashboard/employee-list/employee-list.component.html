@@ -1,70 +1,73 @@
-<div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-  <div class="flex items-center justify-between mb-4">
+<div class="erp-card p-6">
+  <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
     <div>
-      <h3 class="text-lg font-semibold text-white">Liste des Employés</h3>
-      <p class="text-xs text-slate-400">Cliquez sur une ligne pour voir la fiche détaillée</p>
+      <h3 class="erp-page-title text-xl sm:text-2xl">Liste des Employés</h3>
+      <p class="text-xs text-slate-400 mt-1">Cliquez sur une ligne pour voir la fiche détaillée</p>
     </div>
-    <button (click)="load()" class="text-xs text-slate-400 hover:text-white underline">Rafraîchir</button>
+    <button (click)="load()" class="erp-btn-ghost text-xs underline">Rafraîchir</button>
   </div>
 
   <div class="flex gap-3 mb-4">
     <input [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="Rechercher par nom..."
-           class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-400" />
+           class="erp-input flex-1" />
   </div>
 
-  <div *ngIf="loading" class="flex justify-center items-center h-32">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
+  <div *ngIf="loading" class="space-y-3 py-2">
+    <div class="erp-skeleton h-10"></div>
+    <div class="erp-skeleton h-10"></div>
+    <div class="erp-skeleton h-10"></div>
+    <div class="erp-skeleton h-10"></div>
   </div>
 
-  <div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4 text-center text-rose-400 text-sm">
+  <div *ngIf="error && !loading" class="erp-alert-error">
     Impossible de charger les employés.
   </div>
 
   <div *ngIf="!loading && !error" [class.opacity-50]="searching" class="transition-opacity">
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-slate-300 text-sm">
-        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+      <table class="erp-table">
+        <thead>
           <tr>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400" (click)="toggleSort('name')">
+            <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('name')">
               Nom
               <span *ngIf="sortColumn === 'name'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400" (click)="toggleSort('title')">
+            <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('title')">
               Titre
               <span *ngIf="sortColumn === 'title'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400" (click)="toggleSort('department')">
+            <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('department')">
               Département
               <span *ngIf="sortColumn === 'department'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400" (click)="toggleSort('employeeStatus')">
+            <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('employeeStatus')">
               Statut
               <span *ngIf="sortColumn === 'employeeStatus'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400 text-right" (click)="toggleSort('salary')">
+            <th class="cursor-pointer select-none hover:text-accent text-right" (click)="toggleSort('salary')">
               Salaire
               <span *ngIf="sortColumn === 'salary'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="p-3 cursor-pointer select-none hover:text-teal-400" (click)="toggleSort('startDate')">
+            <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('startDate')">
               Date d'entrée
               <span *ngIf="sortColumn === 'startDate'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-700">
+        <tbody>
           <tr *ngFor="let e of employees"
               (click)="goToDetail(e.employeeId)"
-              class="hover:bg-slate-750 cursor-pointer transition-colors">
-            <td class="p-3 font-medium text-white">{{ e.firstName }} {{ e.lastName }}</td>
-            <td class="p-3 text-slate-400">{{ e.title || '—' }}</td>
-            <td class="p-3 text-slate-400">{{ e.departmentName || '—' }}</td>
-            <td class="p-3">
-              <span class="px-2 py-1 rounded text-xs border" [ngClass]="statusClass(e.employeeStatus)">
+              class="hover:bg-slate-800/70 cursor-pointer transition-colors">
+            <td class="font-medium text-white">{{ e.firstName }} {{ e.lastName }}</td>
+            <td class="text-slate-400">{{ e.title || '—' }}</td>
+            <td class="text-slate-400">{{ e.departmentName || '—' }}</td>
+            <td>
+              <span class="erp-badge" [ngClass]="statusClass(e.employeeStatus)">
                 {{ e.employeeStatus || '—' }}
               </span>
             </td>
-            <td class="p-3 text-right text-slate-300">${{ e.salary | number:'1.0-0' }}</td>
-            <td class="p-3 text-slate-400">{{ e.startDate | date:'dd/MM/yyyy' }}</td>
+            <td class="text-right text-slate-300">${{ e.salary | number:'1.0-0' }}</td>
+            <td class="text-slate-400">{{ e.startDate | date:'dd/MM/yyyy' }}</td>
           </tr>
           <tr *ngIf="employees.length === 0">
             <td colspan="6" class="p-3 text-center text-slate-500">Aucun employé trouvé.</td>
@@ -77,11 +80,11 @@
       <span>{{ totalElements }} employés · Page {{ currentPage + 1 }}/{{ totalPages }}</span>
       <div class="flex gap-2">
         <button (click)="prevPage()" [disabled]="currentPage === 0"
-                class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                class="erp-btn-secondary px-3 py-1.5 text-xs">
           Précédent
         </button>
         <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1"
-                class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                class="erp-btn-secondary px-3 py-1.5 text-xs">
           Suivant
         </button>
       </div>

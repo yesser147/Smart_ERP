@@ -40,7 +40,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err?.error?.message || 'Identifiants invalides. Veuillez réessayer.');
+        this.errorMessage.set(err?.error?.message || 'Invalid credentials. Please try again.');
       }
     });
   }

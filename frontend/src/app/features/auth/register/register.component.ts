@@ -19,9 +19,9 @@ export class RegisterComponent {
   errorMessage = signal<string | null>(null);
 
   roles: { label: string; value: RoleName }[] = [
-    { label: 'Administrateur', value: 'ROLE_ADMIN' },
-    { label: 'Responsable RH', value: 'ROLE_HR_MANAGER' },
-    { label: 'Employé', value: 'ROLE_EMPLOYEE' }
+    { label: 'Admin', value: 'ROLE_ADMIN' },
+    { label: 'HR Manager', value: 'ROLE_HR_MANAGER' },
+    { label: 'Employee', value: 'ROLE_EMPLOYEE' }
   ];
 
   registerForm = this.fb.group({
@@ -43,12 +43,12 @@ export class RegisterComponent {
     this.authService.createUser(this.registerForm.getRawValue()).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        this.successMessage.set(`Utilisateur ${res.email} créé avec succès!`);
+        this.successMessage.set(`User ${res.email} created successfully.`);
         this.registerForm.reset({ role: 'ROLE_EMPLOYEE' });
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err?.error?.message || 'Erreur lors de la création de l\'utilisateur.');
+        this.errorMessage.set(err?.error?.message || 'Error creating the user.');
       }
     });
   }

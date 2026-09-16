@@ -1,36 +1,36 @@
-<div class="max-w-xl mx-auto p-6">
-  <h2 class="text-xl font-semibold text-white mb-6">Postuler à une offre</h2>
+<div class="erp-page max-w-xl mx-auto p-4 sm:p-6">
+  <h2 class="erp-page-title text-xl sm:text-2xl mb-6">Postuler à une offre</h2>
 
-  <form [formGroup]="applicationForm" (ngSubmit)="onSubmit()" class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
-    <div class="grid grid-cols-2 gap-4">
+  <form [formGroup]="applicationForm" (ngSubmit)="onSubmit()" class="erp-card p-6 space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label class="text-xs text-slate-400 block mb-1">Prénom</label>
-        <input formControlName="firstName" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+        <input formControlName="firstName" class="erp-input" />
       </div>
       <div>
         <label class="text-xs text-slate-400 block mb-1">Nom</label>
-        <input formControlName="lastName" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+        <input formControlName="lastName" class="erp-input" />
       </div>
     </div>
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">Email</label>
-      <input type="email" formControlName="email" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      <input type="email" formControlName="email" class="erp-input" />
     </div>
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">Téléphone</label>
-      <input formControlName="phoneNumber" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      <input formControlName="phoneNumber" class="erp-input" />
     </div>
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">Niveau d'études</label>
-      <input formControlName="educationLevel" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      <input formControlName="educationLevel" class="erp-input" />
     </div>
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">Poste</label>
-      <select formControlName="jobId" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+      <select formControlName="jobId" class="erp-input">
         <option [ngValue]="null" disabled>Sélectionner un poste...</option>
         <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
           {{ job.title }} — {{ job.departmentName || 'Département #' + job.departmentId }}
@@ -40,20 +40,20 @@
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">Salaire souhaité ($)</label>
-      <input type="number" formControlName="desiredSalary" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white" />
+      <input type="number" formControlName="desiredSalary" class="erp-input" />
     </div>
 
     <div>
       <label class="text-xs text-slate-400 block mb-1">CV (PDF)</label>
       <input type="file" accept="application/pdf" (change)="onFileSelected($event)"
-             class="w-full text-slate-300 text-sm" />
+             class="w-full text-slate-300 text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-line file:bg-canvas file:text-slate-200 file:cursor-pointer" />
     </div>
 
     <p *ngIf="errorMessage" class="text-rose-400 text-sm">{{ errorMessage }}</p>
-    <p *ngIf="successMessage" class="text-teal-400 text-sm">{{ successMessage }}</p>
+    <p *ngIf="successMessage" class="text-accent text-sm">{{ successMessage }}</p>
 
     <button type="submit" [disabled]="isSubmitting"
-            class="w-full py-2.5 bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-slate-900 font-semibold rounded-lg transition-colors">
+            class="erp-btn-primary w-full py-2.5">
       {{ isSubmitting ? 'Envoi en cours...' : 'Envoyer ma candidature' }}
     </button>
   </form>

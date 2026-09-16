@@ -2,16 +2,188 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --erp-bg: #0f172a;
+  --erp-surface: #1e293b;
+  --erp-surface-muted: #162033;
+  --erp-border: #334155;
+  --erp-accent: #38bdf8;
+  --erp-accent-hover: #7dd3fc;
+  --erp-text: #f1f5f9;
+  --erp-muted: #94a3b8;
+  --erp-radius: 0.75rem;
+  --erp-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 24px rgba(2, 6, 23, 0.28);
+}
+
+@layer base {
+  html,
+  body {
+    @apply min-h-full bg-canvas text-slate-100 font-sans antialiased;
+    background-color: var(--erp-bg);
+    color: var(--erp-text);
+  }
+
+  body {
+    @apply text-sm;
+  }
+
+  ::selection {
+    background: rgba(56, 189, 248, 0.28);
+  }
+}
+
+@layer components {
+  .erp-page {
+    @apply min-h-screen bg-canvas text-slate-100;
+  }
+
+  .erp-card {
+    @apply bg-surface border border-line rounded-card shadow-card;
+  }
+
+  .erp-page-title {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight text-white;
+  }
+
+  .erp-section-title {
+    @apply text-base font-semibold text-white tracking-tight;
+  }
+
+  .erp-kicker {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+  }
+
+  .erp-kpi {
+    @apply text-3xl sm:text-4xl font-bold tracking-tight text-white leading-none mt-2;
+  }
+
+  .erp-kpi-label {
+    @apply text-xs font-medium text-slate-400;
+  }
+
+  .erp-kpi-meta {
+    @apply text-xs text-slate-400 mt-2;
+  }
+
+  .erp-input {
+    @apply w-full bg-canvas border border-line rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500
+      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors;
+  }
+
+  .erp-btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold
+      bg-accent text-slate-950 hover:bg-accent-hover transition-colors
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .erp-btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium
+      bg-canvas border border-line text-slate-200 hover:bg-slate-800 hover:text-white transition-colors
+      disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .erp-btn-danger {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium
+      bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 transition-colors
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .erp-btn-ghost {
+    @apply inline-flex items-center text-sm text-slate-400 hover:text-white transition-colors;
+  }
+
+  .erp-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide border;
+  }
+
+  .erp-table {
+    @apply w-full text-left text-slate-300 text-sm;
+  }
+
+  .erp-table thead {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-canvas/60;
+  }
+
+  .erp-table tbody {
+    @apply divide-y divide-line;
+  }
+
+  .erp-table th,
+  .erp-table td {
+    @apply p-3;
+  }
+
+  .erp-nav-item {
+    @apply w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300
+      hover:bg-slate-800/80 hover:text-white transition-colors
+      flex items-center gap-3;
+  }
+
+  .erp-nav-icon {
+    @apply h-5 w-5 shrink-0 text-slate-400;
+  }
+
+  .erp-nav-active {
+    @apply bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent;
+    box-shadow: inset 3px 0 0 var(--erp-accent);
+  }
+
+  .erp-nav-active .erp-nav-icon {
+    @apply text-accent;
+  }
+
+  .erp-nav-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 px-3 mt-4 mb-2;
+  }
+
+  .erp-nav-group {
+    @apply rounded-xl px-1 py-2 mb-3;
+  }
+
+  .erp-nav-group-active {
+    @apply bg-slate-900/55 ring-1 ring-white/5;
+  }
+
+  .erp-page-icon {
+    @apply h-5 w-5 shrink-0 text-accent;
+  }
+
+  .erp-title-row {
+    @apply flex items-center gap-2.5;
+  }
+
+  .erp-skeleton {
+    @apply relative overflow-hidden rounded-lg bg-slate-800;
+  }
+
+  .erp-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.12), transparent);
+    animation: erp-shimmer 1.4s ease-in-out infinite;
+  }
+
+  .erp-alert-error {
+    @apply bg-rose-500/10 border border-rose-500/20 rounded-card p-4 text-center text-rose-400 text-sm;
+  }
+}
+
+@keyframes erp-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ApexCharts Global Dark Tooltip Fix */
 body .apexcharts-tooltip {
-  background: #1e293b !important; /* slate-800 */
-  color: #f8fafc !important; /* slate-50 */
-  border: 1px solid #334155 !important; /* slate-700 */
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
 body .apexcharts-tooltip-title {
-  background: #0f172a !important; /* slate-900 */
+  background: #0f172a !important;
   border-bottom: 1px solid #334155 !important;
   color: #f8fafc !important;
 }
@@ -22,4 +194,32 @@ body .apexcharts-tooltip-text-goals-value,
 body .apexcharts-tooltip-text-z-value,
 body .apexcharts-tooltip-text-value {
   color: #f8fafc !important;
+}
+
+@media (min-width: 1024px) {
+  aside.erp-sidebar-collapsed {
+    width: 4.75rem;
+  }
+
+  aside.erp-sidebar-collapsed .erp-nav-text,
+  aside.erp-sidebar-collapsed .erp-nav-label,
+  aside.erp-sidebar-collapsed .erp-brand-copy,
+  aside.erp-sidebar-collapsed .erp-logout-text {
+    display: none;
+  }
+
+  aside.erp-sidebar-collapsed .erp-nav-item {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  aside.erp-sidebar-collapsed .erp-nav-group {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  aside.erp-sidebar-collapsed .erp-brand-row {
+    justify-content: center;
+  }
 }

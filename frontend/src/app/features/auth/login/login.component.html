@@ -1,15 +1,18 @@
-<div class="min-h-screen flex items-center justify-center bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
-    
+<div class="erp-page min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8 erp-card p-8">
+
     <!-- Header -->
     <div class="text-center">
-      <h2 class="text-3xl font-extrabold text-white tracking-tight">Smart ERP Core</h2>
-      <p class="mt-2 text-sm text-slate-400">Connectez-vous à votre espace RH & Analytics</p>
+      <div class="mx-auto mb-4 h-12 w-12 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent font-bold">
+        NX
+      </div>
+      <h2 class="erp-page-title">Nexus ERP</h2>
+      <p class="mt-2 text-sm text-slate-400">Sign in to your HR & Analytics workspace</p>
     </div>
 
     <!-- Error Banner -->
     @if (errorMessage()) {
-      <div class="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm text-center">
+      <div class="erp-alert-error">
         {{ errorMessage() }}
       </div>
     }
@@ -17,34 +20,34 @@
     <!-- Form -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
       <div class="space-y-4">
-        
+
         <!-- Email Input -->
         <div>
-          <label for="email" class="block text-sm font-medium text-slate-300">Adresse Email</label>
+          <label for="email" class="block text-sm font-medium text-slate-300">Email address</label>
           <input
             id="email"
             type="email"
             formControlName="email"
             placeholder="admin@smarterp.com"
-            class="mt-1 block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            class="erp-input mt-1 py-3"
           />
           @if (loginForm.get('email')?.touched && loginForm.get('email')?.invalid) {
-            <p class="mt-1 text-xs text-red-400">Veuillez entrer une adresse email valide.</p>
+            <p class="mt-1 text-xs text-rose-400">Please enter a valid email address.</p>
           }
         </div>
 
         <!-- Password Input -->
         <div>
-          <label for="password" class="block text-sm font-medium text-slate-300">Mot de passe</label>
+          <label for="password" class="block text-sm font-medium text-slate-300">Password</label>
           <input
             id="password"
             type="password"
             formControlName="password"
             placeholder="••••••••"
-            class="mt-1 block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            class="erp-input mt-1 py-3"
           />
           @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
-            <p class="mt-1 text-xs text-red-400">Le mot de passe doit contenir au moins 6 caractères.</p>
+            <p class="mt-1 text-xs text-rose-400">Password must be at least 6 characters.</p>
           }
         </div>
 
@@ -54,12 +57,12 @@
       <button
         type="submit"
         [disabled]="isLoading()"
-        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        class="erp-btn-primary w-full py-3"
       >
         @if (isLoading()) {
-          <span>Connexion en cours...</span>
+          <span>Signing in...</span>
         } @else {
-          <span>Se connecter</span>
+          <span>Sign in</span>
         }
       </button>
 

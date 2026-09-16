@@ -1,33 +1,33 @@
-<div class="p-6">
-  <button (click)="goBack()" class="text-sm text-slate-400 hover:text-white mb-4 flex items-center gap-1">
+<div class="erp-page p-4 sm:p-6">
+  <button (click)="goBack()" class="erp-btn-ghost mb-4">
     ← Retour aux types
   </button>
 
   <div *ngIf="loading" class="text-slate-400">Chargement...</div>
   <div *ngIf="error" class="text-rose-400">Impossible de charger les unités.</div>
 
-  <div *ngIf="!loading && !error" class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-    <h2 class="text-xl font-semibold text-white mb-1">{{ departmentType }}</h2>
+  <div *ngIf="!loading && !error" class="erp-card p-6">
+    <h2 class="erp-page-title text-xl sm:text-2xl mb-1">{{ departmentType }}</h2>
     <p class="text-xs text-slate-400 mb-4">{{ units.length }} unité(s) sous ce type</p>
 
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-slate-300 text-sm">
-        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+      <table class="erp-table">
+        <thead>
           <tr>
-            <th class="p-3">Unité</th>
-            <th class="p-3 text-right">Effectif</th>
-            <th class="p-3 text-right">Salaire Moyen</th>
-            <th class="p-3 text-right">Turnover</th>
+            <th>Unité</th>
+            <th class="text-right">Effectif</th>
+            <th class="text-right">Salaire Moyen</th>
+            <th class="text-right">Turnover</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-700">
+        <tbody>
           <tr *ngFor="let u of units" (click)="goToDetail(u.departmentId)"
-              class="hover:bg-slate-750 cursor-pointer transition-colors">
-            <td class="p-3 font-medium text-white">{{ u.businessUnit }}</td>
-            <td class="p-3 text-right text-slate-300">{{ u.headcount }}</td>
-            <td class="p-3 text-right text-slate-300">{{ u.avgSalary !== null ? ('$' + (u.avgSalary | number:'1.0-0')) : '—' }}</td>
-            <td class="p-3 text-right">
-              <span class="px-2 py-1 rounded text-xs border" [ngClass]="turnoverClass(u.turnoverRatePct)">
+              class="hover:bg-slate-800/70 cursor-pointer transition-colors">
+            <td class="font-medium text-white">{{ u.businessUnit }}</td>
+            <td class="text-right text-slate-300">{{ u.headcount }}</td>
+            <td class="text-right text-slate-300">{{ u.avgSalary !== null ? ('$' + (u.avgSalary | number:'1.0-0')) : '—' }}</td>
+            <td class="text-right">
+              <span class="erp-badge" [ngClass]="turnoverClass(u.turnoverRatePct)">
                 {{ u.turnoverRatePct | number:'1.1-1' }}%
               </span>
             </td>

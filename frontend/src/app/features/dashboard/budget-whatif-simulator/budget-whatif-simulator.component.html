@@ -1,25 +1,26 @@
-<div *ngIf="loading" class="flex justify-center items-center h-64">
-  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+<div *ngIf="loading" class="space-y-4">
+  <div class="erp-card p-5 h-32"><div class="erp-skeleton h-full"></div></div>
+  <div class="erp-card p-5 h-40"><div class="erp-skeleton h-full"></div></div>
 </div>
 
-<div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-center">
+<div *ngIf="error && !loading" class="erp-alert-error p-6">
   <p class="text-rose-400">Impossible de charger le simulateur budgétaire.</p>
-  <button (click)="loadBaselines()" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
+  <button (click)="loadBaselines()" class="erp-btn-secondary mt-4">
     Réessayer
   </button>
 </div>
 
 <div *ngIf="!loading && !error" class="space-y-4">
   <div class="flex items-center gap-3 mb-2">
-    <span class="p-2 bg-teal-500/10 text-teal-400 rounded-lg border border-teal-500/20">🎚️</span>
+    <span class="p-2 bg-accent-muted text-accent rounded-lg border border-accent/20">🎚️</span>
     <div>
-      <h3 class="text-lg font-semibold text-white">Simulateur Budgétaire Interactif</h3>
+      <h3 class="erp-section-title">Simulateur Budgétaire Interactif</h3>
       <p class="text-xs text-slate-400">Répartissez un nouveau budget entre départements et visualisez le point de performance optimal</p>
     </div>
   </div>
 
   <!-- Budget pool panel -->
-  <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+  <div class="erp-card p-5">
     <div class="flex flex-col md:flex-row md:items-end gap-4 justify-between">
       <div>
         <label class="text-xs text-slate-400 block mb-1">Nouveau budget disponible à répartir</label>
@@ -28,18 +29,18 @@
           min="0"
           [(ngModel)]="availableBudget"
           (ngModelChange)="onAvailableBudgetChange()"
-          class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white w-56 focus:outline-none focus:border-teal-400"
+          class="erp-input w-56"
         />
       </div>
 
-      <div class="flex gap-6 text-sm">
+      <div class="flex gap-6 text-sm flex-wrap">
         <div>
           <div class="text-xs text-slate-400">Budget total actuel</div>
           <div class="text-white font-semibold">${{ currentTotalBudget | number:'1.0-0' }}</div>
         </div>
         <div>
           <div class="text-xs text-slate-400">Alloué</div>
-          <div class="font-semibold" [ngClass]="isOverBudget ? 'text-rose-400' : 'text-teal-400'">
+          <div class="font-semibold" [ngClass]="isOverBudget ? 'text-rose-400' : 'text-accent'">
             ${{ totalAllocated | number:'1.0-0' }}
           </div>
         </div>
@@ -52,20 +53,20 @@
       </div>
 
       <button (click)="resetAllocations()"
-              class="px-3 py-2 text-xs bg-slate-900 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors self-start md:self-end">
+              class="erp-btn-secondary text-xs self-start md:self-end">
         Réinitialiser
       </button>
     </div>
 
-    <div class="mt-3 h-2 bg-slate-900 rounded-full overflow-hidden">
-      <div class="h-full transition-all" [ngClass]="isOverBudget ? 'bg-rose-500' : 'bg-teal-400'"
+    <div class="mt-3 h-2 bg-canvas rounded-full overflow-hidden">
+      <div class="h-full transition-all" [ngClass]="isOverBudget ? 'bg-rose-500' : 'bg-accent'"
            [style.width.%]="allocationPercent"></div>
     </div>
   </div>
 
   <!-- Per-department sliders -->
-  <div *ngFor="let dept of departments" class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-    <div class="flex justify-between items-start mb-4">
+  <div *ngFor="let dept of departments" class="erp-card p-5">
+    <div class="flex justify-between items-start mb-4 gap-4">
       <div>
         <h4 class="text-white font-semibold">{{ dept.department_name }}</h4>
         <p class="text-xs text-slate-400">Budget actuel : ${{ dept.current_budget | number:'1.0-0' }}</p>
@@ -104,7 +105,7 @@
     </div>
 
     <div class="flex justify-between items-center mt-2">
-      <span class="text-xs" [ngClass]="(dept.sliderValue - dept.current_budget) >= 0 ? 'text-teal-400' : 'text-rose-400'">
+      <span class="text-xs" [ngClass]="(dept.sliderValue - dept.current_budget) >= 0 ? 'text-accent' : 'text-rose-400'">
         {{ (dept.sliderValue - dept.current_budget) >= 0 ? '+' : '' }}${{ (dept.sliderValue - dept.current_budget) | number:'1.0-0' }} du pool
       </span>
       <span *ngIf="dept.loading" class="text-xs text-slate-500 italic">Calcul en cours…</span>

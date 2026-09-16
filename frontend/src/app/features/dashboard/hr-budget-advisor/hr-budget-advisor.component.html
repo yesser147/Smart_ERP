@@ -1,26 +1,31 @@
-<div *ngIf="loading" class="flex justify-center items-center h-64">
-  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+<div *ngIf="loading" class="space-y-6">
+  <div class="erp-card p-6 h-36"><div class="erp-skeleton h-full"></div></div>
+  <div class="erp-card p-6 h-64"><div class="erp-skeleton h-full"></div></div>
 </div>
 
-<div *ngIf="error && !loading" class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-center">
-  <p class="text-rose-400">Impossible de charger les prédictions budgétaires.</p>
-  <button (click)="fetchBudgetAdvice()" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">
-    Réessayer
+<div *ngIf="error && !loading" class="erp-alert-error p-6">
+  <p class="text-rose-400">Unable to load budget predictions.</p>
+  <button (click)="fetchBudgetAdvice()" class="erp-btn-secondary mt-4">
+    Retry
   </button>
 </div>
 
 <div *ngIf="!loading && !error && data" class="space-y-6">
 
   <!-- Executive Memo -->
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+  <div class="erp-card p-6">
     <div class="flex items-center gap-3 mb-3">
-      <span class="p-2 bg-sky-500/10 text-sky-400 rounded-lg border border-sky-500/20">💰</span>
+      <span class="p-2 bg-accent-muted text-accent rounded-lg border border-accent/20">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
+        </svg>
+      </span>
       <div>
-        <h3 class="text-lg font-semibold text-white">Conseiller Budgétaire IA (Prescriptif)</h3>
-        <p class="text-xs text-slate-400">Modèle d'élasticité XGBoost & Tests Multi-Prix Targetés</p>
+        <h3 class="erp-page-title text-xl sm:text-2xl">Budget Optimization (AI)</h3>
+        <p class="text-xs text-slate-400">XGBoost elasticity model & targeted multi-price tests</p>
       </div>
     </div>
-    <p class="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+    <p class="text-sm text-slate-300 leading-relaxed bg-canvas/60 p-4 rounded-lg border border-line">
       {{ data.executive_proposal_memo }}
     </p>
   </div>
@@ -29,29 +34,29 @@
   <app-budget-whatif-simulator></app-budget-whatif-simulator>
 
   <!-- TARGETED ANALYSIS: Bottom 3 Departments Price Tests -->
-  <div *ngIf="worstDeptsInfo && worstDeptsInfo.length > 0" class="bg-slate-800 p-6 rounded-xl border border-amber-500/30">
+  <div *ngIf="worstDeptsInfo && worstDeptsInfo.length > 0" class="erp-card p-6">
     <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
       <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-            Cibles Prioritaires
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="erp-badge bg-amber-500/20 text-amber-400 border-amber-500/30">
+            Priority targets
           </span>
-          <h4 class="text-md font-semibold text-white">
-            Analyse d'Élasticité Prix : Top 3 Départements à Faible Performance
+          <h4 class="erp-section-title">
+            Price elasticity analysis: lowest-performing 3 departments
           </h4>
         </div>
         <p class="text-xs text-slate-400">
-          Simulation des gains de performance selon différentes variations d'investissement ($1k à $20k).
+          Simulated performance gains across investment changes ($1k to $20k).
         </p>
       </div>
 
       <div class="flex flex-wrap gap-3">
-        <div *ngFor="let dept of worstDeptsInfo" class="bg-slate-900/60 p-2.5 px-3 rounded-lg border border-slate-700 text-xs flex items-center gap-3">
+        <div *ngFor="let dept of worstDeptsInfo" class="bg-canvas/60 p-2.5 px-3 rounded-lg border border-line text-xs flex items-center gap-3">
           <div>
             <span class="text-white font-bold block">{{ dept.department_name }}</span>
             <span class="text-slate-400">Score: <strong class="text-amber-400">{{ dept.current_performance }} pts</strong></span>
           </div>
-          <div class="h-6 w-px bg-slate-700"></div>
+          <div class="h-6 w-px bg-line"></div>
           <div>
             <span class="text-slate-400 block">Budget</span>
             <span class="text-slate-200 font-semibold">${{ dept.current_budget | number:'1.0-0' }}</span>
@@ -77,8 +82,8 @@
   </div>
 
   <!-- GRAPH: Global Department Budget Comparison -->
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-    <h4 class="text-md font-medium text-white mb-4">Comparaison Globale : Budget Actuel vs Budget Optimisé</h4>
+  <div class="erp-card p-6">
+    <h4 class="erp-section-title mb-4">Global comparison: current vs optimized budget</h4>
     <div *ngIf="budgetChart" class="w-full">
       <apx-chart
         [series]="budgetChart.series"
@@ -95,24 +100,24 @@
 
   <!-- Allocations & Insights -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-2">
-      <h4 class="text-md font-medium text-white mb-4">Allocations Recommandées par Département</h4>
+    <div class="erp-card p-6 lg:col-span-2">
+      <h4 class="erp-section-title mb-4">Recommended allocations by department</h4>
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-slate-300 text-sm">
-          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+        <table class="erp-table">
+          <thead>
             <tr>
-              <th class="p-3">Département</th>
-              <th class="p-3 text-right">Augmentation Recommandée</th>
-              <th class="p-3 text-right">Gain Prédictif</th>
+              <th>Department</th>
+              <th class="text-right">Recommended increase</th>
+              <th class="text-right">Predicted gain</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
-            <tr *ngFor="let item of data.recommended_allocations" class="hover:bg-slate-750">
-              <td class="p-3 font-medium text-white">{{ item.department_name }}</td>
-              <td class="p-3 text-right text-teal-400 font-semibold">
+          <tbody>
+            <tr *ngFor="let item of data.recommended_allocations" class="hover:bg-slate-800/70">
+              <td class="font-medium text-white">{{ item.department_name }}</td>
+              <td class="text-right text-accent font-semibold">
                 +${{ item.recommended_budget_increase | number:'1.0-0' }}
               </td>
-              <td class="p-3 text-right text-sky-400 font-semibold">
+              <td class="text-right text-accent font-semibold">
                 +{{ item.expected_performance_gain }} pts
               </td>
             </tr>
@@ -121,12 +126,12 @@
       </div>
     </div>
 
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 lg:col-span-1">
-      <h4 class="text-md font-medium text-white mb-4">Déductions Stratégiques IA</h4>
+    <div class="erp-card p-6 lg:col-span-1">
+      <h4 class="erp-section-title mb-4">AI strategic insights</h4>
       <div class="space-y-3">
         <div *ngFor="let insight of data.chart_insights; let i = index"
-             class="p-3 rounded-lg bg-slate-900/60 border border-slate-700 text-xs text-slate-300 flex items-start gap-3">
-          <span class="text-teal-400 font-bold">{{ i + 1 }}.</span>
+             class="p-3 rounded-lg bg-canvas/60 border border-line text-xs text-slate-300 flex items-start gap-3">
+          <span class="text-accent font-bold">{{ i + 1 }}.</span>
           <span>{{ insight }}</span>
         </div>
       </div>

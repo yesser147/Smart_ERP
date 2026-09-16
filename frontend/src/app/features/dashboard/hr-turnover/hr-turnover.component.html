@@ -1,58 +1,68 @@
 <!-- hr-turnover.component.html -->
 <div class="space-y-6">
+  <div>
+    <div class="erp-title-row">
+      <svg class="erp-page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+      <h2 class="erp-page-title">Turnover & Retention</h2>
+    </div>
+    <p class="text-sm text-slate-400 mt-1">Departure analysis by department and unit type</p>
+  </div>
+
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h4 class="text-lg font-medium text-white mb-4">Rotation par Département</h4>
-      <apx-chart *ngIf="turnoverChart" 
-        [series]="turnoverChart.series" [chart]="turnoverChart.chart" 
-        [xaxis]="turnoverChart.xaxis" [plotOptions]="turnoverChart.plotOptions" 
+    <div class="erp-card p-6">
+      <h4 class="erp-section-title mb-4">Turnover by department</h4>
+      <apx-chart *ngIf="turnoverChart"
+        [series]="turnoverChart.series" [chart]="turnoverChart.chart"
+        [xaxis]="turnoverChart.xaxis" [plotOptions]="turnoverChart.plotOptions"
         [colors]="turnoverChart.colors" [tooltip]="turnoverChart.tooltip">
       </apx-chart>
     </div>
 
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h4 class="text-lg font-medium text-white mb-4">Rotation par Type de Département</h4>
-      <apx-chart *ngIf="turnoverTypeChart" 
-        [series]="turnoverTypeChart.series" [chart]="turnoverTypeChart.chart" 
-        [xaxis]="turnoverTypeChart.xaxis" [plotOptions]="turnoverTypeChart.plotOptions" 
+    <div class="erp-card p-6">
+      <h4 class="erp-section-title mb-4">Turnover by department type</h4>
+      <apx-chart *ngIf="turnoverTypeChart"
+        [series]="turnoverTypeChart.series" [chart]="turnoverTypeChart.chart"
+        [xaxis]="turnoverTypeChart.xaxis" [plotOptions]="turnoverTypeChart.plotOptions"
         [colors]="turnoverTypeChart.colors" [tooltip]="turnoverTypeChart.tooltip">
       </apx-chart>
     </div>
   </div>
 
   <!-- Detailed Department Breakdown Table -->
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-    <h4 class="text-lg font-medium text-white mb-4">Détails des Départs par Département</h4>
+  <div class="erp-card p-6">
+    <h4 class="erp-section-title mb-4">Departure details by department</h4>
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-slate-300 text-sm">
-        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+      <table class="erp-table">
+        <thead>
           <tr>
-            <th class="p-3">Unité / Département</th>
-            <th class="p-3 text-right">Effectif Total</th>
-            <th class="p-3 text-right">Départs</th>
-            <th class="p-3 text-right">Taux de Turnover</th>
+            <th>Unit / department</th>
+            <th class="text-right">Total headcount</th>
+            <th class="text-right">Departures</th>
+            <th class="text-right">Turnover rate</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-700">
-          <tr *ngFor="let item of paginatedData" class="hover:bg-slate-750">
-  <td class="p-3 font-medium text-white">{{ item.businessUnit || 'ID: ' + item.departmentId }}</td>
-  <td class="p-3 text-right">{{ item.totalEmployees || '-' }}</td>
-  <td class="p-3 text-right text-rose-400">{{ item.terminationsCount || 0 }}</td>
-  <td class="p-3 text-right font-bold text-teal-400">{{ item.turnoverRatePct | number:'1.1-1' }}%</td>
+        <tbody>
+          <tr *ngFor="let item of paginatedData" class="hover:bg-slate-800/70">
+  <td class="font-medium text-white">{{ item.businessUnit || 'ID: ' + item.departmentId }}</td>
+  <td class="text-right">{{ item.totalEmployees || '-' }}</td>
+  <td class="text-right text-rose-400">{{ item.terminationsCount || 0 }}</td>
+  <td class="text-right font-bold text-accent">{{ item.turnoverRatePct | number:'1.1-1' }}%</td>
 </tr>
         </tbody>
       </table>
     </div>
     <div class="flex items-center justify-between mt-4 text-xs text-slate-400">
-      <span>{{ rawTurnoverData.length }} départements · Page {{ currentPage }}/{{ totalPages }}</span>
+      <span>{{ rawTurnoverData.length }} departments · Page {{ currentPage }}/{{ totalPages }}</span>
       <div class="flex gap-2">
         <button (click)="prevPage()" [disabled]="currentPage === 1"
-                class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          Précédent
+                class="erp-btn-secondary px-3 py-1.5 text-xs">
+          Previous
         </button>
         <button (click)="nextPage()" [disabled]="currentPage === totalPages"
-                class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          Suivant
+                class="erp-btn-secondary px-3 py-1.5 text-xs">
+          Next
         </button>
       </div>
     </div>

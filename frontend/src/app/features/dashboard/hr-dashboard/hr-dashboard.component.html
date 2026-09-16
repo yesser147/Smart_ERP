@@ -1,27 +1,27 @@
 <div *ngIf="!loading" class="h-full">
   <ng-container [ngSwitch]="currentView">
-    
-    <app-hr-overview *ngSwitchCase="'overview'" 
-      [kpi]="kpi" 
+
+    <app-hr-overview *ngSwitchCase="'overview'"
+      [kpi]="kpi"
       [statusDonut]="statusDonut"
       [topPerformers]="topPerformers">
     </app-hr-overview>
 
-    <app-hr-turnover *ngSwitchCase="'turnover'" 
-      [turnoverChart]="turnoverChart" 
+    <app-hr-turnover *ngSwitchCase="'turnover'"
+      [turnoverChart]="turnoverChart"
       [turnoverTypeChart]="turnoverTypeChart"
       [rawTurnoverData]="turnoverData">
     </app-hr-turnover>
 
     <!-- payGapChart added -->
-    <app-hr-compensation *ngSwitchCase="'compensation'" 
-      [salaryChart]="salaryChart" 
+    <app-hr-compensation *ngSwitchCase="'compensation'"
+      [salaryChart]="salaryChart"
       [performanceChart]="performanceChart"
       [trainingChart]="trainingChart"
       [payGapChart]="payGapChart">
     </app-hr-compensation>
 
-<app-hr-recruitment *ngSwitchCase="'recruitment'" 
+<app-hr-recruitment *ngSwitchCase="'recruitment'"
   [funnelChart]="funnelChart"
   [jobPostingsChart]="jobPostingsChart"
   [jobPostings]="jobPostings">
@@ -42,6 +42,15 @@
   </ng-container>
 </div>
 
-<div *ngIf="loading" class="flex justify-center items-center h-64">
-  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+<div *ngIf="loading" class="space-y-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="erp-card p-5 h-28"><div class="erp-skeleton h-full"></div></div>
+    <div class="erp-card p-5 h-28"><div class="erp-skeleton h-full"></div></div>
+    <div class="erp-card p-5 h-28"><div class="erp-skeleton h-full"></div></div>
+    <div class="erp-card p-5 h-28"><div class="erp-skeleton h-full"></div></div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="erp-card p-6 h-64"><div class="erp-skeleton h-full"></div></div>
+    <div class="erp-card p-6 h-64 lg:col-span-2"><div class="erp-skeleton h-full"></div></div>
+  </div>
 </div>

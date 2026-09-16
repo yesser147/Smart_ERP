@@ -1,28 +1,32 @@
-<div class="max-w-4xl mx-auto p-6">
-  <button (click)="goBack()" class="text-sm text-slate-400 hover:text-white mb-4 flex items-center gap-1">
+<div class="erp-page max-w-4xl mx-auto p-4 sm:p-6">
+  <button (click)="goBack()" class="erp-btn-ghost mb-4">
     ← Retour
   </button>
 
-  <div *ngIf="loading" class="flex justify-center items-center h-64">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
+  <div *ngIf="loading" class="space-y-4">
+    <div class="erp-card p-6 h-28"><div class="erp-skeleton h-full"></div></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="erp-card p-6 h-48"><div class="erp-skeleton h-full"></div></div>
+      <div class="erp-card p-6 h-48"><div class="erp-skeleton h-full"></div></div>
+    </div>
   </div>
 
   <div *ngIf="error" class="text-rose-400">Employé introuvable.</div>
 
   <div *ngIf="employee as e" class="space-y-6">
     <!-- Header Card -->
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <div class="flex items-start justify-between">
+    <div class="erp-card p-6">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 class="text-2xl font-bold text-white">{{ e.firstName }} {{ e.lastName }}</h2>
+          <h2 class="erp-page-title">{{ e.firstName }} {{ e.lastName }}</h2>
           <p class="text-sm text-slate-400 mt-1">{{ e.title || '—' }} · {{ e.jobFunction || '—' }}</p>
           <p class="text-xs text-slate-500 mt-1">ID: {{ e.employeeId }}</p>
         </div>
         <div class="flex flex-col items-end gap-2">
-          <span class="px-3 py-1 rounded-lg text-xs font-medium border" [ngClass]="statusClass(e.employeeStatus)">
+          <span class="erp-badge" [ngClass]="statusClass(e.employeeStatus)">
             {{ e.employeeStatus || '—' }}
           </span>
-          <span *ngIf="e.needsReview" class="px-3 py-1 rounded-lg text-xs font-medium border bg-amber-500/10 text-amber-400 border-amber-500/20">
+          <span *ngIf="e.needsReview" class="erp-badge bg-amber-500/10 text-amber-400 border-amber-500/20">
             Révision requise
           </span>
         </div>
@@ -31,56 +35,56 @@
 
     <!-- Personal & Employment Info -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Informations Personnelles</h3>
+      <div class="erp-card p-6">
+        <h3 class="erp-kicker text-accent mb-4">Informations Personnelles</h3>
         <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Date de naissance</span>
             <span class="text-white">{{ e.dob ? (e.dob | date:'dd/MM/yyyy') : '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Genre</span>
             <span class="text-white">{{ e.gender || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">État</span>
             <span class="text-white">{{ e.state || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Localisation</span>
             <span class="text-white">{{ e.location || '—' }}</span>
           </div>
         </div>
       </div>
 
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Informations Professionnelles</h3>
+      <div class="erp-card p-6">
+        <h3 class="erp-kicker text-accent mb-4">Informations Professionnelles</h3>
         <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Département</span>
             <span class="text-white">{{ e.departmentName || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Manager</span>
             <span class="text-white">{{ e.managerName || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Type d'emploi</span>
             <span class="text-white">{{ e.employeeType || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Classification</span>
             <span class="text-white">{{ e.employeeClassificationType || '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Date d'entrée</span>
             <span class="text-white">{{ e.startDate ? (e.startDate | date:'dd/MM/yyyy') : '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Ancienneté</span>
             <span class="text-white">{{ tenureYears !== null ? tenureYears + ' ans' : '—' }}</span>
           </div>
-          <div *ngIf="e.exitDate" class="flex justify-between">
+          <div *ngIf="e.exitDate" class="flex justify-between gap-4">
             <span class="text-slate-400">Date de sortie</span>
             <span class="text-rose-400">{{ e.exitDate | date:'dd/MM/yyyy' }}</span>
           </div>
@@ -90,42 +94,42 @@
 
     <!-- Compensation & Performance -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Rémunération</h3>
+      <div class="erp-card p-6">
+        <h3 class="erp-kicker text-accent mb-4">Rémunération</h3>
         <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Salaire actuel</span>
             <span class="text-white font-semibold">${{ e.salary | number:'1.0-0' }} {{ e.currency || 'USD' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Évaluation actuelle</span>
             <span class="text-white">{{ e.currentEmployeeRating ? (e.currentEmployeeRating | number:'1.1-1') : '—' }}</span>
           </div>
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center gap-4">
             <span class="text-slate-400">Performance</span>
-            <span class="px-2 py-1 rounded text-xs border" [ngClass]="performanceClass(e.performanceScore)">
+            <span class="erp-badge" [ngClass]="performanceClass(e.performanceScore)">
               {{ e.performanceScore || '—' }}
             </span>
           </div>
         </div>
       </div>
 
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Engagement & Bien-être</h3>
+      <div class="erp-card p-6">
+        <h3 class="erp-kicker text-accent mb-4">Engagement & Bien-être</h3>
         <div class="space-y-3 text-sm">
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Engagement moyen</span>
             <span class="text-white">{{ avgEngagement !== null ? (avgEngagement | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Satisfaction moyenne</span>
             <span class="text-white">{{ avgSatisfaction !== null ? (avgSatisfaction | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Équilibre vie pro/perso</span>
             <span class="text-white">{{ avgWlb !== null ? (avgWlb | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <span class="text-slate-400">Sondages complétés</span>
             <span class="text-white">{{ surveys.length }}</span>
           </div>
@@ -134,10 +138,10 @@
     </div>
 
     <!-- Termination Info (if applicable) -->
-    <div *ngIf="e.exitDate || e.terminationType || e.terminationDescription" class="bg-slate-800 p-6 rounded-xl border border-rose-500/30">
-      <h3 class="text-sm font-semibold text-rose-400 uppercase tracking-wider mb-4">Informations de Départ</h3>
+    <div *ngIf="e.exitDate || e.terminationType || e.terminationDescription" class="erp-card p-6 border-rose-500/30">
+      <h3 class="erp-kicker text-rose-400 mb-4">Informations de Départ</h3>
       <div class="space-y-3 text-sm">
-        <div class="flex justify-between">
+        <div class="flex justify-between gap-4">
           <span class="text-slate-400">Type de départ</span>
           <span class="text-white">{{ e.terminationType || '—' }}</span>
         </div>
@@ -149,24 +153,24 @@
     </div>
 
     <!-- Salary History -->
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Historique des Salaires</h3>
+    <div class="erp-card p-6">
+      <h3 class="erp-kicker text-accent mb-4">Historique des Salaires</h3>
       <div *ngIf="salaryHistory.length > 0" class="overflow-x-auto">
-        <table class="w-full text-left text-slate-300 text-sm">
-          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+        <table class="erp-table">
+          <thead>
             <tr>
-              <th class="p-3">Date d'effet</th>
-              <th class="p-3 text-right">Salaire</th>
-              <th class="p-3 text-right">Devise</th>
-              <th class="p-3">Motif</th>
+              <th>Date d'effet</th>
+              <th class="text-right">Salaire</th>
+              <th class="text-right">Devise</th>
+              <th>Motif</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
-            <tr *ngFor="let s of salaryHistory" class="hover:bg-slate-750">
-              <td class="p-3">{{ s.effectiveDate | date:'dd/MM/yyyy' }}</td>
-              <td class="p-3 text-right text-white font-medium">${{ s.salary | number:'1.0-0' }}</td>
-              <td class="p-3 text-right text-slate-400">{{ s.currency }}</td>
-              <td class="p-3 text-slate-400">{{ s.changeReason || '—' }}</td>
+          <tbody>
+            <tr *ngFor="let s of salaryHistory" class="hover:bg-slate-800/70">
+              <td>{{ s.effectiveDate | date:'dd/MM/yyyy' }}</td>
+              <td class="text-right text-white font-medium">${{ s.salary | number:'1.0-0' }}</td>
+              <td class="text-right text-slate-400">{{ s.currency }}</td>
+              <td class="text-slate-400">{{ s.changeReason || '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -175,28 +179,28 @@
     </div>
 
     <!-- Training History -->
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Formations Suivies</h3>
+    <div class="erp-card p-6">
+      <h3 class="erp-kicker text-accent mb-4">Formations Suivies</h3>
       <div *ngIf="trainings.length > 0" class="overflow-x-auto">
-        <table class="w-full text-left text-slate-300 text-sm">
-          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+        <table class="erp-table">
+          <thead>
             <tr>
-              <th class="p-3">Programme</th>
-              <th class="p-3">Date</th>
-              <th class="p-3">Statut</th>
-              <th class="p-3">Lieu</th>
+              <th>Programme</th>
+              <th>Date</th>
+              <th>Statut</th>
+              <th>Lieu</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
-            <tr *ngFor="let t of trainings" class="hover:bg-slate-750">
-              <td class="p-3 text-white font-medium">{{ t.programName || '—' }}</td>
-              <td class="p-3 text-slate-400">{{ t.trainingDate | date:'dd/MM/yyyy' }}</td>
-              <td class="p-3">
-                <span class="px-2 py-1 rounded text-xs border" [ngClass]="t.completionStatus?.toUpperCase() === 'COMPLETED' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'">
+          <tbody>
+            <tr *ngFor="let t of trainings" class="hover:bg-slate-800/70">
+              <td class="text-white font-medium">{{ t.programName || '—' }}</td>
+              <td class="text-slate-400">{{ t.trainingDate | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="erp-badge" [ngClass]="t.completionStatus?.toUpperCase() === 'COMPLETED' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'">
                   {{ t.completionStatus || '—' }}
                 </span>
               </td>
-              <td class="p-3 text-slate-400">{{ t.location || '—' }}</td>
+              <td class="text-slate-400">{{ t.location || '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -205,24 +209,24 @@
     </div>
 
     <!-- Engagement Survey History -->
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h3 class="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4">Historique des Sondages d'Engagement</h3>
+    <div class="erp-card p-6">
+      <h3 class="erp-kicker text-accent mb-4">Historique des Sondages d'Engagement</h3>
       <div *ngIf="surveys.length > 0" class="overflow-x-auto">
-        <table class="w-full text-left text-slate-300 text-sm">
-          <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+        <table class="erp-table">
+          <thead>
             <tr>
-              <th class="p-3">Date du sondage</th>
-              <th class="p-3 text-right">Engagement</th>
-              <th class="p-3 text-right">Satisfaction</th>
-              <th class="p-3 text-right">Équilibre vie pro/perso</th>
+              <th>Date du sondage</th>
+              <th class="text-right">Engagement</th>
+              <th class="text-right">Satisfaction</th>
+              <th class="text-right">Équilibre vie pro/perso</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-700">
-            <tr *ngFor="let s of surveys" class="hover:bg-slate-750">
-              <td class="p-3">{{ s.surveyDate | date:'dd/MM/yyyy' }}</td>
-              <td class="p-3 text-right text-white">{{ s.engagementScore | number:'1.1-1' }}</td>
-              <td class="p-3 text-right text-white">{{ s.satisfactionScore | number:'1.1-1' }}</td>
-              <td class="p-3 text-right text-white">{{ s.workLifeBalanceScore | number:'1.1-1' }}</td>
+          <tbody>
+            <tr *ngFor="let s of surveys" class="hover:bg-slate-800/70">
+              <td>{{ s.surveyDate | date:'dd/MM/yyyy' }}</td>
+              <td class="text-right text-white">{{ s.engagementScore | number:'1.1-1' }}</td>
+              <td class="text-right text-white">{{ s.satisfactionScore | number:'1.1-1' }}</td>
+              <td class="text-right text-white">{{ s.workLifeBalanceScore | number:'1.1-1' }}</td>
             </tr>
           </tbody>
         </table>

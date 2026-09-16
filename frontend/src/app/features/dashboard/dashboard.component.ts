@@ -10,6 +10,15 @@ import { HrBudgetAdvisorComponent } from './hr-budget-advisor/hr-budget-advisor.
 import { HrRetentionComponent } from './hr-retention/hr-retention.component';
 import { DepartmentListComponent } from './department-list/department-list.component';
 
+const SIDEBAR_COLLAPSED_KEY = 'nexus_erp_sidebar_collapsed';
+
+const ROLE_LABELS: Record<string, string> = {
+  ROLE_HR_MANAGER: 'HR Manager',
+  ROLE_ADMIN: 'Admin',
+  ROLE_EMPLOYEE: 'Employee',
+  ROLE_MANAGER: 'Manager',
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -27,15 +36,51 @@ import { DepartmentListComponent } from './department-list/department-list.compo
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
-  
-  userInfo: any = null; 
+
+  userInfo: any = null;
   activeMenu: string = 'overview'; // Tracks which sidebar menu is clicked
+  sidebarCollapsed = false;
 
   ngOnInit() {
     this.userInfo = {
       email: 'hr@smarterp.com',
-      role: 'ROLE_HR_MANAGER' 
+      role: 'ROLE_HR_MANAGER'
+      // TODO: once login returns firstName/lastName, add them here too
     };
+
+    try {
+      this.sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+    } catch {
+      this.sidebarCollapsed = false;
+    }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(this.sidebarCollapsed));
+    } catch {
+      /* ignore quota / private mode errors */
+    }
+  }
+
+  get roleLabel(): string {
+    const role = this.userInfo?.role as string | undefined;
+    return (role && ROLE_LABELS[role]) || role || '';
+  }
+
+  get displayName(): string {
+    const info = this.userInfo;
+    const first = info?.firstName ?? info?.first_name;
+    const last = info?.lastName ?? info?.last_name;
+    const full = `${first ?? ''} ${last ?? ''}`.trim();
+    if (full) return full;
+    const email = (info?.email as string) || '';
+    return email.includes('@') ? email.split('@')[0] : email;
+  }
+
+  isGroupActive(keys: string[]): boolean {
+    return keys.includes(this.activeMenu);
   }
 
   logout() {
