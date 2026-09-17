@@ -3,7 +3,6 @@ package com.smarterp.analytics.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +23,9 @@ public class SalaryDistribution {
 
     @Column(name = "business_unit")
     private String businessUnit;
+
+    @Column(name = "division_description")
+    private String divisionDescription;
 
     @Column(name = "employee_count")
     private Long employeeCount;

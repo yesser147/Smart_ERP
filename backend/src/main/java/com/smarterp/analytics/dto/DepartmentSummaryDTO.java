@@ -6,6 +6,7 @@ public record DepartmentSummaryDTO(
     String departmentType,
     String divisionDescription,
     Long headcount,
+    Long totalEverEmployed,   // NEW
     Double avgSalary,
     Double turnoverRatePct,
     Long activeCount,

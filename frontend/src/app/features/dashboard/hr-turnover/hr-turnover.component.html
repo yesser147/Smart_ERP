@@ -1,4 +1,3 @@
-<!-- hr-turnover.component.html -->
 <div class="space-y-6">
   <div>
     <div class="erp-title-row">
@@ -12,12 +11,17 @@
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <div class="erp-card p-6">
-      <h4 class="erp-section-title mb-4">Turnover by department</h4>
+      <h4 class="erp-section-title mb-1">Highest turnover departments</h4>
+      <p class="text-xs text-slate-500 mb-4">Departments with 3+ people, cumulative all-time rate</p>
       <apx-chart *ngIf="turnoverChart"
         [series]="turnoverChart.series" [chart]="turnoverChart.chart"
         [xaxis]="turnoverChart.xaxis" [plotOptions]="turnoverChart.plotOptions"
-        [colors]="turnoverChart.colors" [tooltip]="turnoverChart.tooltip">
+        [colors]="turnoverChart.colors" [dataLabels]="turnoverChart.dataLabels"
+        [grid]="turnoverChart.grid" [tooltip]="turnoverChart.tooltip">
       </apx-chart>
+      <p *ngIf="!turnoverChart" class="text-sm text-slate-500 text-center py-12">
+        Not enough data to display.
+      </p>
     </div>
 
     <div class="erp-card p-6">
@@ -31,40 +35,64 @@
   </div>
 
   <!-- Detailed Department Breakdown Table -->
-  <div class="erp-card p-6">
-    <h4 class="erp-section-title mb-4">Departure details by department</h4>
-    <div class="overflow-x-auto">
-      <table class="erp-table">
-        <thead>
-          <tr>
-            <th>Unit / department</th>
-            <th class="text-right">Total headcount</th>
-            <th class="text-right">Departures</th>
-            <th class="text-right">Turnover rate</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of paginatedData" class="hover:bg-slate-800/70">
-  <td class="font-medium text-white">{{ item.businessUnit || 'ID: ' + item.departmentId }}</td>
-  <td class="text-right">{{ item.totalEmployees || '-' }}</td>
-  <td class="text-right text-rose-400">{{ item.terminationsCount || 0 }}</td>
-  <td class="text-right font-bold text-accent">{{ item.turnoverRatePct | number:'1.1-1' }}%</td>
-</tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="flex items-center justify-between mt-4 text-xs text-slate-400">
-      <span>{{ rawTurnoverData.length }} departments · Page {{ currentPage }}/{{ totalPages }}</span>
-      <div class="flex gap-2">
-        <button (click)="prevPage()" [disabled]="currentPage === 1"
-                class="erp-btn-secondary px-3 py-1.5 text-xs">
-          Previous
-        </button>
-        <button (click)="nextPage()" [disabled]="currentPage === totalPages"
-                class="erp-btn-secondary px-3 py-1.5 text-xs">
-          Next
-        </button>
-      </div>
-    </div>
+ <div class="flex flex-col sm:flex-row justify-between gap-3 mb-4">
+  <h4 class="erp-section-title">Departure details by department</h4>
+  <div class="flex gap-2 items-center">
+    <label class="flex items-center gap-1.5 text-xs text-slate-400 whitespace-nowrap">
+      <input type="checkbox" [(ngModel)]="showTinyDepartments" (ngModelChange)="onFilterChange()" />
+      Show 1-2 person units
+    </label>
+    <input [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" placeholder="Search unit..."
+           class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-400 w-40" />
+    <select [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()"
+            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-400">
+      <option value="">All types</option>
+      <option *ngFor="let t of availableTypes" [value]="t">{{ t }}</option>
+    </select>
   </div>
+</div>
+
+<table class="erp-table">
+  <thead>
+    <tr>
+      <th>Unit</th>
+      <th>Type</th>
+      <th class="text-right">Active headcount</th>
+      <th class="text-right">Ever employed</th>
+      <th class="text-right">Departures</th>
+      <th class="text-right">Turnover rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of paginatedData" class="hover:bg-slate-800/70">
+      <td class="font-medium text-white">
+  {{ item.businessUnit || 'Unknown' }}
+  <span class="text-slate-500 text-xs font-normal block">
+    {{ item.divisionDescription }}
+  </span>
+</td>
+      <td class="text-slate-400">{{ item.departmentType || '—' }}</td>
+      <td class="text-right">{{ item.headcount ?? 0 }}</td>
+      <td class="text-right text-slate-400">{{ item.totalEverEmployed ?? 0 }}</td>
+      <td class="text-right text-rose-400">{{ item.terminatedCount ?? 0 }}</td>
+      <td class="text-right font-bold text-accent">{{ item.turnoverRatePct | number:'1.1-1' }}%</td>
+    </tr>
+    <tr *ngIf="filteredData.length === 0">
+      <td colspan="6" class="text-center text-slate-500 py-6">No departments found.</td>
+    </tr>
+  </tbody>
+</table>
+<div *ngIf="filteredData.length > pageSize" class="flex items-center justify-between mt-4 text-xs text-slate-400">
+  <span>{{ filteredData.length }} departments · Page {{ currentPage }}/{{ totalPages }}</span>
+  <div class="flex gap-2">
+    <button (click)="prevPage()" [disabled]="currentPage === 1"
+            class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+      Previous
+    </button>
+    <button (click)="nextPage()" [disabled]="currentPage >= totalPages"
+            class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+      Next
+    </button>
+  </div>
+</div>
 </div>

@@ -13,6 +13,7 @@ export interface DepartmentSummaryDTO {
   departmentType: string;
   divisionDescription: string;
   headcount: number;
+  totalEverEmployed: number; // NEW
   avgSalary: number | null;
   turnoverRatePct: number;
   activeCount: number;
@@ -21,6 +22,7 @@ export interface DepartmentSummaryDTO {
 
 export interface DepartmentSalarySummaryDTO {
   businessUnit: string;
+  divisionDescription: string;
   avgSalary: number;
 }
 
@@ -41,8 +43,11 @@ export interface AttritionRiskIndicatorsDTO {
 export interface DepartmentTurnoverDTO {
   departmentId?: number;
   businessUnit?: string;
+  departmentType?: string;
+  divisionDescription?: string;
   totalEmployees?: number;
-  terminationsCount?: number;
+  activeCount?: number;
+  terminatedCount?: number; // FIXED: was "terminationsCount", didn't match backend JSON key
   turnoverRatePct?: number;
 }
 export interface EmployeePerformanceEngagementDTO {
@@ -76,6 +81,7 @@ export interface RecruitmentFunnelAtsDTO {
 export interface SalaryDistributionDTO {
   departmentId: number;
   businessUnit: string;
+  divisionDescription: string;
   jobFunction: string;
   employeeCount: number;
   avgSalary: number;
@@ -97,6 +103,7 @@ export interface TopPerformerBenchmarksDTO {
 export interface TrainingAnalyticsDTO {
   departmentId: number;
   businessUnit: string;
+  divisionDescription: string;
   trainedEmployeesCount: number;
   totalTrainingsCompleted: number;
   totalTrainingInvestment: number;
@@ -112,7 +119,8 @@ export interface DepartmentTypeTurnoverDTO {
 }
 
 export interface GenderPayGapDTO {
-  businessUnit: string;
+  departmentType: string;
+  divisionDescription: string;
   gender: string;
   avgSalary: number;
   employeeCount: number;

@@ -9,8 +9,8 @@
     <p class="text-sm text-slate-400 mt-1">Workforce KPIs and top performers</p>
   </div>
 
-  <!-- Top KPI Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <!-- Top KPI Grid: now 5 cards -- engagement and risk split apart -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
     <div class="erp-card p-5">
       <p class="erp-kpi-label">Total headcount</p>
       <h3 class="erp-kpi">{{ kpi?.totalEmployees || 0 }}</h3>
@@ -22,25 +22,51 @@
       <h3 class="erp-kpi text-rose-400">
         {{ (kpi?.companyTurnoverRate || 0) | number:'1.1-1' }}%
       </h3>
-      <p class="erp-kpi-meta">Company average</p>
+      <p class="erp-kpi-meta">Cumulative, all-time</p>
     </div>
 
     <div class="erp-card p-5">
       <p class="erp-kpi-label">Open roles</p>
       <h3 class="erp-kpi text-accent">{{ kpi?.openJobPostings || 0 }}</h3>
-      <p class="erp-kpi-meta">Across {{ kpi?.departmentCount || 0 }} departments</p>
+      <p class="erp-kpi-meta">Across {{ departmentTypeCount || kpi?.departmentCount || 0 }} department types</p>
     </div>
 
     <div class="erp-card p-5">
       <p class="erp-kpi-label">Engagement score</p>
       <h3 class="erp-kpi text-amber-400">
-        {{ ((kpi?.avgEngagement ?? 0) > 5 ? ((kpi?.avgEngagement ?? 0) / 20) : (kpi?.avgEngagement ?? 0)) | number:'1.1-1' }}/5
+        {{ normalizedEngagement(kpi?.avgEngagement) | number:'1.1-1' }}/5
       </h3>
-      <p class="erp-kpi-meta text-rose-400/80">
-        High risk: {{ kpi?.highRiskCount || 0 }} employees
-      </p>
+      <p class="erp-kpi-meta">Company average</p>
+    </div>
+
+    <div class="erp-card p-5">
+      <p class="erp-kpi-label">High flight risk</p>
+      <h3 class="erp-kpi text-rose-400">{{ kpi?.highRiskCount || 0 }}</h3>
+      <p class="erp-kpi-meta">Employees, ML-predicted</p>
     </div>
   </div>
+  <!-- New: quick links into the two AI advisors, using data already fetched elsewhere -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4" *ngIf="recruitmentSummary">
+  <div class="erp-card p-5 flex items-center justify-between">
+    <div>
+      <p class="erp-kpi-label">Recruitment pipeline</p>
+      <h3 class="erp-kpi text-sky-400">{{ recruitmentSummary.activeApplications }}</h3>
+      <p class="erp-kpi-meta">
+        {{ recruitmentSummary.interviewing }} interviewing · {{ recruitmentSummary.offered }} offered
+      </p>
+    </div>
+    
+  </div>
+
+  <div class="erp-card p-5 flex items-center justify-between" *ngIf="budgetAlertCount > 0">
+    <div>
+      <p class="erp-kpi-label">Budget optimization</p>
+      <h3 class="erp-kpi text-amber-400">{{ budgetAlertCount }}</h3>
+      <p class="erp-kpi-meta">Underperforming departments flagged by AI</p>
+    </div>
+    <span class="erp-page-icon text-amber-400">💰</span>
+  </div>
+</div>
 
   <!-- Charts Row -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -55,7 +81,7 @@
 
     <!-- Top Performers Table -->
     <div class="erp-card p-6 lg:col-span-2">
-      <h4 class="erp-section-title mb-4">Top performers</h4>
+      <h4 class="erp-section-title mb-4">Top performers by role</h4>
       <div class="overflow-x-auto">
         <table class="erp-table">
           <thead>
@@ -66,12 +92,15 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of topPerformers" class="hover:bg-slate-800/70">
-              <td class="font-medium text-white">{{ item.title || item.jobFunction || 'N/A' }}</td>
-              <td class="text-accent font-semibold">{{ item.performanceScore || 'N/A' }}</td>
+            <tr *ngFor="let item of dedupedTopPerformers" class="hover:bg-slate-800/70">
+              <td class="font-medium text-white">
+                {{ item.title }}
+                <span *ngIf="item.count > 1" class="text-slate-500 text-xs">×{{ item.count }}</span>
+              </td>
+              <td class="text-accent font-semibold">{{ item.performanceScore }}</td>
               <td>
                 <span class="erp-badge bg-amber-500/10 text-amber-400 border-amber-500/20">
-                  {{ ((item.avgEngagement ?? 0) > 5 ? (item.avgEngagement ?? 0) / 20 : (item.avgEngagement ?? 0)) | number:'1.1-1' }}/5
+                  {{ item.avgEngagement | number:'1.1-1' }}/5
                 </span>
               </td>
             </tr>

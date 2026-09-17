@@ -10,6 +10,8 @@ public record SalaryDistributionDTO(
 
     String businessUnit,
 
+    String divisionDescription,
+
     String jobFunction,
 
     Long employeeCount,
@@ -30,6 +32,7 @@ public record SalaryDistributionDTO(
         return new SalaryDistributionDTO(
             entity.getId().getDepartmentId(),
             entity.getBusinessUnit(),
+            entity.getDivisionDescription(),
             entity.getId().getJobFunction(),
             entity.getEmployeeCount(),
             entity.getAvgSalary(),

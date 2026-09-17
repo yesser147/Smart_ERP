@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DepartmentSalarySummaryDTO {
     private String businessUnit;
+    private String divisionDescription;
     private Double avgSalary;
 }

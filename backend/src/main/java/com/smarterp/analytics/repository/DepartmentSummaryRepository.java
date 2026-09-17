@@ -24,6 +24,7 @@ public class DepartmentSummaryRepository {
                 rs.getString("department_type"),
                 rs.getString("division_description"),
                 rs.getLong("headcount"),
+                rs.getLong("total_ever_employed"),
                 rs.getObject("avg_salary") != null ? rs.getDouble("avg_salary") : null,
                 rs.getDouble("turnover_rate_pct"),
                 rs.getLong("active_count"),

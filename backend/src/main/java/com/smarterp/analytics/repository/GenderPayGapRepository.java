@@ -4,7 +4,6 @@ import com.smarterp.analytics.dto.GenderPayGapDTO;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -16,11 +15,12 @@ public class GenderPayGapRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<GenderPayGapDTO> findSalaryByBusinessUnitAndGender() {
+    public List<GenderPayGapDTO> findSalaryByDepartmentTypeDivisionAndGender() {
         return jdbcTemplate.query(
-            "SELECT business_unit, gender, avg_salary, employee_count FROM v_gender_pay_gap",
+            "SELECT department_type, division_description, gender, avg_salary, employee_count FROM v_gender_pay_gap",
             (rs, rowNum) -> new GenderPayGapDTO(
-                rs.getString("business_unit"),
+                rs.getString("department_type"),
+                rs.getString("division_description"),
                 rs.getString("gender"),
                 rs.getBigDecimal("avg_salary") != null ? rs.getBigDecimal("avg_salary").doubleValue() : 0.0,
                 rs.getLong("employee_count")

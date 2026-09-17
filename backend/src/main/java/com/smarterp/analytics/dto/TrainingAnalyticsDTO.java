@@ -10,6 +10,8 @@ public record TrainingAnalyticsDTO(
 
     String businessUnit,
 
+    String divisionDescription,
+
     Long trainedEmployeesCount,
 
     Long totalTrainingsCompleted,
@@ -26,6 +28,7 @@ public record TrainingAnalyticsDTO(
         return new TrainingAnalyticsDTO(
             entity.getDepartmentId(),
             entity.getBusinessUnit(),
+            entity.getDivisionDescription(),
             entity.getTrainedEmployeesCount(),
             entity.getTotalTrainingsCompleted(),
             entity.getTotalTrainingInvestment(),

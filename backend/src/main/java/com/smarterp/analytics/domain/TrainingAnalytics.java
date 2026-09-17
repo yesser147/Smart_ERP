@@ -25,6 +25,9 @@ public class TrainingAnalytics {
     @Column(name = "business_unit")
     private String businessUnit;
 
+    @Column(name = "division_description")
+    private String divisionDescription;
+
     @Column(name = "trained_employees_count")
     private Long trainedEmployeesCount;
 

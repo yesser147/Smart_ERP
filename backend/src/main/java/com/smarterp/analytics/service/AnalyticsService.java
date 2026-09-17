@@ -94,10 +94,7 @@ public class AnalyticsService {
 
         long highRiskCount = fetchMlHighRiskCount()
                 .orElseGet(() -> {
-                    // Fallback: SQL heuristic, only used if the Python AI
-                    // service is unreachable -- keeps the dashboard alive
-                    // during a demo instead of hard-failing, but this is
-                    // NOT the model's real prediction.
+                
                     log.warn("AI service unreachable -- falling back to SQL heuristic for highRiskCount");
                     return riskList.stream()
                             .filter(r -> "HIGH".equalsIgnoreCase(r.getHeuristicRiskLevel()))
@@ -195,10 +192,9 @@ public class AnalyticsService {
     }
 
     // NEW
-    public List<GenderPayGapDTO> getGenderPayGapStats() {
-        return genderPayGapRepository.findSalaryByBusinessUnitAndGender();
-    }
-
+public List<GenderPayGapDTO> getGenderPayGapStats() {
+    return genderPayGapRepository.findSalaryByDepartmentTypeDivisionAndGender();
+}
     // NEW
     public List<TimeToHireDTO> getTimeToHireStats() {
         return timeToHireRepository.findAvgTimeToHirePerJob();

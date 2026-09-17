@@ -6,6 +6,7 @@ CREATE OR REPLACE VIEW v_closed_departments AS
 SELECT 
     d.department_id,
     d.business_unit,
+    d.division_description,
     COUNT(e.employee_id) AS total_historical_employees,
     SUM(CASE WHEN UPPER(e.employee_status) LIKE '%TERMINATED%' THEN 1 ELSE 0 END) AS total_terminated_employees,
     MAX(e.exit_date) AS estimated_closure_date
@@ -14,7 +15,8 @@ JOIN employees e ON d.department_id = e.department_id
 WHERE e.is_deleted = FALSE
 GROUP BY 
     d.department_id, 
-    d.business_unit
+    d.business_unit,
+    d.division_description
 HAVING 
     SUM(CASE WHEN UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') THEN 1 ELSE 0 END) = 0
     AND SUM(CASE WHEN UPPER(e.employee_status) LIKE '%TERMINATED%' THEN 1 ELSE 0 END) > 0;
@@ -24,6 +26,8 @@ CREATE OR REPLACE VIEW v_department_turnover AS
 SELECT 
     d.department_id,
     d.business_unit,
+    d.department_type,
+    d.division_description,
     COUNT(e.employee_id) AS total_employees,
     SUM(CASE 
         WHEN UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') 
@@ -47,7 +51,9 @@ LEFT JOIN employees e ON d.department_id = e.department_id
     AND e.is_deleted = FALSE
 GROUP BY 
     d.department_id, 
-    d.business_unit;
+    d.business_unit,
+    d.department_type,
+    d.division_description;
 
 
 CREATE OR REPLACE VIEW v_department_type_turnover AS
@@ -111,6 +117,7 @@ CREATE OR REPLACE VIEW v_salary_distribution AS
 SELECT 
     d.department_id,
     d.business_unit,
+    d.division_description,
     e.job_function,
     COUNT(e.employee_id) AS employee_count,
     ROUND(AVG(e.salary), 2) AS avg_salary,
@@ -121,7 +128,7 @@ FROM departments d
 JOIN employees e ON d.department_id = e.department_id
 WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') 
   AND e.is_deleted = FALSE
-GROUP BY d.department_id, d.business_unit, e.job_function;
+GROUP BY d.department_id, d.business_unit, d.division_description, e.job_function;
 
 
 -- =============================================================================
@@ -162,6 +169,7 @@ CREATE OR REPLACE VIEW v_training_analytics AS
 SELECT 
     d.department_id,
     d.business_unit,
+    d.division_description,
     COUNT(DISTINCT et.employee_id) AS trained_employees_count,
     COUNT(et.id) AS total_trainings_completed,
     COALESCE(SUM(tc.cost), 0.00) AS total_training_investment,
@@ -172,7 +180,7 @@ JOIN employee_trainings et ON e.employee_id = et.employee_id
 JOIN training_courses tc ON et.course_id = tc.course_id
 WHERE UPPER(et.completion_status) = 'COMPLETED'
   AND e.is_deleted = FALSE
-GROUP BY d.department_id, d.business_unit;
+GROUP BY d.department_id, d.business_unit, d.division_description;
 
 
 -- =============================================================================
@@ -246,6 +254,7 @@ SELECT
     e.employee_id,
     e.department_id,
     d.business_unit,
+    d.division_description,
     e.job_function,
     e.performance_score,
     e.salary,
@@ -263,7 +272,7 @@ LEFT JOIN engagement_surveys es ON es.employee_id = e.employee_id
 LEFT JOIN v_department_turnover dt ON dt.department_id = e.department_id
 WHERE e.is_deleted = FALSE
 GROUP BY
-    e.employee_id, e.department_id, d.business_unit, e.job_function,
+    e.employee_id, e.department_id, d.business_unit, d.division_description, e.job_function,
     e.performance_score, e.salary, e.start_date, e.gender,
     e.employee_status, e.is_deleted, dt.turnover_rate_pct;
 
@@ -289,6 +298,7 @@ SELECT
     d.department_id,
     d.business_unit,
     d.department_type,
+    d.division_description,
     COALESCE(ta.total_training_investment, 0.00) AS training_budget,
     COUNT(DISTINCT e.employee_id) AS headcount,
     COALESCE(ROUND(AVG(e.current_employee_rating), 2), 3.00) AS avg_performance,
@@ -302,18 +312,20 @@ LEFT JOIN v_training_analytics ta ON d.department_id = ta.department_id
 LEFT JOIN engagement_surveys es ON e.employee_id = es.employee_id
 LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id
 GROUP BY 
-    d.department_id, d.business_unit, d.department_type, ta.total_training_investment, dt.turnover_rate_pct;
+    d.department_id, d.business_unit, d.department_type, d.division_description,
+    ta.total_training_investment, dt.turnover_rate_pct;
 
-    CREATE OR REPLACE VIEW v_gender_pay_gap AS
+CREATE OR REPLACE VIEW v_gender_pay_gap AS
 SELECT 
-    d.business_unit,
+    d.department_type,
+    d.division_description,
     e.gender,
     ROUND(AVG(e.salary), 2) AS avg_salary,
     COUNT(*) AS employee_count
 FROM employees e
 JOIN departments d ON d.department_id = e.department_id
 WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') AND e.is_deleted = FALSE
-GROUP BY d.business_unit, e.gender;
+GROUP BY d.department_type, d.division_description, e.gender;
 
 CREATE OR REPLACE VIEW v_time_to_hire AS
 SELECT
@@ -336,6 +348,7 @@ SELECT
     COUNT(DISTINCT e.employee_id) FILTER (
         WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE')
     ) AS headcount,
+    COUNT(DISTINCT e.employee_id) AS total_ever_employed,
     ROUND(
         AVG(e.salary) FILTER (WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE')),
         2

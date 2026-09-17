@@ -20,7 +20,8 @@ import {
   EmployeePerformanceEngagementDTO,
   DepartmentTypeTurnoverDTO,
   GenderPayGapDTO,       // NEW
-  TimeToHireDTO          // NEW
+  TimeToHireDTO,          // NEW
+  DepartmentSummaryDTO
 } from '../../../core/models/analytics.model';
 
 import { HrOverviewComponent } from '../hr-overview/hr-overview.component';
@@ -87,7 +88,10 @@ export class HrDashboardComponent implements OnInit {
   topPerformers: TopPerformerBenchmarksDTO[] = [];
   turnoverData: DepartmentTurnoverDTO[] = [];
   payGapData: GenderPayGapDTO[] = [];       // NEW
-  timeToHireData: TimeToHireDTO[] = [];     // NEW
+  timeToHireData: TimeToHireDTO[] = []; 
+  recruitmentSummary: { activeApplications: number; interviewing: number; offered: number } | null = null;
+  departmentTypeCount = 0;
+  departmentSummary: DepartmentSummaryDTO[] = [];
 
   turnoverChart!: ChartOptions;
   turnoverTypeChart!: ChartOptions;
@@ -97,7 +101,8 @@ export class HrDashboardComponent implements OnInit {
   trainingChart!: ChartOptions;
   performanceChart!: ChartOptions;
   jobPostingsChart!: ChartOptions;
-  payGapChart!: ChartOptions;               // NEW
+  payGapChart!: ChartOptions;         
+      // NEW
 
   ngOnInit(): void {
     forkJoin({
@@ -112,8 +117,9 @@ export class HrDashboardComponent implements OnInit {
       payGap: this.analyticsService.getGenderPayGap(),         // NEW
       timeToHire: this.analyticsService.getTimeToHire(),       // NEW
       employees: this.hrService.getAllEmployees(),
-      jobPostings: this.hrService.getAllJobPostings()
-    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings }) => {
+      jobPostings: this.hrService.getAllJobPostings(),
+      departmentSummary: this.analyticsService.getDepartmentSummary()
+    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings,departmentSummary }) => {
       
       this.kpi = kpis;
       this.employees = employees;
@@ -121,6 +127,21 @@ export class HrDashboardComponent implements OnInit {
       this.turnoverData = turnover;
       this.payGapData = payGap;
       this.timeToHireData = timeToHire;
+      // alongside your existing forkJoin results, derive:
+      this.recruitmentSummary = {
+        activeApplications: funnel.reduce((sum, f) => sum + (f.appliedCount || 0) + (f.inReviewCount || 0), 0),
+        interviewing: funnel.reduce((sum, f) => sum + (f.interviewingCount || 0), 0),
+        offered: funnel.reduce((sum, f) => sum + (f.offeredCount || 0), 0)
+      };
+
+      // Real distinct department-type count -- fixes the "620 departments"
+      // bug, which was counting raw department_id rows instead of actual
+      // organizational types (Sales, Engineering, etc.)
+      this.departmentTypeCount = new Set(
+        departmentSummary.map((d: DepartmentSummaryDTO) => d.departmentType || 'Non classé')
+      ).size;
+      this.departmentSummary = departmentSummary;
+
       
       this.topPerformers = [...topPerformers]
         .sort((a, b) => (b.avgEngagement ?? 0) - (a.avgEngagement ?? 0))
