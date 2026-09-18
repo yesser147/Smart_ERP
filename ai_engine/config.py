@@ -78,7 +78,6 @@ RETENTION_SCHEMA_PATH = os.path.join(
 
 CATEGORICAL_FEATURES = [
     "division_description",
-    "department_type",
     "job_function",
     "performance_score",
     "gender",

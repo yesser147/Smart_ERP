@@ -117,7 +117,10 @@ async def get_retention_strategy():
 
         macro_strategy = generate_macro_retention_strategy(high_risk_df, total_active, threshold=RISK_THRESHOLD)
         return macro_strategy
+    except HTTPException:
+        raise
     except Exception as e:
+        logging.error(f"Failed to generate retention strategy: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -132,6 +135,7 @@ def get_retention_risk_scores(threshold: float = RISK_THRESHOLD):
         high_risk_count = int((scored["risk_score"] >= threshold).sum())
         return {"high_risk_count": high_risk_count, "total_active": total_active}
     except Exception as e:
+        logging.error(f"Failed to compute retention risk scores: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
