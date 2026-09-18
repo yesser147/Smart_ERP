@@ -144,10 +144,9 @@ public class AnalyticsService {
                 .map(DepartmentTurnoverDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
-    public List<DepartmentSalarySummaryDTO> getSalaryDistributionSummary() {
-        return salaryDistributionRepository.findSalarySummaryByBusinessUnit();
-    }
+public List<DepartmentSalarySummaryDTO> getSalaryDistributionSummary() {
+    return salaryDistributionRepository.findSalarySummaryByDivision();
+}
 
     public List<DepartmentTypeTurnoverDTO> getDepartmentTypeTurnoverStats() {
         return departmentTypeTurnoverRepository.findAll()

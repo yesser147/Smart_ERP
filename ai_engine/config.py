@@ -76,10 +76,9 @@ RETENTION_SCHEMA_PATH = os.path.join(
 # Model Training Parameters
 # -------------------------------------------------------------------
 
-CHURN_STATUSES = ["Terminated"]
-
 CATEGORICAL_FEATURES = [
-    "business_unit",
+    "division_description",
+    "department_type",
     "job_function",
     "performance_score",
     "gender",
@@ -93,6 +92,8 @@ NUMERIC_FEATURES = [
     "avg_work_life_balance",
     "department_turnover_rate",
 ]
+
+CHURN_STATUSES = ["Terminated"]
 
 # -------------------------------------------------------------------
 # Gemini

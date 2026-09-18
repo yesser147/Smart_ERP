@@ -12,9 +12,8 @@ import java.util.List;
 @Repository
 public interface SalaryDistributionRepository extends JpaRepository<SalaryDistribution, SalaryDistributionId> {
 
-    @Query("SELECT new com.smarterp.analytics.dto.DepartmentSalarySummaryDTO(" +
-           "s.businessUnit, AVG(s.avgSalary)) " +
-           "FROM SalaryDistribution s " +
-           "GROUP BY s.businessUnit")
-    List<DepartmentSalarySummaryDTO> findSalarySummaryByBusinessUnit();
+@Query("SELECT new com.smarterp.analytics.dto.DepartmentSalarySummaryDTO(MAX(s.businessUnit), s.divisionDescription, AVG(s.avgSalary)) " +
+       "FROM SalaryDistribution s GROUP BY s.divisionDescription")
+List<DepartmentSalarySummaryDTO> findSalarySummaryByDivision();
+
 }

@@ -11,31 +11,34 @@
 
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <div class="erp-card p-6">
-      <h4 class="erp-section-title mb-4">Average salary by unit</h4>
+      <h4 class="erp-section-title mb-4">Average salary by division</h4>
       <apx-chart *ngIf="salaryChart"
         [series]="salaryChart.series" [chart]="salaryChart.chart"
         [xaxis]="salaryChart.xaxis" [plotOptions]="salaryChart.plotOptions"
-        [colors]="salaryChart.colors" [fill]="salaryChart.fill" [tooltip]="salaryChart.tooltip">
+        [colors]="salaryChart.colors" [fill]="salaryChart.fill"
+        [dataLabels]="salaryChart.dataLabels" [tooltip]="salaryChart.tooltip">
       </apx-chart>
     </div>
 
     <div class="erp-card p-6">
-      <h4 class="erp-section-title mb-4">Training investment by department type</h4>
+      <h4 class="erp-section-title mb-4">Training investment by division</h4>
       <apx-chart *ngIf="trainingChart"
         [series]="trainingChart.series" [chart]="trainingChart.chart"
         [xaxis]="trainingChart.xaxis" [plotOptions]="trainingChart.plotOptions"
-        [colors]="trainingChart.colors" [tooltip]="trainingChart.tooltip">
+        [colors]="trainingChart.colors" [dataLabels]="trainingChart.dataLabels"
+        [tooltip]="trainingChart.tooltip">
       </apx-chart>
     </div>
   </div>
 
-  <!-- NEW: Gender Pay Gap -->
+  <!-- Gender Pay Gap -->
   <div class="erp-card p-6">
-    <h4 class="erp-section-title mb-4">Pay gap by gender and unit</h4>
+    <h4 class="erp-section-title mb-4">Pay gap by gender and division</h4>
     <apx-chart *ngIf="payGapChart"
       [series]="payGapChart.series" [chart]="payGapChart.chart"
       [xaxis]="payGapChart.xaxis" [plotOptions]="payGapChart.plotOptions"
       [colors]="payGapChart.colors" [fill]="payGapChart.fill"
+      [dataLabels]="payGapChart.dataLabels"
       [grid]="payGapChart.grid" [tooltip]="payGapChart.tooltip" [legend]="payGapChart.legend">
     </apx-chart>
   </div>
@@ -47,7 +50,7 @@
         [series]="performanceChart.series" [chart]="performanceChart.chart"
         [xaxis]="performanceChart.xaxis" [yaxis]="performanceChart.yaxis"
         [stroke]="performanceChart.stroke" [colors]="performanceChart.colors"
-        [tooltip]="performanceChart.tooltip">
+        [dataLabels]="performanceChart.dataLabels" [tooltip]="performanceChart.tooltip">
       </apx-chart>
     </div>
   </div>

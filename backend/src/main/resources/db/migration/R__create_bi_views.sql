@@ -2,6 +2,7 @@
 -- 1. Department Turnover & Closure Analytics
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_closed_departments CASCADE;
 CREATE OR REPLACE VIEW v_closed_departments AS
 SELECT 
     d.department_id,
@@ -22,6 +23,7 @@ HAVING
     AND SUM(CASE WHEN UPPER(e.employee_status) LIKE '%TERMINATED%' THEN 1 ELSE 0 END) > 0;
 
 
+DROP VIEW IF EXISTS v_department_turnover CASCADE;
 CREATE OR REPLACE VIEW v_department_turnover AS
 SELECT 
     d.department_id,
@@ -56,6 +58,7 @@ GROUP BY
     d.division_description;
 
 
+DROP VIEW IF EXISTS v_department_type_turnover CASCADE;
 CREATE OR REPLACE VIEW v_department_type_turnover AS
 SELECT 
     d.department_type,
@@ -88,6 +91,7 @@ GROUP BY
 -- 2. Employee Performance & Survey Engagement Metrics
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_employee_performance_engagement CASCADE;
 CREATE OR REPLACE VIEW v_employee_performance_engagement AS
 SELECT 
     e.employee_id,
@@ -113,6 +117,7 @@ GROUP BY
 -- 3. Salary Distribution & Compensation Equity
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_salary_distribution CASCADE;
 CREATE OR REPLACE VIEW v_salary_distribution AS
 SELECT 
     d.department_id,
@@ -135,6 +140,7 @@ GROUP BY d.department_id, d.business_unit, d.division_description, e.job_functio
 -- 4. Recruitment Funnel & ATS Performance
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_recruitment_funnel_ats CASCADE;
 CREATE OR REPLACE VIEW v_recruitment_funnel_ats AS
 SELECT 
     jp.job_id,
@@ -165,6 +171,7 @@ GROUP BY
 -- 5. Training & Upskilling Analytics
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_training_analytics CASCADE;
 CREATE OR REPLACE VIEW v_training_analytics AS
 SELECT 
     d.department_id,
@@ -187,6 +194,7 @@ GROUP BY d.department_id, d.business_unit, d.division_description;
 -- 6. Flight Risk & Attrition Indicators (Feeds ML Engine)
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_attrition_risk_indicators CASCADE;
 CREATE OR REPLACE VIEW v_attrition_risk_indicators AS
 SELECT 
     e.employee_id,
@@ -222,6 +230,7 @@ GROUP BY
 -- 7. Top Performer Benchmarks (Feeds ATS Matching Engine)
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_top_performer_benchmarks CASCADE;
 CREATE OR REPLACE VIEW v_top_performer_benchmarks AS
 SELECT 
     e.employee_id,
@@ -249,6 +258,7 @@ GROUP BY
 -- 8. AI Feature Views (Retention, Exit Reasons, Training Budgets)
 -- =============================================================================
 
+DROP VIEW IF EXISTS v_ai_retention_features CASCADE;
 CREATE OR REPLACE VIEW v_ai_retention_features AS
 SELECT
     e.employee_id,
@@ -315,6 +325,7 @@ GROUP BY
     d.department_id, d.business_unit, d.department_type, d.division_description,
     ta.total_training_investment, dt.turnover_rate_pct;
 
+DROP VIEW IF EXISTS v_gender_pay_gap CASCADE;
 CREATE OR REPLACE VIEW v_gender_pay_gap AS
 SELECT 
     d.department_type,
@@ -327,6 +338,7 @@ JOIN departments d ON d.department_id = e.department_id
 WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') AND e.is_deleted = FALSE
 GROUP BY d.department_type, d.division_description, e.gender;
 
+DROP VIEW IF EXISTS v_time_to_hire CASCADE;
 CREATE OR REPLACE VIEW v_time_to_hire AS
 SELECT
     jp.job_id,
@@ -339,6 +351,7 @@ JOIN job_applications ja ON ja.job_id = jp.job_id
 WHERE UPPER(ja.status) = 'OFFERED'
 GROUP BY jp.job_id, jp.title, jp.department_id;
 
+DROP VIEW IF EXISTS v_department_summary CASCADE;
 CREATE OR REPLACE VIEW v_department_summary AS
 SELECT 
     d.department_id,
@@ -362,3 +375,22 @@ LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id
 WHERE d.is_deleted = FALSE
 GROUP BY d.department_id, d.business_unit, d.department_type, d.division_description,
          dt.turnover_rate_pct, dt.active_count, dt.terminated_count;
+
+         
+GRANT SELECT ON
+    v_closed_departments,
+    v_department_turnover,
+    v_department_type_turnover,
+    v_employee_performance_engagement,
+    v_salary_distribution,
+    v_recruitment_funnel_ats,
+    v_training_analytics,
+    v_attrition_risk_indicators,
+    v_top_performer_benchmarks,
+    v_ai_retention_features,
+    v_ai_exit_reason_frequencies,
+    v_ai_training_budget_features,
+    v_gender_pay_gap,
+    v_time_to_hire,
+    v_department_summary
+TO ai_readonly_user;

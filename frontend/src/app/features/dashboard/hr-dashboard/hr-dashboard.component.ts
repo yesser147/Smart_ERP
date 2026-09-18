@@ -19,8 +19,8 @@ import {
   TrainingAnalyticsDTO,
   EmployeePerformanceEngagementDTO,
   DepartmentTypeTurnoverDTO,
-  GenderPayGapDTO,       // NEW
-  TimeToHireDTO,          // NEW
+  GenderPayGapDTO,
+  TimeToHireDTO,
   DepartmentSummaryDTO
 } from '../../../core/models/analytics.model';
 
@@ -87,7 +87,7 @@ export class HrDashboardComponent implements OnInit {
   jobPostings: JobPostingDTO[] = [];
   topPerformers: TopPerformerBenchmarksDTO[] = [];
   turnoverData: DepartmentTurnoverDTO[] = [];
-  payGapData: GenderPayGapDTO[] = [];       // NEW
+  payGapData: GenderPayGapDTO[] = [];
   timeToHireData: TimeToHireDTO[] = []; 
   recruitmentSummary: { activeApplications: number; interviewing: number; offered: number } | null = null;
   departmentTypeCount = 0;
@@ -101,8 +101,7 @@ export class HrDashboardComponent implements OnInit {
   trainingChart!: ChartOptions;
   performanceChart!: ChartOptions;
   jobPostingsChart!: ChartOptions;
-  payGapChart!: ChartOptions;         
-      // NEW
+  payGapChart!: ChartOptions;
 
   ngOnInit(): void {
     forkJoin({
@@ -114,12 +113,12 @@ export class HrDashboardComponent implements OnInit {
       training: this.analyticsService.getTrainingAnalyticsStats(),
       topPerformers: this.analyticsService.getTopPerformerBenchmarksStats(),
       performance: this.analyticsService.getPerformanceEngagementStats(),
-      payGap: this.analyticsService.getGenderPayGap(),         // NEW
-      timeToHire: this.analyticsService.getTimeToHire(),       // NEW
+      payGap: this.analyticsService.getGenderPayGap(),
+      timeToHire: this.analyticsService.getTimeToHire(),
       employees: this.hrService.getAllEmployees(),
       jobPostings: this.hrService.getAllJobPostings(),
       departmentSummary: this.analyticsService.getDepartmentSummary()
-    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings,departmentSummary }) => {
+    }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings, departmentSummary }) => {
       
       this.kpi = kpis;
       this.employees = employees;
@@ -127,22 +126,18 @@ export class HrDashboardComponent implements OnInit {
       this.turnoverData = turnover;
       this.payGapData = payGap;
       this.timeToHireData = timeToHire;
-      // alongside your existing forkJoin results, derive:
+
       this.recruitmentSummary = {
         activeApplications: funnel.reduce((sum, f) => sum + (f.appliedCount || 0) + (f.inReviewCount || 0), 0),
         interviewing: funnel.reduce((sum, f) => sum + (f.interviewingCount || 0), 0),
         offered: funnel.reduce((sum, f) => sum + (f.offeredCount || 0), 0)
       };
 
-      // Real distinct department-type count -- fixes the "620 departments"
-      // bug, which was counting raw department_id rows instead of actual
-      // organizational types (Sales, Engineering, etc.)
       this.departmentTypeCount = new Set(
         departmentSummary.map((d: DepartmentSummaryDTO) => d.departmentType || 'Non classé')
       ).size;
       this.departmentSummary = departmentSummary;
 
-      
       this.topPerformers = [...topPerformers]
         .sort((a, b) => (b.avgEngagement ?? 0) - (a.avgEngagement ?? 0))
         .slice(0, 5);
@@ -155,7 +150,7 @@ export class HrDashboardComponent implements OnInit {
       this.trainingChart = this.buildTrainingChart(training);
       this.performanceChart = this.buildPerformanceChart(performance);
       this.jobPostingsChart = this.buildJobPostingsChart(jobPostings);
-      this.payGapChart = this.buildPayGapChart(payGap);        // NEW
+      this.payGapChart = this.buildPayGapChart(payGap);
 
       this.loading = false;
     });
@@ -168,7 +163,7 @@ export class HrDashboardComponent implements OnInit {
     return {
       series: [{ name: 'Turnover %', data: sortedData.map(t => t.turnoverRatePct ?? 0) }],
       chart: { type: 'bar', height: chartHeight, ...DARK_THEME_BASE },
-      xaxis: { categories: sortedData.map(t => t.businessUnit ?? `ID: ${t.departmentId}`) },
+      xaxis: { categories: sortedData.map(t => t.divisionDescription || t.businessUnit || `ID: ${t.departmentId}`) },
       plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
       dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
       colors: ['#2dd4bf', '#22d3ee', '#38bdf8', '#818cf8', '#a78bfa', '#f472b6', '#fb923c'],
@@ -201,7 +196,7 @@ export class HrDashboardComponent implements OnInit {
     return {
       series: [{ name: 'Salaire Moyen', data: salary.map(s => Math.round(s.avgSalary ?? 0)) }],
       chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
-      xaxis: { categories: salary.map(s => s.businessUnit ?? 'Unknown') },
+      xaxis: { categories: salary.map(s => s.divisionDescription || s.businessUnit || 'Unknown') },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
       dataLabels: { enabled: false },
       colors: ['#38bdf8'],
@@ -216,40 +211,40 @@ export class HrDashboardComponent implements OnInit {
   }
 
   private buildFunnelChart(funnel: RecruitmentFunnelAtsDTO[]): ChartOptions {
-  const totals = funnel.reduce(
-    (acc, f) => {
-      acc.applied += f.appliedCount ?? 0;
-      acc.inReview += f.inReviewCount ?? 0;
-      acc.interviewing += f.interviewingCount ?? 0;
-      acc.offered += f.offeredCount ?? 0;
-      acc.rejected += f.rejectedCount ?? 0;
-      return acc;
-    },
-    { applied: 0, inReview: 0, interviewing: 0, offered: 0, rejected: 0 }
-  );
-  return {
-    series: [{ name: 'Candidats', data: [totals.applied, totals.inReview, totals.interviewing, totals.offered, totals.rejected] }],
-    chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
-    xaxis: { categories: ['Candidatures', 'En Examen', 'Entretien', 'Offre Envoyée', 'Rejetés'] },
-    plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', distributed: true } },
-    dataLabels: { enabled: true },
-    colors: ['#818cf8', '#facc15', '#38bdf8', '#4ade80', '#f87171'],
-    fill: { opacity: 0.9 },
-    grid: { borderColor: '#334155', strokeDashArray: 4 },
-    tooltip: { theme: 'dark' },
-    legend: { show: false },
-  };
-}
+    const totals = funnel.reduce(
+      (acc, f) => {
+        acc.applied += f.appliedCount ?? 0;
+        acc.inReview += f.inReviewCount ?? 0;
+        acc.interviewing += f.interviewingCount ?? 0;
+        acc.offered += f.offeredCount ?? 0;
+        acc.rejected += f.rejectedCount ?? 0;
+        return acc;
+      },
+      { applied: 0, inReview: 0, interviewing: 0, offered: 0, rejected: 0 }
+    );
+    return {
+      series: [{ name: 'Candidats', data: [totals.applied, totals.inReview, totals.interviewing, totals.offered, totals.rejected] }],
+      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
+      xaxis: { categories: ['Candidatures', 'En Examen', 'Entretien', 'Offre Envoyée', 'Rejetés'] },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', distributed: true } },
+      dataLabels: { enabled: true },
+      colors: ['#818cf8', '#facc15', '#38bdf8', '#4ade80', '#f87171'],
+      fill: { opacity: 0.9 },
+      grid: { borderColor: '#334155', strokeDashArray: 4 },
+      tooltip: { theme: 'dark' },
+      legend: { show: false },
+    };
+  }
 
   private buildTrainingChart(training: TrainingAnalyticsDTO[]): ChartOptions {
-    const investmentByType = training.reduce((acc, curr) => {
-      const type = (curr as any).departmentType || curr.businessUnit || 'Unknown';
-      acc[type] = (acc[type] || 0) + (curr.totalTrainingInvestment ?? 0);
+    const investmentByDivision = training.reduce((acc, curr) => {
+      const key = curr.divisionDescription || curr.businessUnit || 'Unknown';
+      acc[key] = (acc[key] || 0) + (curr.totalTrainingInvestment ?? 0);
       return acc;
     }, {} as Record<string, number>);
 
-    const categories = Object.keys(investmentByType);
-    const data = Object.values(investmentByType);
+    const categories = Object.keys(investmentByDivision);
+    const data = Object.values(investmentByDivision);
 
     return {
       series: [{ name: 'Investissement', data }],
@@ -349,17 +344,23 @@ export class HrDashboardComponent implements OnInit {
     };
   }
 
-  // NEW
+  /** Groups by division (the real, comparable job-function unit) with the
+   * department type appended for context -- business_unit is a site/location
+   * code and was dropped from this comparison since it doesn't reflect role
+   * or pay-band, and mixing it in would compare unlike jobs against each other. */
   private buildPayGapChart(payGap: GenderPayGapDTO[]): ChartOptions {
-    // Group by business unit, one series per gender, so bars sit
-    // side-by-side per department -- the standard way to show a gap.
-    const units = [...new Set(payGap.map(p => p.businessUnit))];
+    const divisions = [...new Set(payGap.map(p => p.divisionDescription))];
     const genders = [...new Set(payGap.map(p => p.gender))];
+
+    const labelFor = (division: string) => {
+      const match = payGap.find(p => p.divisionDescription === division);
+      return match?.departmentType ? `${division} (${match.departmentType})` : division;
+    };
 
     const series = genders.map(g => ({
       name: g,
-      data: units.map(u => {
-        const match = payGap.find(p => p.businessUnit === u && p.gender === g);
+      data: divisions.map(d => {
+        const match = payGap.find(p => p.divisionDescription === d && p.gender === g);
         return match ? Math.round(match.avgSalary) : 0;
       })
     }));
@@ -367,7 +368,7 @@ export class HrDashboardComponent implements OnInit {
     return {
       series,
       chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
-      xaxis: { categories: units },
+      xaxis: { categories: divisions.map(labelFor), labels: { rotate: -45, hideOverlappingLabels: true } },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
       dataLabels: { enabled: false },
       colors: ['#38bdf8', '#f472b6', '#a78bfa'],

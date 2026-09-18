@@ -13,6 +13,9 @@ spring:
     username: postgres
     password: postgres  
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 2
 
   # JPA & Hibernate Settings
   jpa:
@@ -34,18 +37,16 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: nexuserp.system@gmail.com
-    password: bfkkisanijbvcfxx  # Spaces removed here
+    password: bfkkisanijbvcfxx
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-# JWT Security Configuration Settings
 application:
   security:
     jwt:
-      # Must be a Base64-encoded string of at least 256 bits (32+ bytes)
       secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      expiration-ms: 86400000 # 24 Hours in milliseconds
-      refresh-token-expiration-ms: 604800000 # 7 Days in milliseconds
+      expiration-ms: 86400000
+      refresh-token-expiration-ms: 604800000
