@@ -1,0 +1,48 @@
+<div class="max-w-2xl mx-auto p-6 space-y-4">
+  <button (click)="goBack()" class="text-sm text-slate-400 hover:text-white mb-2">← Retour</button>
+
+  <div *ngIf="loading" class="text-slate-400">Chargement...</div>
+  <div *ngIf="error" class="text-rose-400">Candidat introuvable.</div>
+
+  <div *ngIf="applicant as a" class="erp-card p-6 space-y-3">
+    <h2 class="text-xl font-semibold text-white">{{ a.firstName }} {{ a.lastName }}</h2>
+    <div class="grid grid-cols-2 gap-3 text-sm">
+      <div><span class="text-slate-400">Email : </span><span class="text-white">{{ a.email }}</span></div>
+      <div><span class="text-slate-400">Téléphone : </span><span class="text-white">{{ a.phoneNumber || '—' }}</span></div>
+      <div><span class="text-slate-400">Éducation : </span><span class="text-white">{{ a.educationLevel || '—' }}</span></div>
+      <div><span class="text-slate-400">Expérience : </span><span class="text-white">{{ a.yearsOfExperience ?? '—' }} ans</span></div>
+    </div>
+  </div>
+
+  <div class="erp-card p-6 space-y-3">
+    <h3 class="erp-section-title">Évaluation IA de compatibilité</h3>
+    <div class="flex gap-3">
+      <select [(ngModel)]="selectedJobId" class="erp-input flex-1">
+        <option [ngValue]="null" disabled>Sélectionner un poste...</option>
+        <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">{{ job.title }}</option>
+      </select>
+      <button (click)="assessFit()" [disabled]="assessing || selectedJobId === null" class="erp-btn-primary px-4">
+        {{ assessing ? 'Analyse...' : 'Évaluer' }}
+      </button>
+    </div>
+
+    <div *ngIf="assessmentError" class="erp-alert-error">{{ assessmentError }}</div>
+
+    <div *ngIf="assessment" class="space-y-2 pt-2 border-t border-slate-700">
+      <p class="font-bold" [ngClass]="verdictClass(assessment.verdict)">{{ assessment.verdict }}</p>
+      <p class="text-sm text-slate-300">{{ assessment.reasoning }}</p>
+      <div *ngIf="assessment.strengths?.length" class="text-sm">
+        <span class="text-teal-400 font-medium">Points forts :</span>
+        <ul class="list-disc list-inside text-slate-300">
+          <li *ngFor="let s of assessment.strengths">{{ s }}</li>
+        </ul>
+      </div>
+      <div *ngIf="assessment.gaps?.length" class="text-sm">
+        <span class="text-rose-400 font-medium">Points faibles :</span>
+        <ul class="list-disc list-inside text-slate-300">
+          <li *ngFor="let g of assessment.gaps">{{ g }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

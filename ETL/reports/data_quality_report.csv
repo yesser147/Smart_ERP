@@ -1,0 +1,21 @@
+table,rule,rows_affected,description
+employees,columns_dropped,3,"Dropped unused/sensitive columns: ['race_ethnicity', 'marital_status', 'pay_zone']"
+employees,unparseable_dob,1823,dob had a value that wasn't a real date -> set to null
+employees,nonstandard_status_kept,456,"employee_status value wasn't in the known set -- kept as-is, title-cased"
+employees,active_with_past_exit_date_fixed,991,Status said Active but exit_date was already in the past -> status set to Terminated
+employees,future_start_with_exit_date,69,"Future Start employee had an exit_date -- impossible, set to null"
+employees,invalid_email_cleared,18,"email didn't look like a real address -- cleared, will be synthesized"
+employees,email_synthesized,18,email was missing/invalid -- synthesized a placeholder (name.id@smarterp.local)
+employees,duplicate_email_deduplicated,2,Two employees ended up with the same email -- made unique with a +employee_id tag
+recruitment,phone_number_malformed_length_cleared,400,"phone_number was longer than 30 chars (corrupted source data, not a real value) -> set to null"
+surveys,unparseable_survey_date,1814,survey_date had a value that wasn't a real date -> set to null
+departments,extracted,620,620 unique departments extracted
+users,generated,3000,Clean user domain accounts generated
+user_tokens,generated,1533,Activation tokens written to user_tokens table
+salary_history,generated,3000,Initial compensation histories generated
+training_courses,extracted,5,Extracted training catalog
+employee_trainings,linked,3000,Normalized employee training logs
+applicants,extracted,2977,Normalized applicant profiles
+job_postings,generated,636,Extracted job requisitions
+job_applications,linked,2977,Created job application links
+applicant_cvs,synthesized,2977,"Generated real embeddings from job title/education/experience (not random noise, not a uniform skill list)"

@@ -27,4 +27,5 @@ public class JobPosting {
     private BigDecimal offeredSalaryMax;
     private String status = "OPEN";
     private LocalDateTime createdAt = LocalDateTime.now();
+    
 }

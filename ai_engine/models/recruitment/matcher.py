@@ -213,3 +213,66 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
     candidates.sort(key=lambda c: c["match_score"], reverse=True)
 
     return {"job_id": job.job_id, "job_title": job.title, "candidates": candidates[:top_k]}
+
+
+def assess_applicant_fit(applicant_id: int, job_id: int) -> dict:
+    """Focused single-candidate check: 'is this specific person actually
+    right for this specific job', beyond just the ranking score --
+    surfaces the LLM's reasoning directly for a human to read."""
+    with engine.connect() as conn:
+        job = conn.execute(
+            text("SELECT job_id, title, required_experience_years FROM job_postings WHERE job_id = :jid"),
+            {"jid": job_id}
+        ).fetchone()
+        applicant = conn.execute(text("""
+            SELECT a.applicant_id, a.first_name, a.last_name, a.education_level,
+                   a.years_of_experience, ac.extracted_skills_json, ac.parsed_text
+            FROM applicants a
+            LEFT JOIN applicant_cvs ac ON ac.applicant_id = a.applicant_id
+            WHERE a.applicant_id = :aid
+        """), {"aid": applicant_id}).fetchone()
+
+    if job is None or applicant is None:
+        return {"status": "error", "message": "Candidat ou poste introuvable."}
+
+    if not applicant.extracted_skills_json:
+        return {"status": "error", "message": "Le CV de ce candidat n'a pas encore été traité."}
+
+    skills = _safe_parse_skills(applicant.extracted_skills_json)
+
+    prompt = f"""You are assessing whether a specific candidate can actually
+perform a specific job -- not just whether their resume sounds similar.
+
+Job: {job.title}
+Required experience: {job.required_experience_years or 0} years
+
+Candidate:
+- Education: {applicant.education_level}
+- Years of experience: {applicant.years_of_experience}
+- Extracted skills: {json.dumps(skills)}
+- Resume excerpt: {(applicant.parsed_text or '')[:1500]}
+
+Give a direct, honest assessment: can this person realistically do this job?
+Point out any real gaps (missing required experience, no directly relevant
+skills) as well as genuine strengths. Do not be falsely encouraging if the
+fit is weak.
+
+Return ONLY a valid JSON object:
+{{
+  "verdict": "<Strong fit | Possible fit | Weak fit>",
+  "reasoning": "<3-4 sentences, direct and specific>",
+  "gaps": ["gap 1", "gap 2"],
+  "strengths": ["strength 1", "strength 2"]
+}}"""
+
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                  "format": "json", "options": {"temperature": 0.1}},
+            timeout=90,
+        )
+        response.raise_for_status()
+        return {"status": "success", **json.loads(response.json()["response"])}
+    except Exception as e:
+        return {"status": "error", "message": f"Échec de l'analyse: {e}"}

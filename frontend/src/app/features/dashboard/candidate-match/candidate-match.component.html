@@ -12,7 +12,7 @@
       class="erp-input flex-1"
       [(ngModel)]="selectedJobId"
       (ngModelChange)="runMatch()">
-      <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
+      <option *ngFor="let job of jobPostings" [ngValue]="job.jobId"  >
         {{ job.title }} {{ job.status ? '(' + job.status + ')' : '' }}
       </option>
     </select>
@@ -41,7 +41,11 @@
 
     <div *ngFor="let c of candidates; let i = index"
          class="bg-canvas/60 border border-line rounded-card p-3">
-      <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between cursor-pointer hover:bg-slate-800/40 rounded-md transition-colors -m-1 p-1"
+       (click)="goToDetail(c.applicant_id)"
+       role="link"
+       tabindex="0"
+       (keydown.enter)="goToDetail(c.applicant_id)">
         <div class="flex items-center gap-3">
           <span class="text-xs text-slate-500 w-5">#{{ i + 1 }}</span>
           <div>

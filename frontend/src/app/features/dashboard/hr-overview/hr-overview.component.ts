@@ -21,10 +21,6 @@ export class HrOverviewComponent {
     const v = value ?? 0;
     return v > 5 ? v / 20 : v;
   }
-
-  /** Collapses duplicate titles into one row with a count, so "Accountant I"
-   * appearing 3 times among top performers reads as "Accountant I ×3"
-   * instead of three identical-looking rows. */
   get dedupedTopPerformers(): { title: string; performanceScore: string; avgEngagement: number; count: number }[] {
     const map = new Map<string, { title: string; performanceScore: string; avgEngagement: number; count: number }>();
 

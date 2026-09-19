@@ -47,4 +47,7 @@ matchCandidates(jobId: number, topK: number = 10, recomputeAll: boolean = false)
   processCv(applicantId: number): Observable<any> {
   return this.http.post<any>(`${this.baseUrl}/recruitment/process-cv/${applicantId}`, {});
 }
+assessApplicantFit(applicantId: number, jobId: number): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl}/recruitment/assess/${applicantId}/${jobId}`);
+}
 }

@@ -1,0 +1,5 @@
+id,name,description
+1,ROLE_SUPER_ADMIN,Full system access
+2,ROLE_ADMIN,HR administrator
+3,ROLE_MANAGER,Department / team manager
+4,ROLE_USER,Standard employee

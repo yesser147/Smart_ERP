@@ -7,8 +7,15 @@ import com.smarterp.hr.domain.Department;
 import com.smarterp.hr.domain.Employee;
 import com.smarterp.hr.domain.JobApplication;
 import com.smarterp.hr.domain.JobPosting;
+import com.smarterp.hr.domain.SalaryHistory;
 import com.smarterp.hr.dto.*;
 import com.smarterp.hr.repository.*;
+import com.smarterp.security.domain.RoleName;
+import com.smarterp.security.domain.User;
+import com.smarterp.security.dto.AuthResponse;
+import com.smarterp.security.dto.RegisterRequest;
+import com.smarterp.security.repository.UserRepository;
+import com.smarterp.security.service.AuthService;
 import com.smarterp.shared.email.EmailService;
 import com.smarterp.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +55,8 @@ public class HrService {
     private final EmailService emailService;
     private final JdbcTemplate jdbcTemplate;
     private final MinioService minioService;
+    private final AuthService authService;
+    private final UserRepository userRepository;
 
     public List<DepartmentDTO> getAllDepartments() {
         return departmentRepository.findAll()
@@ -206,78 +215,76 @@ private String mapSortColumn(String sortBy) {
     };
 }
     @Transactional
-    public HireResultDTO hireApplicant(Long applicantId, HireRequestDTO req) {
-        Applicant applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + applicantId));
+public HireResultDTO hireApplicant(Long applicantId, HireRequestDTO req) {
+    Applicant applicant = applicantRepository.findById(applicantId)
+            .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + applicantId));
 
-        if (!departmentRepository.existsById(req.departmentId())) {
-            throw new ResourceNotFoundException("Aucun département trouvé avec l'id : " + req.departmentId());
-        }
+    Department department = departmentRepository.findById(req.departmentId())
+            .orElseThrow(() -> new ResourceNotFoundException("Aucun département trouvé avec l'id : " + req.departmentId()));
 
-        Long employeeId = jdbcTemplate.queryForObject("""
-            INSERT INTO employees
-                (department_id, first_name, last_name, start_date, title,
-                 employee_status, employee_type, employee_classification_type,
-                 dob, state, job_function, gender, location, salary, currency,
-                 is_deleted, needs_review, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?, ?, ?, ?, ?, 'USD',
-                    FALSE, FALSE, now(), now())
-            RETURNING employee_id
-            """,
-            Long.class,
-            req.departmentId(), applicant.getFirstName(), applicant.getLastName(),
-            req.startDate(), req.title(), req.employeeType(), req.employeeClassificationType(),
-            applicant.getDob(), req.state(), req.jobFunction(), applicant.getGender(),
-            req.location(), req.salary()
-        );
+    // 1. Create the real Employee record, reusing what the applicant
+    // already gave us (name, gender, dob) instead of asking HR to retype it.
+    Employee employee = new Employee();
+    employee.setDepartment(department);
+    employee.setFirstName(applicant.getFirstName());
+    employee.setLastName(applicant.getLastName());
+    employee.setStartDate(req.startDate());
+    employee.setTitle(req.title());
+    employee.setEmployeeStatus("Active");
+    employee.setEmployeeType(req.employeeType());
+    employee.setEmployeeClassificationType(req.employeeClassificationType());
+    employee.setDob(applicant.getDob());
+    employee.setState(req.state());
+    employee.setJobFunction(req.jobFunction());
+    employee.setGender(applicant.getGender());
+    employee.setLocation(req.location());
+    employee.setSalary(req.salary());
+    employee.setCurrency("USD");
+    Employee savedEmployee = employeeRepository.save(employee);
 
-        jdbcTemplate.update("""
-            INSERT INTO salary_history (employee_id, effective_date, salary, currency, change_reason, created_at)
-            VALUES (?, ?, ?, 'USD', 'INITIAL_HIRE', now())
-            """,
-            employeeId, req.startDate(), req.salary()
-        );
+    // employee_id is a plain BIGINT with no @GeneratedValue in this
+    // entity -- confirm the employees_employee_id_seq DEFAULT from the
+    // earlier schema.sql fix is in place, or this insert will fail
+    // needing an explicit ID.
 
-        Long roleId = jdbcTemplate.queryForObject(
-            "SELECT id FROM roles WHERE name = ?", Long.class, req.roleName()
-        );
+    // 2. Initial salary history row, same as any other new hire.
+    SalaryHistory salaryHistory = new SalaryHistory();
+    salaryHistory.setEmployee(savedEmployee);
+    salaryHistory.setEffectiveDate(req.startDate());
+    salaryHistory.setSalary(req.salary());
+    salaryHistory.setCurrency("USD");
+    salaryHistory.setChangeReason("INITIAL_HIRE");
+    salaryHistoryRepository.save(salaryHistory);
 
-        UUID userId = UUID.randomUUID();
-        jdbcTemplate.update("""
-            INSERT INTO users (id, employee_id, email, password_hash, is_active, role_id, created_at, updated_at, created_by, updated_by)
-            VALUES (?, ?, ?, NULL, FALSE, ?, now(), now(), 'HIRE_FLOW', 'HIRE_FLOW')
-            """,
-            userId, employeeId, applicant.getEmail(), roleId
-        );
+    // 3. Real login account, reusing AuthService's actual registration
+    // logic (role lookup, password hashing, activation token, email)
+    // instead of duplicating it with raw JDBC inserts.
+    RegisterRequest registerRequest = new RegisterRequest(
+            applicant.getEmail(),
+            UUID.randomUUID().toString(), // temporary password; user sets a real one via the activation link
+            RoleName.valueOf(req.roleName())
+    );
+    AuthResponse authResponse = authService.register(registerRequest);
+    User user = userRepository.findById(authResponse.userId())
+            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable après création."));
+    user.setEmployeeId(savedEmployee.getEmployeeId());
+    userRepository.save(user);
 
-        UUID tokenId = UUID.randomUUID();
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusDays(7);
-        jdbcTemplate.update("""
-            INSERT INTO user_tokens (id, user_id, token, token_type, expires_at, is_used, is_revoked, created_at)
-            VALUES (?, ?, ?, 'ACTIVATION', ?, FALSE, FALSE, now())
-            """,
-            tokenId, userId, token, expiresAt
-        );
+    // 4. Mark the application OFFERED and close the job posting so it
+    // stops accepting new applications / showing as open.
+    if (req.jobApplicationId() != null) {
+        jobApplicationRepository.findById(req.jobApplicationId()).ifPresent(app -> {
+            app.setStatus("OFFERED");
+            JobApplication savedApp = jobApplicationRepository.save(app);
 
-        // TODO: point this at your real frontend activation route.
-        String activationUrl = "http://localhost:4200/activate?token=" + token;
-        boolean emailSent = true;
-        try {
-            emailService.sendAccountActivationEmail(applicant.getEmail(), req.roleName(), activationUrl);
-        } catch (Exception e) {
-            emailSent = false;
-        }
-
-        if (req.jobApplicationId() != null) {
-            jobApplicationRepository.findById(req.jobApplicationId()).ifPresent(app -> {
-                app.setStatus("OFFERED");
-                jobApplicationRepository.save(app);
-            });
-        }
-
-        return new HireResultDTO(employeeId, applicant.getEmail(), emailSent);
+            JobPosting posting = savedApp.getJobPosting();
+            posting.setStatus("FILLED");
+            jobPostingRepository.save(posting);
+        });
     }
+
+    return new HireResultDTO(savedEmployee.getEmployeeId(), applicant.getEmail(), true);
+}
 
     
     

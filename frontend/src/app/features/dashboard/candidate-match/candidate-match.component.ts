@@ -160,4 +160,8 @@ export class CandidateMatchComponent implements OnChanges {
       error: () => { this.processingId = null; }
     });
   }
+  goToDetail(applicantId: number): void {
+  console.log('Navigating to applicant:', applicantId);
+  this.router.navigate(['/dashboard/applicant', applicantId]);
+}
 }

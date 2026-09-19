@@ -105,9 +105,11 @@ export interface JobPostingDTO {
   jobId?: number;
   title: string;
   departmentId?: number;
-  departmentName?: string;
+  departmentType?: string;
+  businessUnit?: string;
+  divisionDescription?: string;
   location?: string;
-  requiredExperienceYears?: number;
+  requiredExperienceYears?: number; // BigDecimal serializes as a number in JSON
   offeredSalaryMin?: number;
   offeredSalaryMax?: number;
   status: 'OPEN' | 'CLOSED' | 'DRAFT' | string;

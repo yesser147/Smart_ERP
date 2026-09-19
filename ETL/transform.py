@@ -1,0 +1,467 @@
+"""
+Transform stage: Synthesizes fully normalized tables for security tokens, 
+training catalogs, ATS workflows, salary history, and pgvector embeddings.
+"""
+
+import uuid
+import json
+import numpy as np
+import pandas as pd
+from datetime import datetime, timezone, timedelta
+import config
+from embeddings import embed_text
+
+
+def extract_departments(employees, report):
+    dept_cols = ["business_unit", "department_type", "division_description"]
+    dept_cols = [c for c in dept_cols if c in employees.columns]
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    departments = employees[dept_cols].drop_duplicates().reset_index(drop=True)
+    departments.index += 1
+    departments.index.name = "department_id"
+    departments = departments.reset_index()
+
+    departments["is_deleted"] = False
+    departments["created_at"] = now_str
+
+    employees = employees.merge(departments, on=dept_cols, how="left")
+    employees = employees.drop(columns=dept_cols)
+
+    report.log("departments", "extracted", len(departments),
+               f"{len(departments)} unique departments extracted")
+    return employees, departments
+
+
+def link_managers(employees, report):
+    employees = employees.copy()
+    employees["full_name"] = employees["first_name"] + " " + employees["last_name"]
+
+    name_counts = employees["full_name"].value_counts()
+    name_to_id = employees.drop_duplicates(subset="full_name", keep="first").set_index("full_name")["employee_id"]
+
+    employees["manager_id"] = employees["supervisor"].map(name_to_id)
+    self_ref_mask = employees["manager_id"] == employees["employee_id"]
+    if self_ref_mask.any():
+        employees.loc[self_ref_mask, "manager_id"] = np.nan
+
+    employees["manager_id"] = pd.to_numeric(employees["manager_id"], errors="coerce").astype("Int64")
+    valid_emp_ids = set(employees["employee_id"])
+    invalid_manager_mask = employees["manager_id"].notna() & ~employees["manager_id"].isin(valid_emp_ids)
+    
+    if invalid_manager_mask.any():
+        employees.loc[invalid_manager_mask, "manager_id"] = pd.NA
+
+    employees = employees.drop(columns=["full_name", "supervisor"])
+    return employees
+
+
+def build_roles():
+    return pd.DataFrame(config.ROLES)
+
+
+def build_users(employees, report):
+    manager_ids = set(employees["manager_id"].dropna())
+
+    def role_for(row):
+        title = str(row["title"]).upper()
+        if "CEO" in title or "PRESIDENT" in title or "CHIEF" in title:
+            return 1  # SUPER_ADMIN
+        if "DIRECTOR" in title or "VP" in title or "HEAD OF" in title:
+            return 2  # ADMIN
+        if "MANAGER" in title or "SUPERVISOR" in title or "LEAD" in title or row["employee_id"] in manager_ids:
+            return 3  # MANAGER
+        return 4  # USER
+
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    users = pd.DataFrame({
+        "id": [str(uuid.uuid4()) for _ in range(len(employees))],
+        "employee_id": employees["employee_id"].values,
+        "email": employees["email"].values,
+        "password_hash": config.DEFAULT_PASSWORD_HASH,
+        "is_active": employees["employee_status"].eq("Active").values,
+        "role_id": employees.apply(role_for, axis=1).values,
+        "created_at": now_str,
+        "updated_at": now_str,
+        "created_by": "SYSTEM_ETL",
+        "updated_by": "SYSTEM_ETL"
+    })
+
+    report.log("users", "generated", len(users), "Clean user domain accounts generated")
+    return users
+
+
+def build_user_tokens(users, report):
+    """Generates activation tokens in dedicated user_tokens table for inactive users."""
+    inactive_users = users[users["is_active"] == False].copy()
+    now = datetime.now(timezone.utc)
+    expiry = now + timedelta(days=7)
+
+    tokens = pd.DataFrame({
+        "id": [str(uuid.uuid4()) for _ in range(len(inactive_users))],
+        "user_id": inactive_users["id"].values,
+        "token": [str(uuid.uuid4()) for _ in range(len(inactive_users))],
+        "token_type": "ACTIVATION",
+        "expires_at": expiry.strftime("%Y-%m-%d %H:%M:%S"),
+        "is_used": False,
+        "is_revoked": False,
+        "created_at": now.strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    report.log("user_tokens", "generated", len(tokens), "Activation tokens written to user_tokens table")
+    return tokens
+
+
+def inject_compensation_and_history(employees, users, report):
+    """Injects current salary and creates initial entries in salary_history table."""
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    emp = employees.merge(users[["employee_id", "role_id"]], on="employee_id", how="left")
+    rng = np.random.default_rng(42)
+
+    def generate_salary(role_id):
+        if role_id == 1: return round(rng.uniform(150000, 250000), 2)
+        if role_id == 2: return round(rng.uniform(95000, 145000), 2)
+        if role_id == 3: return round(rng.uniform(70000, 105000), 2)
+        return round(rng.uniform(45000, 80000), 2)
+
+    employees["salary"] = emp["role_id"].apply(generate_salary)
+    employees["currency"] = "USD"
+    employees["is_deleted"] = False
+    employees["created_at"] = now_str
+    employees["updated_at"] = now_str
+
+    salary_history = pd.DataFrame({
+        "employee_id": employees["employee_id"].values,
+        "effective_date": employees["start_date"].values,
+        "salary": employees["salary"].values,
+        "currency": "USD",
+        "change_reason": "INITIAL_HIRE",
+        "created_at": now_str
+    })
+
+    report.log("salary_history", "generated", len(salary_history), "Initial compensation histories generated")
+    return employees, salary_history
+
+
+def normalize_trainings(raw_trainings, report):
+    """Splits flat trainings into training_courses catalog and employee_trainings logs."""
+    course_cols = ["training_program_name", "training_type", "trainer", "training_duration_days", "training_cost"]
+    
+    # 1. Deduplicate strictly by program_name to respect the UNIQUE constraint
+    courses = raw_trainings[course_cols].drop_duplicates(subset=["training_program_name"]).reset_index(drop=True)
+    
+    courses.rename(columns={
+        "training_program_name": "program_name",
+        "training_duration_days": "duration_days",
+        "training_cost": "cost"
+    }, inplace=True)
+    courses["is_active"] = True
+
+    # 2. Assign explicit IDs for foreign key linking
+    courses.index += 1
+    courses.index.name = "course_id"
+    courses = courses.reset_index()
+
+    # 3. Join on program_name only
+    merged = raw_trainings.merge(courses, left_on="training_program_name", right_on="program_name", how="left")
+
+    employee_trainings = pd.DataFrame({
+        "employee_id": merged["employee_id"].values,
+        "course_id": merged["course_id"].values,
+        "training_date": merged["training_date"].values,
+        "completion_status": merged["training_outcome"].values,
+        "location": merged["location"].values
+    })
+
+    report.log("training_courses", "extracted", len(courses), "Extracted training catalog")
+    report.log("employee_trainings", "linked", len(employee_trainings), "Normalized employee training logs")
+    return courses, employee_trainings
+
+
+def normalize_recruitment(raw_recruitment, departments, report):
+    """Splits raw recruitment data into applicants, job_postings, and job_applications."""
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    applicant_cols = [
+        "applicant_id", "first_name", "last_name", "email", "phone_number", 
+        "education_level", "years_of_experience", "gender", "dob", "address", 
+        "city", "state", "zip_code", "country"
+    ]
+    applicant_cols = [c for c in applicant_cols if c in raw_recruitment.columns]
+    
+    # 1. Deduplicate by email and applicant_id to satisfy DB UNIQUE constraints
+    applicants = (
+        raw_recruitment[applicant_cols]
+        .drop_duplicates(subset=["email"])
+        .drop_duplicates(subset=["applicant_id"])
+        .copy()
+    )
+    applicants["created_at"] = now_str
+
+    # Filter raw recruitment records to retain valid FK relationships
+    valid_applicant_ids = set(applicants["applicant_id"])
+    valid_recruitment = raw_recruitment[raw_recruitment["applicant_id"].isin(valid_applicant_ids)].copy()
+
+    # 2. Job Postings
+    unique_titles = valid_recruitment["job_title"].dropna().unique()
+    rng = np.random.default_rng(42)
+    
+    dept_ids = departments["department_id"].tolist() if len(departments) > 0 else [1]
+    
+    job_postings = pd.DataFrame({
+        "job_id": range(1, len(unique_titles) + 1),
+        "title": unique_titles,
+        "department_id": [rng.choice(dept_ids) for _ in range(len(unique_titles))],
+        "location": "Remote / HQ",
+        "required_experience_years": rng.integers(1, 8, size=len(unique_titles)),
+        "offered_salary_min": rng.integers(50000, 75000, size=len(unique_titles)),
+        "offered_salary_max": rng.integers(80000, 130000, size=len(unique_titles)),
+        "status": "OPEN",
+        "created_at": now_str
+    })
+
+    title_to_job_id = dict(zip(job_postings["title"], job_postings["job_id"]))
+
+    # 3. Job Applications (linked only to surviving applicants)
+    applications = pd.DataFrame({
+        "application_id": [str(uuid.uuid4()) for _ in range(len(valid_recruitment))],
+        "applicant_id": valid_recruitment["applicant_id"].values,
+        "job_id": valid_recruitment["job_title"].map(title_to_job_id).fillna(1).astype(int).values,
+        "application_date": valid_recruitment["application_date"].values,
+        "desired_salary": valid_recruitment["desired_salary"].values,
+        "status": valid_recruitment["status"].values,
+        "ai_match_score": rng.integers(45, 98, size=len(valid_recruitment)),
+        "created_at": now_str
+    })
+
+    report.log("applicants", "extracted", len(applicants), "Normalized applicant profiles")
+    report.log("job_postings", "generated", len(job_postings), "Extracted job requisitions")
+    report.log("job_applications", "linked", len(applications), "Created job application links")
+    return applicants, job_postings, applications
+
+
+JOB_TITLE_SKILL_MAP = {
+    "engineer": ["Software Engineering", "Problem Solving", "System Design"],
+    "developer": ["Programming", "Debugging", "Version Control"],
+    "java": ["Java", "Spring Boot", "SQL"],
+    "python": ["Python", "Data Processing", "Automation"],
+    "data": ["Data Analysis", "SQL", "Statistics"],
+    "analyst": ["Analytical Thinking", "Reporting", "Excel"],
+    "sales": ["Negotiation", "CRM Tools", "Client Relations"],
+    "marketing": ["Campaign Strategy", "Content Creation", "Analytics"],
+    "manager": ["Leadership", "Project Planning", "Stakeholder Management"],
+    "hr": ["Recruitment", "Employee Relations", "Compliance"],
+    "finance": ["Financial Modeling", "Budgeting", "Excel"],
+    "accountant": ["Bookkeeping", "Reconciliation", "Compliance"],
+    "designer": ["UI/UX Design", "Prototyping", "Creativity"],
+    "support": ["Customer Service", "Troubleshooting", "Communication"],
+    "operations": ["Process Optimization", "Logistics", "Coordination"],
+}
+DEFAULT_SKILLS = ["Communication", "Teamwork", "Adaptability"]
+
+
+def _infer_skills(job_title: str) -> list[str]:
+    title = str(job_title).lower()
+    for keyword, skills in JOB_TITLE_SKILL_MAP.items():
+        if keyword in title:
+            return skills
+    return DEFAULT_SKILLS
+
+
+def build_applicant_cvs(applicants, raw_recruitment, report):
+    """Generates applicant CV records with REAL 384-dim embeddings derived
+    from each applicant's actual data (job title applied for, education,
+    experience, inferred skills) -- not random noise, and not an identical
+    skill list copy-pasted across every row.
+
+    This is honest synthetic enrichment, not real CV parsing: Kaggle's
+    recruitment CSV has no résumé text or skills field, so job_title is
+    the only signal available to differentiate applicants at all. If real
+    CV files ever become available, replace this with actual text
+    extraction feeding the same embed_text() call.
+    """
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    # job_title lives on raw_recruitment (the application), not on
+    # applicants directly -- join it in. Same applicant can have multiple
+    # applications; take the first for profile text purposes.
+    title_by_applicant = (
+        raw_recruitment[["applicant_id", "job_title"]]
+        .dropna(subset=["applicant_id"])
+        .drop_duplicates(subset=["applicant_id"], keep="first")
+        .set_index("applicant_id")["job_title"]
+    )
+
+    ids, urls, texts, skills_json, embeddings = [], [], [], [], []
+
+    print(f"  computing real embeddings for {len(applicants)} applicant CVs...")
+    for row in applicants.itertuples():
+        job_title = title_by_applicant.get(row.applicant_id, "General Application")
+        skills = _infer_skills(job_title)
+        education = row.education_level if pd.notna(row.education_level) else "unspecified education"
+        experience = row.years_of_experience if pd.notna(row.years_of_experience) else "unspecified"
+
+        profile_text = (
+            f"{row.first_name} {row.last_name} applied for {job_title}. "
+            f"Education: {education}. Experience: {experience} years. "
+            f"Skills: {', '.join(skills)}."
+        )
+
+        ids.append(str(uuid.uuid4()))
+        urls.append(f"/storage/cvs/{row.applicant_id}_cv.pdf")
+        texts.append(profile_text)
+        skills_json.append(json.dumps(skills))
+        embeddings.append("[" + ",".join(map(str, embed_text(profile_text))) + "]")
+
+    cvs = pd.DataFrame({
+        "id": ids,
+        "applicant_id": applicants["applicant_id"].values,
+        "file_url": urls,
+        "parsed_text": texts,
+        "extracted_skills_json": skills_json,
+        "cv_embedding": embeddings,
+        "created_at": now_str
+    })
+
+    report.log("applicant_cvs", "synthesized", len(cvs),
+               "Generated real embeddings from job title/education/experience "
+               "(not random noise, not a uniform skill list)")
+    return cvs
+
+
+def enforce_manager_hierarchy(employees, users, report):
+    employees = employees.copy()
+    emp = employees.merge(users[["employee_id", "role_id"]], on="employee_id", how="left")
+
+    executives = emp[emp["role_id"] == 1]["employee_id"].tolist()
+    dept_admins = emp[emp["role_id"] <= 2].groupby("department_id")["employee_id"].apply(list).to_dict()
+    dept_managers = emp[emp["role_id"] <= 3].groupby("department_id")["employee_id"].apply(list).to_dict()
+
+    def assign_manager(row):
+        if pd.notna(row["manager_id"]): return row["manager_id"]
+        dept, role, emp_id = row["department_id"], row["role_id"], row["employee_id"]
+
+        if role == 1: return pd.NA
+        if role == 2:
+            candidates = [c for c in executives if c != emp_id]
+            return candidates[0] if candidates else pd.NA
+        if role == 3:
+            candidates = [c for c in dept_admins.get(dept, []) if c != emp_id]
+            if candidates: return candidates[0]
+            candidates = [c for c in executives if c != emp_id]
+            return candidates[0] if candidates else pd.NA
+        if role == 4:
+            candidates = [c for c in dept_managers.get(dept, []) if c != emp_id]
+            if candidates: return candidates[0]
+            candidates = [c for c in dept_admins.get(dept, []) if c != emp_id]
+            if candidates: return candidates[0]
+            candidates = [c for c in executives if c != emp_id]
+            return candidates[0] if candidates else pd.NA
+
+        return pd.NA
+
+    employees["manager_id"] = emp.apply(assign_manager, axis=1).astype("Int64")
+    return employees
+
+
+def enrich_termination_descriptions(df: pd.DataFrame) -> pd.DataFrame:
+    """Populates realistic termination_description text during the ETL transform phase
+    for employees where employee_status is 'Terminated'.
+    """
+    df = df.copy()
+
+    # Pre-defined exit reason scenarios
+    eng_reasons = {
+        0: "Resigned due to severe burnout from mandatory weekend on-call rotations and lack of work-life balance.",
+        1: "Accepted a competing offer with a 25% higher base salary and remote flexibility.",
+        2: "Exited due to stagnation in career advancement and limited engineering mentorship opportunities.",
+        3: "Departed following friction with direct manager over tech stack decisions and unrealistic sprint deadlines.",
+    }
+
+    sales_reasons = {
+        0: "Left after quota targets were increased by 40% without adjusting commission structures.",
+        1: "Resigned to join an early-stage competitor offering higher equity and uncapped commission.",
+        2: "Cited low job satisfaction and lack of administrative support for client onboarding.",
+    }
+
+    general_reasons = {
+        0: "Resigned citing below-market compensation and lack of annual salary adjustments.",
+        1: "Left due to lack of flexibility around hybrid work policies and long commute times.",
+        2: "Terminated due to persistent low performance scores and disengagement following team restructuring.",
+    }
+
+    def assign_reason(row):
+        # 1. If not terminated, clear it out
+        if row.get("employee_status") != "Terminated":
+            return None
+
+        # 2. Assign the realistic reason based on department (overwriting the Faker gibberish)
+        emp_id = int(row.get("employee_id", 0))
+        bu = str(row.get("business_unit", ""))
+
+        if bu == "Engineering":
+            return eng_reasons[emp_id % 4]
+        elif bu == "Sales":
+            return sales_reasons[emp_id % 3]
+        else:
+            return general_reasons[emp_id % 3]
+
+    df["termination_description"] = df.apply(assign_reason, axis=1)
+    return df
+
+def run_transform(cleaned, report):
+    print("TRANSFORM")
+
+    # 1. Cast numeric IDs
+    cleaned["employees"]["employee_id"] = pd.to_numeric(
+        cleaned["employees"]["employee_id"], errors="coerce"
+    ).astype("Int64")
+    
+    if "employee_id" in cleaned["trainings"].columns:
+        cleaned["trainings"]["employee_id"] = pd.to_numeric(
+            cleaned["trainings"]["employee_id"], errors="coerce"
+        ).astype("Int64")
+        
+    if "employee_id" in cleaned["surveys"].columns:
+        cleaned["surveys"]["employee_id"] = pd.to_numeric(
+            cleaned["surveys"]["employee_id"], errors="coerce"
+        ).astype("Int64")
+
+   
+    cleaned["employees"] = enrich_termination_descriptions(cleaned["employees"])
+
+    # 3. Process workforce structure
+    employees, departments = extract_departments(cleaned["employees"], report)
+    employees = link_managers(employees, report)
+    roles = build_roles()
+    
+    users = build_users(employees, report)
+    user_tokens = build_user_tokens(users, report)
+    
+    employees = enforce_manager_hierarchy(employees, users, report)
+    employees, salary_history = inject_compensation_and_history(employees, users, report)
+    
+    if "email" in employees.columns:
+        employees = employees.drop(columns=["email"])
+
+    # 4. Process auxiliary domains
+    courses, employee_trainings = normalize_trainings(cleaned["trainings"], report)
+    applicants, job_postings, job_applications = normalize_recruitment(cleaned["recruitment"], departments, report)
+    cvs = build_applicant_cvs(applicants, cleaned["recruitment"], report)
+
+    return {
+        "roles": roles,
+        "departments": departments,
+        "employees": employees,
+        "salary_history": salary_history,
+        "users": users,
+        "user_tokens": user_tokens,
+        "training_courses": courses,
+        "employee_trainings": employee_trainings,
+        "surveys": cleaned["surveys"],
+        "applicants": applicants,
+        "job_postings": job_postings,
+        "job_applications": job_applications,
+        "applicant_cvs": cvs,
+    }

@@ -13,7 +13,7 @@ from models.budget_advisor.predict import BudgetPrescriptor
 from models.budget_advisor.advise import generate_budget_proposal
 from models.retention.predict import RetentionPredictor
 from models.retention.diagnostic import generate_macro_retention_strategy
-from models.recruitment.matcher import match_candidates_to_job  # NEW
+from models.recruitment.matcher import match_candidates_to_job, assess_applicant_fit
 
 app = FastAPI(title="SmartERP AI Services API")
 
@@ -156,6 +156,16 @@ def get_candidate_matches(job_id: int, top_k: int = 10, recompute_all: bool = Fa
 @app.post("/api/ai/recruitment/process-cv/{applicant_id}")
 def process_cv(applicant_id: int):
     result = process_applicant_cv(applicant_id)
+    if result["status"] == "error":
+        raise HTTPException(status_code=422, detail=result["message"])
+    return result
+
+
+
+
+@app.get("/api/ai/recruitment/assess/{applicant_id}/{job_id}")
+def assess_fit(applicant_id: int, job_id: int):
+    result = assess_applicant_fit(applicant_id, job_id)
     if result["status"] == "error":
         raise HTTPException(status_code=422, detail=result["message"])
     return result

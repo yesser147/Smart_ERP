@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiService } from '../../../core/services/ai.service';
 import { HrService, ApplicantWithCvStatus } from '../../../core/services/hr.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-applicant-cv-manager',
@@ -13,6 +14,7 @@ import { HrService, ApplicantWithCvStatus } from '../../../core/services/hr.serv
 export class ApplicantCvManagerComponent implements OnInit {
   private hrService = inject(HrService);
   private aiService = inject(AiService);
+    private router = inject(Router);
 
   applicants: ApplicantWithCvStatus[] = [];
   loading = true;
@@ -122,4 +124,8 @@ export class ApplicantCvManagerComponent implements OnInit {
       }
     });
   }
+goToDetail(applicantId: number): void {
+  console.log('Navigating to applicant:', applicantId);
+  this.router.navigate(['/dashboard/applicant', applicantId]);
+}
 }

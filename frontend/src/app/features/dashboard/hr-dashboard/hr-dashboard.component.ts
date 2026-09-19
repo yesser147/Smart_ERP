@@ -319,30 +319,30 @@ export class HrDashboardComponent implements OnInit {
     };
   }
 
-  private buildJobPostingsChart(postings: JobPostingDTO[]): ChartOptions {
-    const openPostings = postings.filter(j => !j.status || j.status.toUpperCase() === 'OPEN');
-    const deptCounts: { [key: string]: number } = {};
-    
-    openPostings.forEach(j => {
-      const dept = j.departmentName || 'Non assigné';
-      deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-    });
+private buildJobPostingsChart(postings: JobPostingDTO[]): ChartOptions {
+  const openPostings = postings.filter(j => !j.status || j.status.toUpperCase() === 'OPEN');
+  const groupCounts: { [key: string]: number } = {};
 
-    const categories = Object.keys(deptCounts);
-    const data = Object.values(deptCounts);
+  openPostings.forEach(j => {
+    const groupKey = j.departmentType || j.divisionDescription || j.businessUnit || 'Non assigné';
+    groupCounts[groupKey] = (groupCounts[groupKey] || 0) + 1;
+  });
 
-    return {
-      series: [{ name: 'Postes Ouverts', data }],
-      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
-      xaxis: { categories },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
-      colors: ['#38bdf8'],
-      dataLabels: { enabled: true },
-      grid: { borderColor: '#334155', strokeDashArray: 4 },
-      tooltip: { theme: 'dark' },
-      legend: { show: false }
-    };
-  }
+  const categories = Object.keys(groupCounts);
+  const data = Object.values(groupCounts);
+
+  return {
+    series: [{ name: 'Postes Ouverts', data }],
+    chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
+    xaxis: { categories },
+    plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
+    colors: ['#38bdf8'],
+    dataLabels: { enabled: true },
+    grid: { borderColor: '#334155', strokeDashArray: 4 },
+    tooltip: { theme: 'dark' },
+    legend: { show: false }
+  };
+}
 
   /** Groups by division (the real, comparable job-function unit) with the
    * department type appended for context -- business_unit is a site/location

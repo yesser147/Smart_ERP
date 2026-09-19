@@ -32,9 +32,9 @@
       <label class="text-xs text-slate-400 block mb-1">Poste</label>
       <select formControlName="jobId" class="erp-input">
         <option [ngValue]="null" disabled>Sélectionner un poste...</option>
-        <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
-          {{ job.title }} — {{ job.departmentName || 'Département #' + job.departmentId }}
-        </option>
+<option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
+  {{ job.title }} — {{ job.departmentType }}{{ job.businessUnit ? ' (' + job.businessUnit + ')' : '' }}
+</option>
       </select>
     </div>
 
