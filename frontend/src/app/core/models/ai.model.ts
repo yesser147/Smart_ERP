@@ -44,3 +44,8 @@ export interface JobMatchResult {
   job_title: string;
   candidates: CandidateMatch[];
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}

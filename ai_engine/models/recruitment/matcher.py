@@ -1,34 +1,25 @@
 """
-Two-stage candidate matching, scoped to actual applicants of a job:
-  1. Embedding retrieval (pgvector cosine similarity) - but ONLY among
-     applicants who have a job_applications row for this job_id, not
-     the whole applicant pool.
-  2. LLM reranking (local Ollama llama3.1) scores that same restricted
-     set against the job's actual requirements.
-
-Scores are persisted onto job_applications.ai_match_score. A normal
-call only computes scores for applicants who don't have one yet (a
-newly-submitted application, or a CV just processed) -- already-scored
-applicants are read straight from the cache, no LLM call. Pass
-recompute_all=True to force every applicant of this job to be rescored
-(e.g. after the job's requirements changed).
+Two-stage candidate matching with score caching, scoped to a job's real
+applicants only, using curated/LLM-generated required skills per job title.
 """
 
 import json
+import requests
 import pandas as pd
+from types import SimpleNamespace
 from sqlalchemy import text
 from database import engine
 from embeddings import embed_text
-import requests
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.1"
+SHORTLIST_MULTIPLIER = 3
 
 
 def _safe_parse_skills(raw_value):
-    """extracted_skills_json is a JSONB column -- psycopg2 auto-
-    deserializes it to a list/dict on read, so json.loads() on it
-    throws TypeError (not str/bytes). Tolerate both shapes."""
+    """extracted_skills_json is JSONB -- psycopg2 auto-deserializes it to
+    a list/dict on read, so json.loads() on it throws TypeError. Tolerate
+    both shapes."""
     if raw_value is None:
         return []
     if isinstance(raw_value, (list, dict)):
@@ -39,10 +30,78 @@ def _safe_parse_skills(raw_value):
         return []
 
 
+def _generate_skills_with_llm(job) -> str:
+    """Cache-miss fallback: no curated row exists for this title yet, so
+    ask the LLM once and cache the result in job_title_skills."""
+    ctx = ", ".join(x for x in (job.department_type, job.division_description) if x)
+    prompt = f"""List the 8 to 12 most important skills, tools and qualifications
+required for the job "{job.title}"{f' in the department: {ctx}' if ctx else ''}.
+Return ONLY a valid JSON object: {{"skills": ["skill1", "skill2"]}}"""
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                  "format": "json", "options": {"temperature": 0.1}},
+            timeout=60,
+        )
+        response.raise_for_status()
+        skills = json.loads(response.json()["response"]).get("skills", [])
+        return ", ".join(str(s) for s in skills if s)
+    except Exception as e:
+        print(f"  ⚠️  Skill generation failed for '{job.title}': {e}")
+        return ""
+
+
+def get_required_skills(job) -> str:
+    """Curated row if present, else generate once with the LLM and cache it."""
+    key = job.title.strip().lower()
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT skills FROM job_title_skills WHERE title_key = :k"),
+                           {"k": key}).fetchone()
+    if row:
+        return row.skills
+
+    skills = _generate_skills_with_llm(job)
+    if skills:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO job_title_skills (title_key, title, skills, source)
+                VALUES (:k, :t, :s, 'llm')
+                ON CONFLICT (title_key) DO NOTHING
+            """), {"k": key, "t": job.title.strip(), "s": skills})
+    return skills
+
+
+def _load_job(job_id: int):
+    with engine.connect() as conn:
+        row = conn.execute(text("""
+            SELECT jp.job_id, jp.title, jp.required_experience_years,
+                   d.department_type, d.division_description
+            FROM job_postings jp
+            LEFT JOIN departments d ON d.department_id = jp.department_id
+            WHERE jp.job_id = :jid
+        """), {"jid": job_id}).fetchone()
+    if row is None:
+        return None
+    job = SimpleNamespace(**row._mapping)
+    job.required_skills = get_required_skills(job)
+    return job
+
+
+def _job_profile_text(job) -> str:
+    parts = [f"Job title: {job.title}."]
+    if job.required_skills:
+        parts.append(f"Required skills: {job.required_skills}.")
+    parts.append(f"Requires {job.required_experience_years or 0} years of experience.")
+    ctx = ", ".join(x for x in (job.department_type, job.division_description) if x)
+    if ctx:
+        parts.append(f"Department: {ctx}.")
+    return " ".join(parts)
+
+
 def _fetch_job_applicants(job_id: int) -> pd.DataFrame:
-    """The candidate pool for this job is ONLY people who actually have
-    a job_applications row for it -- not the whole applicant table.
-    This is the fix for candidates showing up who never applied."""
+    """Only people who actually applied to this job -- not the whole
+    applicant pool."""
     query = text("""
         SELECT
             ja.application_id, ja.ai_match_score,
@@ -59,7 +118,6 @@ def _fetch_job_applicants(job_id: int) -> pd.DataFrame:
 
 
 def _embedding_scores(job_text: str, applicant_ids: list) -> dict:
-    """Cosine similarity, restricted to the given applicant_ids only."""
     if not applicant_ids:
         return {}
 
@@ -77,9 +135,7 @@ def _embedding_scores(job_text: str, applicant_ids: list) -> dict:
     return {int(r.applicant_id): round(float(r.similarity) * 100, 1) for r in df.itertuples()}
 
 
-def _rerank_with_llm(job_title: str, required_experience: float, rows: pd.DataFrame) -> dict:
-    """Only called on the subset of applicants that actually need
-    scoring -- never the whole table."""
+def _rerank_with_llm(job, rows: pd.DataFrame) -> dict:
     candidates_payload = [
         {
             "applicant_id": int(row.applicant_id),
@@ -91,16 +147,17 @@ def _rerank_with_llm(job_title: str, required_experience: float, rows: pd.DataFr
     ]
 
     prompt = f"""You are ranking job candidates for this position:
-Title: {job_title}
-Required experience: {required_experience or 0} years
+Title: {job.title}
+Required skills: {job.required_skills or 'not specified'}
+Required experience: {job.required_experience_years or 0} years
 
 Candidates (JSON):
 {json.dumps(candidates_payload, indent=2)}
 
 For each candidate, score 0-100 how well they fit this specific job based on
 their actual skills, education, and experience versus the requirements above.
-Penalize candidates significantly below the required experience. Reward
-directly relevant skills over generic ones.
+Penalize candidates significantly below the required experience or missing
+most required skills. Reward directly relevant skills over generic ones.
 
 Return ONLY a valid JSON object with no other text, in this exact shape:
 {{
@@ -128,21 +185,51 @@ Return ONLY a valid JSON object with no other text, in this exact shape:
         return {}
 
 
-def _persist_score(application_id, score: float):
+def _persist_score(application_id, score: float, reasoning: str = None, embedding_score: float = None):
     with engine.begin() as conn:
         conn.execute(text("""
-            UPDATE job_applications SET ai_match_score = :score
+            UPDATE job_applications
+            SET ai_match_score = :score, ai_match_reasoning = :reasoning, ai_embedding_score = :emb
             WHERE application_id = :aid
-        """), {"score": round(score), "aid": application_id})
+        """), {"score": round(score), "reasoning": reasoning, "emb": embedding_score, "aid": application_id})
+
+
+def _load_cached_scores(job_id: int, top_k: int):
+    query = text("""
+        SELECT
+            a.applicant_id, a.first_name, a.last_name, a.education_level,
+            a.years_of_experience, ac.extracted_skills_json,
+            ja.ai_match_score, ja.ai_match_reasoning, ja.ai_embedding_score
+        FROM job_applications ja
+        JOIN applicants a ON a.applicant_id = ja.applicant_id
+        LEFT JOIN applicant_cvs ac ON ac.applicant_id = a.applicant_id
+        WHERE ja.job_id = :jid
+        ORDER BY ja.ai_match_score DESC NULLS LAST
+        LIMIT :k
+    """)
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params={"jid": job_id, "k": top_k})
+
+    if df.empty or df["ai_match_score"].isna().any():
+        return None
+
+    return [
+        {
+            "applicant_id": int(r.applicant_id),
+            "name": f"{r.first_name} {r.last_name}",
+            "education_level": r.education_level,
+            "years_of_experience": float(r.years_of_experience) if pd.notna(r.years_of_experience) else None,
+            "skills": r.extracted_skills_json,
+            "match_score": float(r.ai_match_score),
+            "embedding_score": float(r.ai_embedding_score) if pd.notna(r.ai_embedding_score) else None,
+            "ai_reasoning": r.ai_match_reasoning,
+        }
+        for r in df.itertuples()
+    ]
 
 
 def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = False):
-    with engine.connect() as conn:
-        job = conn.execute(
-            text("SELECT job_id, title, required_experience_years FROM job_postings WHERE job_id = :jid"),
-            {"jid": job_id}
-        ).fetchone()
-
+    job = _load_job(job_id)
     if job is None:
         return None
 
@@ -150,8 +237,6 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
     if applicants_df.empty:
         return {"job_id": job.job_id, "job_title": job.title, "candidates": []}
 
-    # Anyone with no CV embedding yet can't be scored at all -- skip them
-    # (they'll appear once "Traiter CV" runs for them).
     scorable = applicants_df[applicants_df["cv_embedding"].notna()].copy()
 
     if recompute_all:
@@ -163,7 +248,6 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
 
     candidates = []
 
-    # Reuse cached scores as-is -- no LLM call for these.
     for r in already_scored.itertuples():
         candidates.append({
             "applicant_id": int(r.applicant_id),
@@ -176,14 +260,12 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
             "ai_reasoning": None,
         })
 
-    # Only the genuinely new/unscored applicants trigger embedding +
-    # LLM work -- this is what stops re-running the LLM on every load.
     if not to_score.empty:
-        job_text = f"{job.title}. Requires {job.required_experience_years or 0} years of experience."
+        job_text = _job_profile_text(job)
         applicant_ids = to_score["applicant_id"].astype(int).tolist()
 
         embedding_scores = _embedding_scores(job_text, applicant_ids)
-        llm_scores = _rerank_with_llm(job.title, job.required_experience_years, to_score)
+        llm_scores = _rerank_with_llm(job, to_score)
 
         for r in to_score.itertuples():
             applicant_id = int(r.applicant_id)
@@ -197,7 +279,7 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
                 final_score = embedding_score
                 reasoning = None
 
-            _persist_score(r.application_id, final_score)
+            _persist_score(r.application_id, final_score, reasoning, embedding_score)
 
             candidates.append({
                 "applicant_id": applicant_id,
@@ -214,65 +296,3 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
 
     return {"job_id": job.job_id, "job_title": job.title, "candidates": candidates[:top_k]}
 
-
-def assess_applicant_fit(applicant_id: int, job_id: int) -> dict:
-    """Focused single-candidate check: 'is this specific person actually
-    right for this specific job', beyond just the ranking score --
-    surfaces the LLM's reasoning directly for a human to read."""
-    with engine.connect() as conn:
-        job = conn.execute(
-            text("SELECT job_id, title, required_experience_years FROM job_postings WHERE job_id = :jid"),
-            {"jid": job_id}
-        ).fetchone()
-        applicant = conn.execute(text("""
-            SELECT a.applicant_id, a.first_name, a.last_name, a.education_level,
-                   a.years_of_experience, ac.extracted_skills_json, ac.parsed_text
-            FROM applicants a
-            LEFT JOIN applicant_cvs ac ON ac.applicant_id = a.applicant_id
-            WHERE a.applicant_id = :aid
-        """), {"aid": applicant_id}).fetchone()
-
-    if job is None or applicant is None:
-        return {"status": "error", "message": "Candidat ou poste introuvable."}
-
-    if not applicant.extracted_skills_json:
-        return {"status": "error", "message": "Le CV de ce candidat n'a pas encore été traité."}
-
-    skills = _safe_parse_skills(applicant.extracted_skills_json)
-
-    prompt = f"""You are assessing whether a specific candidate can actually
-perform a specific job -- not just whether their resume sounds similar.
-
-Job: {job.title}
-Required experience: {job.required_experience_years or 0} years
-
-Candidate:
-- Education: {applicant.education_level}
-- Years of experience: {applicant.years_of_experience}
-- Extracted skills: {json.dumps(skills)}
-- Resume excerpt: {(applicant.parsed_text or '')[:1500]}
-
-Give a direct, honest assessment: can this person realistically do this job?
-Point out any real gaps (missing required experience, no directly relevant
-skills) as well as genuine strengths. Do not be falsely encouraging if the
-fit is weak.
-
-Return ONLY a valid JSON object:
-{{
-  "verdict": "<Strong fit | Possible fit | Weak fit>",
-  "reasoning": "<3-4 sentences, direct and specific>",
-  "gaps": ["gap 1", "gap 2"],
-  "strengths": ["strength 1", "strength 2"]
-}}"""
-
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
-                  "format": "json", "options": {"temperature": 0.1}},
-            timeout=90,
-        )
-        response.raise_for_status()
-        return {"status": "success", **json.loads(response.json()["response"])}
-    except Exception as e:
-        return {"status": "error", "message": f"Échec de l'analyse: {e}"}

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { DepartmentBaseline, JobMatchResult, SimulationResult } from '../models/ai.model';
+import { ChatMessage, DepartmentBaseline, JobMatchResult, SimulationResult } from '../models/ai.model';
 
 
 
@@ -47,7 +47,24 @@ matchCandidates(jobId: number, topK: number = 10, recomputeAll: boolean = false)
   processCv(applicantId: number): Observable<any> {
   return this.http.post<any>(`${this.baseUrl}/recruitment/process-cv/${applicantId}`, {});
 }
-assessApplicantFit(applicantId: number, jobId: number): Observable<any> {
-  return this.http.get<any>(`${this.baseUrl}/recruitment/assess/${applicantId}/${jobId}`);
+
+
+
+
+sendApplicantChatMessage(applicantId: number, jobId: number, message: string): Observable<{ reply: string }> {
+  return this.http.post<{ reply: string }>(
+    `${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}`,
+    { message }
+  );
+}
+
+getApplicantChatHistory(applicantId: number, jobId: number): Observable<{ messages: ChatMessage[] }> {
+  return this.http.get<{ messages: ChatMessage[] }>(
+    `${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}/history`
+  );
+}
+
+resetApplicantChat(applicantId: number, jobId: number): Observable<any> {
+  return this.http.delete(`${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}`);
 }
 }

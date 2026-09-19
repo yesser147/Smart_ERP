@@ -173,7 +173,17 @@ CREATE TABLE IF NOT EXISTS job_applications (
     status VARCHAR(50) DEFAULT 'APPLIED',
     ai_match_score INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ai_match_reasoning TEXT,
+    ai_embedding_score NUMERIC(5,1)
 );
+CREATE TABLE IF NOT EXISTS job_title_skills (
+    title_key  VARCHAR(150) PRIMARY KEY,          -- lower(trim(title))
+    title      VARCHAR(150) NOT NULL,
+    skills     TEXT NOT NULL,                     -- comma-separated
+    source     VARCHAR(20) DEFAULT 'manual',      -- 'manual' | 'llm'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 CREATE TABLE IF NOT EXISTS applicant_cvs (
     id UUID PRIMARY KEY,

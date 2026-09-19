@@ -24,6 +24,11 @@ public class JobApplication {
     @JoinColumn(name = "job_id")
     private JobPosting jobPosting;
 
+    @Column(columnDefinition = "TEXT")
+    private String aiMatchReasoning;
+
+    private BigDecimal aiEmbeddingScore;
+
     private LocalDate applicationDate;
     private BigDecimal desiredSalary;
     private String status = "APPLIED";

@@ -13,7 +13,8 @@ from models.budget_advisor.predict import BudgetPrescriptor
 from models.budget_advisor.advise import generate_budget_proposal
 from models.retention.predict import RetentionPredictor
 from models.retention.diagnostic import generate_macro_retention_strategy
-from models.recruitment.matcher import match_candidates_to_job, assess_applicant_fit
+from models.recruitment.matcher import match_candidates_to_job
+from models.recruitment.applicant_chat import start_or_continue_chat, get_chat_history, reset_chat
 
 app = FastAPI(title="SmartERP AI Services API")
 
@@ -31,6 +32,9 @@ RISK_THRESHOLD = 0.70
 
 class ChatRequest(BaseModel):
     question: str
+
+class ChatMessageRequest(BaseModel):
+    message: str
 
 
 class SimulateBudgetRequest(BaseModel):
@@ -139,8 +143,6 @@ def get_retention_risk_scores(threshold: float = RISK_THRESHOLD):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- NEW: Recruitment candidate matching ---
-
 @app.get("/api/ai/recruitment/match/{job_id}")
 def get_candidate_matches(job_id: int, top_k: int = 10, recompute_all: bool = False):
     try:
@@ -163,11 +165,21 @@ def process_cv(applicant_id: int):
 
 
 
-@app.get("/api/ai/recruitment/assess/{applicant_id}/{job_id}")
-def assess_fit(applicant_id: int, job_id: int):
-    result = assess_applicant_fit(applicant_id, job_id)
+@app.post("/api/ai/recruitment/chat/{applicant_id}/{job_id}")
+def chat_about_applicant(applicant_id: int, job_id: int, request: ChatMessageRequest):
+    result = start_or_continue_chat(applicant_id, job_id, request.message)
     if result["status"] == "error":
         raise HTTPException(status_code=422, detail=result["message"])
+    return result
+
+@app.get("/api/ai/recruitment/chat/{applicant_id}/{job_id}/history")
+def get_applicant_chat_history(applicant_id: int, job_id: int):
+    return {"messages": get_chat_history(applicant_id, job_id)}
+
+@app.delete("/api/ai/recruitment/chat/{applicant_id}/{job_id}")
+def reset_applicant_chat(applicant_id: int, job_id: int):
+    reset_chat(applicant_id, job_id)
+    return {"status": "reset"}
     return result
 
 if __name__ == "__main__":
