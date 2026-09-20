@@ -1,0 +1,140 @@
+<div class="erp-page max-w-5xl mx-auto p-4 sm:p-6 space-y-4">
+  <button (click)="goBack()" class="text-sm text-slate-400 hover:text-white">← Back to job postings</button>
+
+  <div *ngIf="jobMissing" class="text-rose-400">Job posting not found.</div>
+
+  <!-- ============ Job details ============ -->
+  <div *ngIf="job as j" class="erp-card p-5 space-y-4">
+    <div class="flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <h2 class="text-xl font-semibold text-white">
+          {{ j.title }}
+          <span *ngIf="titleTotal > 1" class="text-sm text-slate-500">#{{ j.jobId }}</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">{{ deptLabel(j) }}</p>
+      </div>
+      <span class="erp-badge" [ngClass]="statusClass(j.status || 'OPEN')">{{ j.status || 'OPEN' }}</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+      <div>
+        <div class="text-xs text-slate-500">Applicants</div>
+        <div class="text-white">{{ applicantsTotal }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-slate-500">Required experience</div>
+        <div class="text-white">{{ requiredYears !== null ? requiredYears + ' years' : '—' }}</div>
+      </div>
+      <div *ngIf="titleTotal > 1">
+        <div class="text-xs text-slate-500">Same title</div>
+        <div class="text-white">{{ titleOpen }} of {{ titleTotal }} postings open</div>
+      </div>
+    </div>
+
+    <div *ngIf="requiredSkills.length">
+      <div class="text-xs text-slate-500 mb-1.5">Required skills</div>
+      <div class="flex gap-1 flex-wrap">
+        <span *ngFor="let s of requiredSkills"
+              class="erp-badge bg-slate-800 text-slate-300 border-line normal-case tracking-normal">{{ s }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Candidates ============ -->
+  <div class="erp-card p-5">
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <h3 class="erp-section-title">Matched candidates</h3>
+      <div class="flex gap-2">
+        <button (click)="runMatch(true)" class="erp-btn-secondary px-3 py-1.5 text-xs">Recalculate</button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="space-y-3 py-2">
+      <div class="erp-skeleton h-20"></div>
+      <div class="erp-skeleton h-20"></div>
+      <div class="erp-skeleton h-20"></div>
+    </div>
+
+    <div *ngIf="error && !loading" class="erp-alert-error">
+      Unable to load candidate matches.
+    </div>
+
+    <div *ngIf="!loading && !error && candidates.length > 0" class="space-y-2">
+      <div *ngFor="let c of candidates; let i = index"
+           class="bg-canvas/60 border border-line rounded-card p-3">
+
+        <!-- Clickable area: opens the applicant detail page -->
+        <div class="flex items-center justify-between cursor-pointer hover:bg-slate-800/40 rounded-md transition-colors -m-1 p-1"
+             (click)="goToDetail(c.applicant_id)"
+             role="link"
+             tabindex="0"
+             (keydown.enter)="goToDetail(c.applicant_id)">
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500 w-5">#{{ i + 1 }}</span>
+            <div>
+              <div class="text-white font-medium text-sm">{{ c.name }}</div>
+              <div class="text-xs text-slate-400">
+                {{ c.education_level || 'N/A' }} · {{ c.years_of_experience ?? 0 }} years of experience
+              </div>
+              <div class="flex gap-1 mt-1 flex-wrap">
+                <span *ngFor="let skill of parseSkills(c.skills)"
+                      class="erp-badge bg-slate-800 text-slate-300 border-line normal-case tracking-normal">
+                  {{ skill }}
+                </span>
+              </div>
+              <p *ngIf="c.ai_reasoning" class="text-xs text-accent/80 mt-1.5 italic">
+                💡 {{ c.ai_reasoning }}
+              </p>
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-3">
+            <div class="text-lg font-bold" [ngClass]="scoreClass(c.match_score)">{{ c.match_score }}%</div>
+            <div class="text-[10px] text-slate-500">match</div>
+            <div *ngIf="c.embedding_score !== undefined && c.embedding_score !== null"
+                 class="text-[10px] text-slate-600 mt-0.5"
+                 title="How close the CV text is to the job text. Only 10% of the match score.">
+              (CV similarity: {{ c.embedding_score }}%)
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions: outside the clickable area so they don't trigger navigation -->
+        <div *ngIf="applicationFor(c.applicant_id) as app"
+             class="flex items-center justify-between mt-3 pt-3 border-t border-line gap-2 flex-wrap">
+          <span class="erp-badge" [ngClass]="statusClass(app.status)">{{ app.status }}</span>
+          <div class="flex gap-2 flex-wrap">
+            <button
+              *ngIf="app.status !== 'INTERVIEWING' && app.status !== 'OFFERED' && app.status !== 'REJECTED'"
+              (click)="interview(c.applicant_id)"
+              [disabled]="actioningApplicantId === c.applicant_id"
+              class="erp-btn-secondary px-3 py-1.5 text-xs">
+              Interview
+            </button>
+            <button
+              *ngIf="app.status !== 'OFFERED' && app.status !== 'REJECTED'"
+              (click)="goToHire(c.applicant_id)"
+              class="erp-btn-primary px-3 py-1.5 text-xs">
+              Offer
+            </button>
+            <button
+              *ngIf="app.status !== 'REJECTED' && app.status !== 'OFFERED'"
+              (click)="reject(c.applicant_id)"
+              [disabled]="actioningApplicantId === c.applicant_id"
+              class="erp-btn-danger px-3 py-1.5 text-xs">
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="canShowMore" class="text-center pt-2">
+        <button (click)="showMore()" class="erp-btn-secondary px-4 py-2 text-xs">Show more candidates</button>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && !error && candidates.length === 0"
+         class="text-center text-slate-500 text-sm py-8">
+      No matched candidates yet. Applicants appear here once their CV has been processed.
+    </div>
+  </div>
+</div>

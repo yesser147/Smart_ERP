@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HrService } from '../../../core/services/hr.service';
-import { ApplicantDTO, DepartmentDTO } from '../../../core/models/hr.model';
+import { ApplicantDTO, DepartmentDTO, JobPostingDTO } from '../../../core/models/hr.model';
 
 @Component({
   selector: 'app-hire-employee',
@@ -19,9 +19,11 @@ export class HireEmployeeComponent implements OnInit {
 
   applicantId!: number;
   jobApplicationId: string | null = null;
+  jobId: number | null = null;
 
   applicant = signal<ApplicantDTO | null>(null);
   departments = signal<DepartmentDTO[]>([]);
+  job = signal<JobPostingDTO | null>(null);
 
   isLoading = signal<boolean>(false);
   isSubmitting = signal<boolean>(false);
@@ -44,6 +46,8 @@ export class HireEmployeeComponent implements OnInit {
   ngOnInit(): void {
     this.applicantId = Number(this.route.snapshot.paramMap.get('applicantId'));
     this.jobApplicationId = this.route.snapshot.queryParamMap.get('jobApplicationId');
+    const jobIdParam = this.route.snapshot.queryParamMap.get('jobId');
+    this.jobId = jobIdParam ? Number(jobIdParam) : null;
 
     this.isLoading.set(true);
     this.hrService.getApplicantById(this.applicantId).subscribe({
@@ -51,7 +55,28 @@ export class HireEmployeeComponent implements OnInit {
       error: () => { this.errorMessage.set('Candidat introuvable.'); this.isLoading.set(false); }
     });
 
-    this.hrService.getAllDepartments().subscribe(depts => this.departments.set(depts));
+    if (this.jobId !== null) {
+      this.hrService.getAllJobPostings().subscribe(jobs => {
+        const job = jobs.find(j => j.jobId === this.jobId) ?? null;
+        this.job.set(job);
+        if (job) {
+          // department is fixed by the posting; title/location are prefilled but editable
+          this.hireForm.patchValue({
+            departmentId: job.departmentId,
+            title: job.title,
+            location: job.location ?? ''
+          });
+        } else {
+          this.loadDepartments();
+        }
+      });
+    } else {
+      this.loadDepartments();   // opened without a job: keep the manual picker
+    }
+  }
+
+  private loadDepartments(): void {
+    this.hrService.getAllDepartments().subscribe(d => this.departments.set(d));
   }
 
   onSubmit(): void {
@@ -70,7 +95,9 @@ export class HireEmployeeComponent implements OnInit {
       next: (res) => {
         this.isSubmitting.set(false);
         this.successMessage.set(`Employé créé (ID ${res.employeeId}). Email d'activation envoyé à ${res.email}.`);
-        setTimeout(() => this.router.navigate(['/dashboard/recruitment']), 2000); // adjust to your real route
+        setTimeout(() => this.router.navigate(
+          this.jobId !== null ? ['/dashboard/recruitment/job', this.jobId] : ['/dashboard']
+        ), 2000);
       },
       error: (err) => {
         this.isSubmitting.set(false);

@@ -15,6 +15,10 @@ from models.retention.predict import RetentionPredictor
 from models.retention.diagnostic import generate_macro_retention_strategy
 from models.recruitment.matcher import match_candidates_to_job
 from models.recruitment.applicant_chat import start_or_continue_chat, get_chat_history, reset_chat
+from fastapi.responses import StreamingResponse
+from models.recruitment.applicant_chat import (
+    start_or_continue_chat, get_chat_history, reset_chat, stream_chat_message, ChatError)
+from models.recruitment.llm_client import LLMUnavailable
 
 app = FastAPI(title="SmartERP AI Services API")
 
@@ -165,13 +169,21 @@ def process_cv(applicant_id: int):
 
 
 
-@app.post("/api/ai/recruitment/chat/{applicant_id}/{job_id}")
-def chat_about_applicant(applicant_id: int, job_id: int, request: ChatMessageRequest):
-    result = start_or_continue_chat(applicant_id, job_id, request.message)
-    if result["status"] == "error":
-        raise HTTPException(status_code=422, detail=result["message"])
-    return result
 
+
+@app.post("/api/ai/recruitment/chat/{applicant_id}/{job_id}/stream")
+def chat_about_applicant_stream(applicant_id: int, job_id: int, request: ChatMessageRequest):
+    try:
+        generator = stream_chat_message(applicant_id, job_id, request.message)
+    except ChatError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except LLMUnavailable as e:
+        raise HTTPException(status_code=503, detail=f"IA indisponible : {e}")
+    return StreamingResponse(
+        generator,
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 @app.get("/api/ai/recruitment/chat/{applicant_id}/{job_id}/history")
 def get_applicant_chat_history(applicant_id: int, job_id: int):
     return {"messages": get_chat_history(applicant_id, job_id)}

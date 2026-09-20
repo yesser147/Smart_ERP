@@ -192,8 +192,11 @@ CREATE TABLE IF NOT EXISTS applicant_cvs (
     parsed_text TEXT,
     extracted_skills_json JSONB,
     cv_embedding vector(384),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    experience_profile TEXT,
+    cv_years_of_experience NUMERIC
 );
+
 
 -- 6. AI Budget Advisor: confirmed allocations (app-owned, not ETL-sourced)
 CREATE TABLE IF NOT EXISTS department_budget_allocations (

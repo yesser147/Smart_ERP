@@ -43,6 +43,8 @@ export interface JobMatchResult {
   job_id: number;
   job_title: string;
   candidates: CandidateMatch[];
+  required_skills?: string;
+  required_experience_years?: number | null;
 }
 
 export interface ChatMessage {

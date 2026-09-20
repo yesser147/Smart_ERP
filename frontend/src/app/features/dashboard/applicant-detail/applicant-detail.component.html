@@ -1,35 +1,141 @@
-<div class="erp-card p-6 space-y-3">
-  <h3 class="erp-section-title">Discuter de la compatibilité avec l'IA</h3>
-  <div class="flex gap-3">
-    <select [(ngModel)]="selectedJobId" (ngModelChange)="onJobSelected()" class="erp-input flex-1">
-      <option [ngValue]="null" disabled>Sélectionner un poste...</option>
-      <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">{{ job.title }}</option>
-    </select>
-    <button *ngIf="selectedJobId !== null" (click)="resetChat()" class="erp-btn-secondary px-3 text-xs">
-      Réinitialiser
-    </button>
-  </div>
+<div class="erp-page max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
+  <button (click)="goBack()" class="text-sm text-slate-400 hover:text-white">← Back</button>
 
-  <div *ngIf="selectedJobId !== null" class="space-y-3">
-    <div class="max-h-80 overflow-y-auto space-y-2 pr-1">
-      <div *ngFor="let m of chatMessages"
-           [ngClass]="m.role === 'user' ? 'ml-auto bg-violet-500/10 border-violet-500/20 text-right' : 'mr-auto bg-slate-900/60 border-slate-700'"
-           class="max-w-[85%] p-3 rounded-lg border text-sm text-slate-200">
-        {{ m.content }}
+  <div *ngIf="loading" class="text-slate-400">Loading...</div>
+  <div *ngIf="error" class="text-rose-400">Applicant not found.</div>
+
+  <div *ngIf="applicant as a" class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+
+    <!-- ============ LEFT: info + decision ============ -->
+    <aside class="space-y-4 lg:sticky lg:top-4">
+
+      <!-- Applicant -->
+      <div class="erp-card p-5 space-y-4">
+        <div class="flex items-start justify-between gap-2">
+          <h2 class="text-lg font-semibold text-white">{{ a.firstName }} {{ a.lastName }}</h2>
+          <span *ngIf="application" class="erp-badge shrink-0" [ngClass]="statusClass(application.status)">
+            {{ application.status }}
+          </span>
+        </div>
+        <dl class="space-y-3 text-sm">
+          <div>
+            <dt class="text-xs text-slate-500">Email</dt>
+            <dd class="text-white break-all">{{ a.email }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">Phone</dt>
+            <dd class="text-white">{{ a.phoneNumber || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">Education</dt>
+            <dd class="text-white">{{ a.educationLevel || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">Experience</dt>
+            <dd class="text-white">{{ a.yearsOfExperience ?? '—' }} years</dd>
+          </div>
+        </dl>
       </div>
-      <div *ngIf="chatMessages.length === 0" class="text-xs text-slate-500 text-center py-4">
-        Posez une question, par exemple : "Ce candidat a-t-il l'expérience nécessaire pour ce poste ?"
+
+      <!-- Job picker: only when the page was opened without a job -->
+      <div *ngIf="!jobFixed" class="erp-card p-5">
+        <p class="text-xs text-slate-400 mb-1">Evaluate for a position</p>
+        <select [(ngModel)]="selectedJobId" (ngModelChange)="onJobSelected()" class="erp-input w-full">
+          <option [ngValue]="null" disabled>Select a position...</option>
+          <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">{{ job.title }}</option>
+        </select>
       </div>
-    </div>
 
-    <div *ngIf="chatError" class="erp-alert-error text-xs">{{ chatError }}</div>
+      <!-- Job context -->
+      <div *ngIf="selectedJob" class="erp-card p-5 space-y-1">
+        <p class="text-xs text-slate-500">Position evaluated</p>
+        <p class="text-white font-medium">{{ selectedJob.title }}</p>
+        <p class="text-xs text-slate-400">
+          {{ selectedJob.departmentType || selectedJob.businessUnit || '—' }}
+          <span *ngIf="selectedJob.divisionDescription"> · {{ selectedJob.divisionDescription }}</span>
+        </p>
+      </div>
 
-    <div class="flex gap-2">
-      <input [(ngModel)]="chatInput" (keyup.enter)="sendChatMessage()" placeholder="Posez une question sur ce candidat..."
-             class="erp-input flex-1" [disabled]="chatSending" />
-      <button (click)="sendChatMessage()" [disabled]="chatSending || !chatInput.trim()" class="erp-btn-primary px-4">
-        {{ chatSending ? '...' : 'Envoyer' }}
-      </button>
-    </div>
+      <!-- Decision: only what makes sense for the current status -->
+      <div *ngIf="selectedJobId !== null" class="erp-card p-5 space-y-3">
+        <p class="text-xs text-slate-500">Decision</p>
+
+        <p *ngIf="!application" class="text-xs text-slate-500 italic">
+          This candidate did not apply for this position.
+        </p>
+
+        <p *ngIf="status === 'OFFERED'" class="text-sm text-teal-400">Offer made.</p>
+        <p *ngIf="status === 'REJECTED'" class="text-sm text-rose-400">Application rejected.</p>
+
+        <div *ngIf="application && !isFinal" class="flex flex-col gap-2">
+          <button *ngIf="canInterview" (click)="interview()" [disabled]="actioning"
+                  class="erp-btn-secondary w-full py-2">
+            Move to interview
+          </button>
+          <button (click)="goToHire()" [disabled]="actioning"
+                  class="erp-btn-primary w-full py-2">
+            Make offer
+          </button>
+          <button (click)="reject()" [disabled]="actioning"
+                  class="erp-btn-danger w-full py-2">
+            Reject
+          </button>
+        </div>
+
+        <p *ngIf="actionError" class="text-xs text-rose-400">{{ actionError }}</p>
+      </div>
+    </aside>
+
+    <!-- ============ RIGHT: chat ============ -->
+    <section *ngIf="selectedJobId !== null"
+             class="erp-card flex flex-col h-[calc(100vh-11rem)] min-h-[480px]">
+
+      <div class="flex items-center justify-between px-5 py-3 border-b border-line">
+        <h3 class="erp-section-title">Chat with AI</h3>
+        <button (click)="resetChat()" class="erp-btn-ghost text-xs">Reset</button>
+      </div>
+
+      <div #chatScroll class="flex-1 overflow-y-auto p-5 space-y-3">
+        <div *ngFor="let m of chatMessages"
+             [ngClass]="m.role === 'user'
+               ? 'ml-auto bg-accent-muted border-accent/20 text-right'
+               : 'mr-auto bg-slate-900/60 border-slate-700'"
+             class="max-w-[80%] p-3 rounded-lg border text-sm text-slate-200 whitespace-pre-wrap">
+          {{ m.content }}
+        </div>
+
+        <!-- typing dots until the first streamed token arrives -->
+        <div *ngIf="chatSending && !replyStarted"
+             class="mr-auto bg-slate-900/60 border border-slate-700 max-w-[80%] p-3 rounded-lg">
+          <span class="inline-flex gap-1">
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+          </span>
+        </div>
+
+        <div *ngIf="chatMessages.length === 0 && !chatSending"
+             class="h-full flex items-center justify-center text-xs text-slate-500 text-center px-6">
+          Ask a question, for example: "Does this candidate have the experience required for this position?"
+        </div>
+      </div>
+
+      <div *ngIf="chatError" class="erp-alert-error text-xs mx-5 mb-2">{{ chatError }}</div>
+
+      <div class="flex gap-2 p-4 border-t border-line">
+        <input [(ngModel)]="chatInput" (keyup.enter)="sendChatMessage()"
+               placeholder="Ask a question about this candidate..."
+               class="erp-input flex-1" [disabled]="chatSending" />
+        <button (click)="sendChatMessage()" [disabled]="chatSending || !chatInput.trim()"
+                class="erp-btn-primary px-5">
+          Send
+        </button>
+      </div>
+    </section>
+
+    <section *ngIf="selectedJobId === null"
+             class="erp-card p-10 text-center text-sm text-slate-500">
+      Select a position on the left to evaluate this candidate and chat with the AI.
+    </section>
   </div>
 </div>

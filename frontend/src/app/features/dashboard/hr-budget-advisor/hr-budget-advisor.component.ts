@@ -1,23 +1,15 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
-  NgApexchartsModule,
-  ApexAxisChartSeries,
-  ApexChart,
-  ApexXAxis,
-  ApexPlotOptions,
-  ApexDataLabels,
-  ApexGrid,
-  ApexTooltip,
-  ApexLegend,
-  ApexStroke,
-  ApexMarkers,
-  ApexFill
+  NgApexchartsModule, ApexAxisChartSeries, ApexChart, ApexXAxis,
+  ApexPlotOptions, ApexDataLabels, ApexGrid, ApexTooltip, ApexLegend,
+  ApexStroke, ApexMarkers
 } from 'ng-apexcharts';
 import { AiService } from '../../../core/services/ai.service';
-import { BudgetWhatifSimulatorComponent } from '../budget-whatif-simulator/budget-whatif-simulator.component'; // adjust path to wherever you saved it
+import { DepartmentBaseline } from '../../../core/models/ai.model';
 
-export type ChartOptions = {
+type BaseChartOptions = {
   series: ApexAxisChartSeries;
   chart: ApexChart;
   colors: string[];
@@ -25,11 +17,16 @@ export type ChartOptions = {
   tooltip: ApexTooltip;
   legend: ApexLegend;
   xaxis: ApexXAxis;
-  plotOptions: ApexPlotOptions;
   grid: ApexGrid;
+};
+
+export type ComparisonChartOptions = BaseChartOptions & {
+  plotOptions: ApexPlotOptions;
+};
+
+export type CurveChartOptions = BaseChartOptions & {
   stroke: ApexStroke;
   markers: ApexMarkers;
-  fill: ApexFill;
 };
 
 const DARK_THEME_BASE: Partial<ApexChart> = {
@@ -41,7 +38,7 @@ const DARK_THEME_BASE: Partial<ApexChart> = {
 @Component({
   selector: 'app-hr-budget-advisor',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule, BudgetWhatifSimulatorComponent],
+  imports: [CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './hr-budget-advisor.component.html'
 })
 export class HrBudgetAdvisorComponent implements OnInit {
@@ -50,9 +47,14 @@ export class HrBudgetAdvisorComponent implements OnInit {
   loading = true;
   error = false;
   data: any = null;
-  budgetChart!: ChartOptions;
-  priceVariationChart!: ChartOptions;
-  worstDeptsInfo: any[] = [];
+
+  // Full department list, used to power a single dropdown -- replaces
+  // rendering every department's slider/curve at once.
+  departments: DepartmentBaseline[] = [];
+  selectedDeptId: number | null = null;
+
+  comparisonChart!: ComparisonChartOptions;
+  performanceCurveChart!: CurveChartOptions;
 
   ngOnInit(): void {
     this.fetchBudgetAdvice();
@@ -62,85 +64,72 @@ export class HrBudgetAdvisorComponent implements OnInit {
     this.loading = true;
     this.error = false;
 
+    // Both calls already existed elsewhere in the app (memo + baselines) --
+    // reusing them here instead of adding a new endpoint.
     this.aiService.getBudgetAdvice().subscribe({
       next: (res) => {
         this.data = res;
-        this.budgetChart = this.buildBudgetComparisonChart(res.recommended_allocations || []);
-
-        const worstDepts = res.chart_data?.worst_departments_price_tests ||
-                          (res.chart_data?.worst_department_price_tests ? [res.chart_data.worst_department_price_tests] : []);
-
-        if (worstDepts && worstDepts.length > 0) {
-          this.worstDeptsInfo = worstDepts;
-          this.priceVariationChart = this.buildPriceVariationChart(worstDepts);
-        }
-
-        this.loading = false;
+        this.aiService.getDepartmentBaselines().subscribe({
+          next: (baselines) => {
+            this.departments = baselines;
+            // Default to the first recommended allocation's department if
+            // one exists, else the first department overall.
+            const firstRecommended = res.recommended_allocations?.[0]?.department_id;
+            this.selectedDeptId = firstRecommended ?? baselines[0]?.department_id ?? null;
+            this.onDeptChange();
+            this.loading = false;
+          },
+          error: () => { this.error = true; this.loading = false; }
+        });
       },
-      error: () => {
-        this.error = true;
-        this.loading = false;
-      }
+      error: () => { this.error = true; this.loading = false; }
     });
   }
 
-  private buildBudgetComparisonChart(allocations: any[]): ChartOptions {
-    const categories = allocations.map(a => a.department_name || `Dept ${a.department_id}`);
-    const originalBudgets = allocations.map(a => a.current_budget ?? a.base_budget ?? 100000);
-    const newBudgets = allocations.map((a, i) => originalBudgets[i] + (a.recommended_budget_increase || 0));
+  onDeptChange(): void {
+    const dept = this.departments.find(d => d.department_id === this.selectedDeptId);
+    if (!dept) return;
 
-    return {
-      series: [
-        { name: 'Budget Actuel', data: originalBudgets },
-        { name: 'Nouveau Budget Optimisé', data: newBudgets }
-      ],
-      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
+    const optimalBudget = dept.peak_budget;
+
+    this.comparisonChart = {
+      series: [{
+        name: 'Budget',
+        data: [dept.current_budget, optimalBudget]
+      }],
+      chart: { type: 'bar', height: 240, ...DARK_THEME_BASE },
+      // `distributed: true` assigns one color per bar, so two colors for two bars
       colors: ['#64748b', '#2dd4bf'],
-      plotOptions: { bar: { horizontal: false, columnWidth: '50%', borderRadius: 4 } },
-      dataLabels: { enabled: false },
-      xaxis: { categories },
+      plotOptions: { bar: { horizontal: false, columnWidth: '40%', borderRadius: 4, distributed: true } },
+      dataLabels: { enabled: true, formatter: (v: number) => `$${v.toLocaleString()}` },
+      xaxis: { categories: ['Budget actuel', 'Budget optimal (IA)'] },
       grid: { borderColor: '#334155', strokeDashArray: 4 },
       tooltip: { theme: 'dark', y: { formatter: (v: number) => `$${v.toLocaleString()}` } },
-      legend: { position: 'top', labels: { colors: '#94a3b8' } },
-      stroke: { show: false },
-      fill: { opacity: 1 },
-      markers: { size: 0 }
+      legend: { show: false },
+    };
+
+    this.performanceCurveChart = {
+      series: [{ name: 'Performance prédite', data: dept.curve.map(p => p.performance) }],
+      chart: { type: 'line', height: 260, ...DARK_THEME_BASE },
+      colors: ['#2dd4bf'],
+      stroke: { curve: 'smooth', width: 3 },
+      markers: { size: 0 },
+      dataLabels: { enabled: false },
+      xaxis: {
+        categories: dept.curve.map(p => `$${Math.round(p.budget / 1000)}k`),
+        title: { text: 'Budget de formation', style: { color: '#64748b' } }
+      },
+      grid: { borderColor: '#334155', strokeDashArray: 4 },
+      tooltip: { theme: 'dark', y: { formatter: (v: number) => v.toFixed(3) + ' pts' } },
+      legend: { show: false },
     };
   }
 
-  private buildPriceVariationChart(worstDeptsData: any[]): ChartOptions {
-    const firstDeptTests = worstDeptsData[0]?.price_variations_tested || [];
-    const categories = firstDeptTests.map((t: any) => `+$${t.added_budget.toLocaleString()}`);
+  get selectedDept(): DepartmentBaseline | undefined {
+    return this.departments.find(d => d.department_id === this.selectedDeptId);
+  }
 
-    const multiSeries = worstDeptsData.map((dept: any) => ({
-      name: dept.department_name || `Dept #${dept.department_id}`,
-      data: (dept.price_variations_tested || []).map((t: any) => t.performance_gain)
-    }));
-
-    return {
-      series: multiSeries,
-      chart: { type: 'area', height: 280, ...DARK_THEME_BASE },
-      colors: ['#f59e0b', '#ec4899', '#3b82f6'],
-      stroke: { curve: 'smooth', width: 3 },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shadeIntensity: 1,
-          opacityFrom: 0.35,
-          opacityTo: 0.05,
-          stops: [0, 90, 100]
-        }
-      },
-      markers: { size: 4, strokeWidth: 2 },
-      plotOptions: { bar: { horizontal: false } },
-      dataLabels: { enabled: false },
-      xaxis: {
-        categories,
-        title: { text: 'Variations d\'Investissement Supplémentaires', style: { color: '#64748b' } }
-      },
-      grid: { borderColor: '#334155', strokeDashArray: 4 },
-      tooltip: { theme: 'dark', y: { formatter: (v: number) => `+${v.toFixed(3)} pts` } },
-      legend: { show: true, position: 'top', labels: { colors: '#94a3b8' } }
-    };
+  get selectedRecommendation(): any {
+    return this.data?.recommended_allocations?.find((a: any) => a.department_id === this.selectedDeptId);
   }
 }

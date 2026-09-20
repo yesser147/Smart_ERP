@@ -1,6 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 
 import { HrDashboardComponent } from './hr-dashboard/hr-dashboard.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
@@ -25,6 +27,7 @@ const ROLE_LABELS: Record<string, string> = {
   imports: [
     CommonModule,
     RouterLink,
+    RouterOutlet,
     HrDashboardComponent,
     AdminDashboardComponent,
     EmployeeDashboardComponent,
@@ -36,10 +39,21 @@ const ROLE_LABELS: Record<string, string> = {
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   userInfo: any = null;
   activeMenu: string = 'overview'; // Tracks which sidebar menu is clicked
   sidebarCollapsed = false;
+
+  /** true while a child page (applicant detail, hire form...) is open */
+  childActive = !!this.route.snapshot.firstChild;
+
+  constructor() {
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed())
+      .subscribe(() => { this.childActive = !!this.route.snapshot.firstChild; });
+  }
 
   ngOnInit() {
     this.userInfo = {
@@ -53,6 +67,12 @@ export class DashboardComponent implements OnInit {
     } catch {
       this.sidebarCollapsed = false;
     }
+  }
+
+  /** Sidebar click: select the tab, and leave the child page if one is open. */
+  selectMenu(menu: string): void {
+    this.activeMenu = menu;
+    if (this.childActive) this.router.navigate(['/dashboard']);
   }
 
   toggleSidebar(): void {

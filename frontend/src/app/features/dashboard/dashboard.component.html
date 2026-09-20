@@ -37,7 +37,7 @@
 
         <div *ngIf="!sidebarCollapsed" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2 mt-1">Analytics</div>
 
-        <button (click)="activeMenu = 'overview'"
+        <button (click)="selectMenu('overview')"
                 [class.bg-sky-600]="activeMenu === 'overview'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Overview' : null"
@@ -48,7 +48,7 @@
           <span *ngIf="!sidebarCollapsed">Overview</span>
         </button>
 
-        <button (click)="activeMenu = 'turnover'"
+        <button (click)="selectMenu('turnover')"
                 [class.bg-sky-600]="activeMenu === 'turnover'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Turnover & Retention' : null"
@@ -59,7 +59,7 @@
           <span *ngIf="!sidebarCollapsed">Turnover & Retention</span>
         </button>
 
-        <button (click)="activeMenu = 'compensation'"
+        <button (click)="selectMenu('compensation')"
                 [class.bg-sky-600]="activeMenu === 'compensation'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Compensation & Perf' : null"
@@ -70,7 +70,7 @@
           <span *ngIf="!sidebarCollapsed">Compensation & Perf</span>
         </button>
 
-        <button (click)="activeMenu = 'recruitment'"
+        <button (click)="selectMenu('recruitment')"
                 [class.bg-sky-600]="activeMenu === 'recruitment'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Recruitment & Training' : null"
@@ -83,7 +83,7 @@
 
         <div *ngIf="!sidebarCollapsed" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2 mt-4">Management</div>
 
-        <button (click)="activeMenu = 'employees'"
+        <button (click)="selectMenu('employees')"
                 [class.bg-sky-600]="activeMenu === 'employees'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Employees' : null"
@@ -94,7 +94,7 @@
           <span *ngIf="!sidebarCollapsed">Employees</span>
         </button>
 
-        <button (click)="activeMenu = 'departments'"
+        <button (click)="selectMenu('departments')"
                 [class.bg-sky-600]="activeMenu === 'departments'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Departments' : null"
@@ -107,7 +107,7 @@
 
         <div *ngIf="!sidebarCollapsed" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2 mt-4">AI & Strategy</div>
 
-        <button (click)="activeMenu = 'budget'"
+        <button (click)="selectMenu('budget')"
                 [class.bg-sky-600]="activeMenu === 'budget'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Budget Optimization (AI)' : null"
@@ -118,7 +118,7 @@
           <span *ngIf="!sidebarCollapsed">Budget Optimization (AI)</span>
         </button>
 
-        <button (click)="activeMenu = 'retention'"
+        <button (click)="selectMenu('retention')"
                 [class.bg-sky-600]="activeMenu === 'retention'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'Retention Strategy (AI)' : null"
@@ -133,7 +133,7 @@
       <!-- ADMIN MENU -->
       <ng-container *ngIf="userInfo?.role === 'ROLE_ADMIN'">
         <div *ngIf="!sidebarCollapsed" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2 mt-1">Admin</div>
-        <button (click)="activeMenu = 'admin_overview'"
+        <button (click)="selectMenu('admin_overview')"
                 [class.bg-sky-600]="activeMenu === 'admin_overview'"
                 [class.justify-center]="sidebarCollapsed"
                 [attr.title]="sidebarCollapsed ? 'System Settings' : null"
@@ -179,16 +179,21 @@
       </div>
     </header>
 
-    <!-- DYNAMIC DASHBOARD INJECTION -->
-    <div class="flex-1 overflow-y-auto p-8">
-      @if (userInfo?.role === 'ROLE_HR_MANAGER' || userInfo?.role === 'ROLE_MANAGER') {
-        <app-hr-dashboard [currentView]="activeMenu" />
-        <app-ai-assistant></app-ai-assistant>
-      } @else if (userInfo?.role === 'ROLE_ADMIN') {
-        <app-admin-dashboard />
-      } @else {
-        <app-employee-dashboard />
-      }
+    <!-- CONTENT: child page (applicant, hire...) or the tab dashboards -->
+    <div class="flex-1 overflow-y-auto" [class.p-8]="!childActive">
+      <router-outlet />
+
+      <!-- kept mounted but hidden on child pages, so tab state survives -->
+      <div [class.hidden]="childActive">
+        @if (userInfo?.role === 'ROLE_HR_MANAGER' || userInfo?.role === 'ROLE_MANAGER') {
+          <app-hr-dashboard [currentView]="activeMenu" />
+          <app-ai-assistant></app-ai-assistant>
+        } @else if (userInfo?.role === 'ROLE_ADMIN') {
+          <app-admin-dashboard />
+        } @else {
+          <app-employee-dashboard />
+        }
+      </div>
     </div>
   </main>
 </div>

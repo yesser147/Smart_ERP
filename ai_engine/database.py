@@ -7,7 +7,8 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=2,
-    pool_recycle=1800,  # recycle connections after 30 min to avoid stale/leaked ones piling up
+    pool_recycle=1800,
+    connect_args={"application_name": "ai_engine_main"},
 )
 ai_engine = create_engine(
     config.AI_DATABASE_URL,
@@ -15,4 +16,5 @@ ai_engine = create_engine(
     pool_size=3,
     max_overflow=2,
     pool_recycle=1800,
+    connect_args={"application_name": "ai_engine_ai"},
 )

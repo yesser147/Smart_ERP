@@ -18,14 +18,24 @@
     <h3 class="erp-kicker text-accent">Détails du poste (à compléter)</h3>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Département</label>
-      <select formControlName="departmentId" class="erp-input">
-        <option [ngValue]="null" disabled>Sélectionner...</option>
-        <option *ngFor="let d of departments()" [ngValue]="d.departmentId">
-          {{ d.businessUnit }} - {{ d.departmentType }}
-        </option>
-      </select>
+  <label class="text-xs text-slate-400 block mb-1">Département</label>
+
+  <ng-container *ngIf="job() as j; else deptPicker">
+    <div class="erp-input bg-slate-900/40 text-slate-300 cursor-not-allowed">
+      {{ j.businessUnit }} - {{ j.departmentType }}<span *ngIf="j.divisionDescription"> · {{ j.divisionDescription }}</span>
     </div>
+    <p class="text-[11px] text-slate-500 mt-1">Défini par l'offre « {{ j.title }} »</p>
+  </ng-container>
+
+  <ng-template #deptPicker>
+    <select formControlName="departmentId" class="erp-input">
+      <option [ngValue]="null" disabled>Sélectionner...</option>
+      <option *ngFor="let d of departments()" [ngValue]="d.departmentId">
+        {{ d.businessUnit }} - {{ d.departmentType }}
+      </option>
+    </select>
+  </ng-template>
+</div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>

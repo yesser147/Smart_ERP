@@ -51,11 +51,36 @@ matchCandidates(jobId: number, topK: number = 10, recomputeAll: boolean = false)
 
 
 
-sendApplicantChatMessage(applicantId: number, jobId: number, message: string): Observable<{ reply: string }> {
-  return this.http.post<{ reply: string }>(
-    `${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}`,
-    { message }
-  );
+streamApplicantChat(applicantId: number, jobId: number, message: string): Observable<string> {
+  return new Observable<string>(subscriber => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(`${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+          signal: controller.signal
+        });
+        if (!res.ok || !res.body) {
+          let detail = 'Request failed';
+          try { detail = (await res.json()).detail ?? detail; } catch { /* keep default */ }
+          throw new Error(detail);
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          subscriber.next(decoder.decode(value, { stream: true }));
+        }
+        subscriber.complete();
+      } catch (e) {
+        if (!controller.signal.aborted) subscriber.error(e);
+      }
+    })();
+    return () => controller.abort();
+  });
 }
 
 getApplicantChatHistory(applicantId: number, jobId: number): Observable<{ messages: ChatMessage[] }> {
