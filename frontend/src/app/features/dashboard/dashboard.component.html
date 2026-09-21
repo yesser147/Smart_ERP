@@ -3,17 +3,27 @@
   <!-- LEFT SIDEBAR -->
   <aside [class.w-64]="!sidebarCollapsed"
          [class.w-20]="sidebarCollapsed"
-         class="bg-slate-800 border-r border-slate-700 flex flex-col transition-all duration-200 ease-out shrink-0">
+         class="bg-slate-800 flex flex-col transition-all duration-200 ease-out shrink-0">
 
-    <!-- BRAND + COLLAPSE TOGGLE -->
-    <div class="p-4 border-b border-slate-700">
+    <div class="p-4">
       <div class="flex items-center gap-3" [class.justify-center]="sidebarCollapsed">
-        <div class="h-10 w-10 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-sm shrink-0">
-          NX
-        </div>
+        <img src="/assets/images/nexus.svg" alt="Nexus ERP" class="h-10 w-10 shrink-0" />
         <div *ngIf="!sidebarCollapsed" class="min-w-0">
           <h2 class="text-lg font-bold text-white leading-tight">Nexus ERP</h2>
-          <p class="text-xs text-slate-400 mt-0.5">{{ roleLabel }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT USER -->
+    <div class="px-4 pb-4">
+      <div class="flex items-center gap-3 bg-slate-900/50 rounded-lg p-2.5"
+           [class.justify-center]="sidebarCollapsed">
+        <div class="h-8 w-8 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 font-semibold text-xs shrink-0">
+          {{ userInitials }}
+        </div>
+        <div *ngIf="!sidebarCollapsed" class="min-w-0">
+          <p class="text-sm font-medium text-white truncate">{{ displayName }}</p>
+          <p class="text-xs text-slate-400">{{ roleLabel }}</p>
         </div>
       </div>
 
@@ -29,6 +39,8 @@
         </svg>
       </button>
     </div>
+
+    <div class="border-t border-slate-700"></div>
 
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
 
@@ -162,28 +174,35 @@
   </aside>
 
   <!-- MAIN CONTENT AREA -->
-  <main class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+  <main class="relative flex-1 flex flex-col h-full overflow-hidden min-w-0">
 
-    <!-- HEADER -->
-    <header class="flex justify-between items-center p-6 bg-slate-800/50 border-b border-slate-700">
-      <div>
-        <h1 class="text-2xl font-bold">Dashboard</h1>
-        <p class="text-sm text-slate-400">Logged in as: <span class="text-sky-400">{{ displayName }}</span></p>
-      </div>
-      <div>
-        @if(userInfo?.role === 'ROLE_ADMIN' || userInfo?.role === 'ROLE_HR_MANAGER') {
-          <a routerLink="/dashboard/register" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer inline-block">
-            + Create user
-          </a>
-        }
+    <!-- BACKGROUND ILLUSTRATION (AI / analytics / report) -->
+    <div aria-hidden="true"
+         class="pointer-events-none absolute inset-0 opacity-40 bg-no-repeat bg-right-bottom bg-cover"
+         style="background-image: url('/assets/images/dashboard-bg.svg')"></div>
+
+    <!-- HEADER: breadcrumb + date + role, no repeated title -->
+    <header class="relative z-10 flex justify-between items-center px-8 py-3 bg-slate-800/30 border-b border-slate-700/50">
+      <nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <span class="text-slate-500">Nexus ERP</span>
+        <span class="text-slate-600">/</span>
+        <span class="text-slate-400">{{ pageGroup }}</span>
+        <span class="text-slate-600">/</span>
+        <span class="text-slate-200 font-medium">{{ pageTitle }}</span>
+      </nav>
+
+      <div class="flex items-center gap-3 text-xs text-slate-400">
+        <span class="hidden md:inline">{{ today | date:'EEEE, d MMMM y' }}</span>
+        <span class="px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 font-medium">
+          {{ roleLabel }} workspace
+        </span>
       </div>
     </header>
 
     <!-- CONTENT: child page (applicant, hire...) or the tab dashboards -->
-    <div class="flex-1 overflow-y-auto" [class.p-8]="!childActive">
+    <div class="relative z-10 flex-1 overflow-y-auto" [class.p-8]="!childActive">
       <router-outlet />
 
-      <!-- kept mounted but hidden on child pages, so tab state survives -->
       <div [class.hidden]="childActive">
         @if (userInfo?.role === 'ROLE_HR_MANAGER' || userInfo?.role === 'ROLE_MANAGER') {
           <app-hr-dashboard [currentView]="activeMenu" />

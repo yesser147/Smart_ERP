@@ -1,14 +1,16 @@
 <div class="erp-page max-w-xl mx-auto p-4 sm:p-6">
-  <h2 class="erp-page-title text-xl sm:text-2xl mb-6">Postuler à une offre</h2>
+  <button type="button" (click)="goBack()" class="text-sm text-slate-400 hover:text-white mb-4">← Back</button>
+
+  <h2 class="erp-page-title text-xl sm:text-2xl mb-6">Apply for a job</h2>
 
   <form [formGroup]="applicationForm" (ngSubmit)="onSubmit()" class="erp-card p-6 space-y-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Prénom</label>
+        <label class="text-xs text-slate-400 block mb-1">First name</label>
         <input formControlName="firstName" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Nom</label>
+        <label class="text-xs text-slate-400 block mb-1">Last name</label>
         <input formControlName="lastName" class="erp-input" />
       </div>
     </div>
@@ -19,27 +21,27 @@
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Téléphone</label>
+      <label class="text-xs text-slate-400 block mb-1">Phone</label>
       <input formControlName="phoneNumber" class="erp-input" />
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Niveau d'études</label>
+      <label class="text-xs text-slate-400 block mb-1">Education level</label>
       <input formControlName="educationLevel" class="erp-input" />
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Poste</label>
+      <label class="text-xs text-slate-400 block mb-1">Position</label>
       <select formControlName="jobId" class="erp-input">
-        <option [ngValue]="null" disabled>Sélectionner un poste...</option>
-<option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
-  {{ job.title }} — {{ job.departmentType }}{{ job.businessUnit ? ' (' + job.businessUnit + ')' : '' }}
-</option>
+        <option [ngValue]="null" disabled>Select a position...</option>
+        <option *ngFor="let job of jobPostings" [ngValue]="job.jobId">
+          {{ job.title }} — {{ job.departmentType }}{{ job.businessUnit ? ' (' + job.businessUnit + ')' : '' }}
+        </option>
       </select>
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Salaire souhaité ($)</label>
+      <label class="text-xs text-slate-400 block mb-1">Desired salary ($)</label>
       <input type="number" formControlName="desiredSalary" class="erp-input" />
     </div>
 
@@ -52,9 +54,8 @@
     <p *ngIf="errorMessage" class="text-rose-400 text-sm">{{ errorMessage }}</p>
     <p *ngIf="successMessage" class="text-accent text-sm">{{ successMessage }}</p>
 
-    <button type="submit" [disabled]="isSubmitting"
-            class="erp-btn-primary w-full py-2.5">
-      {{ isSubmitting ? 'Envoi en cours...' : 'Envoyer ma candidature' }}
+    <button type="submit" [disabled]="isSubmitting" class="erp-btn-primary w-full py-2.5">
+      {{ isSubmitting ? 'Submitting...' : 'Submit application' }}
     </button>
   </form>
 </div>

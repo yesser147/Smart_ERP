@@ -1,6 +1,6 @@
 <div class="erp-page max-w-4xl mx-auto p-4 sm:p-6">
   <button (click)="goBack()" class="erp-btn-ghost mb-4">
-    ← Retour
+    ← Back
   </button>
 
   <div *ngIf="loading" class="space-y-4">
@@ -11,7 +11,7 @@
     </div>
   </div>
 
-  <div *ngIf="error" class="text-rose-400">Employé introuvable.</div>
+  <div *ngIf="error" class="text-rose-400">Employee not found.</div>
 
   <div *ngIf="employee as e" class="space-y-6">
     <!-- Header Card -->
@@ -27,7 +27,7 @@
             {{ e.employeeStatus || '—' }}
           </span>
           <span *ngIf="e.needsReview" class="erp-badge bg-amber-500/10 text-amber-400 border-amber-500/20">
-            Révision requise
+            Review required
           </span>
         </div>
       </div>
@@ -36,32 +36,32 @@
     <!-- Personal & Employment Info -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="erp-card p-6">
-        <h3 class="erp-kicker text-accent mb-4">Informations Personnelles</h3>
+        <h3 class="erp-kicker text-accent mb-4">Personal Information</h3>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Date de naissance</span>
+            <span class="text-slate-400">Date of birth</span>
             <span class="text-white">{{ e.dob ? (e.dob | date:'dd/MM/yyyy') : '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Genre</span>
+            <span class="text-slate-400">Gender</span>
             <span class="text-white">{{ e.gender || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">État</span>
+            <span class="text-slate-400">State</span>
             <span class="text-white">{{ e.state || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Localisation</span>
+            <span class="text-slate-400">Location</span>
             <span class="text-white">{{ e.location || '—' }}</span>
           </div>
         </div>
       </div>
 
       <div class="erp-card p-6">
-        <h3 class="erp-kicker text-accent mb-4">Informations Professionnelles</h3>
+        <h3 class="erp-kicker text-accent mb-4">Professional Information</h3>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Département</span>
+            <span class="text-slate-400">Department</span>
             <span class="text-white">{{ e.departmentName || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
@@ -69,7 +69,7 @@
             <span class="text-white">{{ e.managerName || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Type d'emploi</span>
+            <span class="text-slate-400">Employment type</span>
             <span class="text-white">{{ e.employeeType || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
@@ -77,15 +77,17 @@
             <span class="text-white">{{ e.employeeClassificationType || '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Date d'entrée</span>
+            <span class="text-slate-400">Start date</span>
             <span class="text-white">{{ e.startDate ? (e.startDate | date:'dd/MM/yyyy') : '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Ancienneté</span>
-            <span class="text-white">{{ tenureYears !== null ? tenureYears + ' ans' : '—' }}</span>
+            <span class="text-slate-400">Tenure</span>
+            <span class="text-white">{{ tenureYears !== null ? tenureYears + ' years' : '—' }}</span>
           </div>
-          <div *ngIf="e.exitDate" class="flex justify-between gap-4">
-            <span class="text-slate-400">Date de sortie</span>
+          <!-- Exit date only for people who actually left -->
+          <div *ngIf="(e.employeeStatus || '').toLowerCase().includes('terminat') && e.exitDate"
+               class="flex justify-between gap-4">
+            <span class="text-slate-400">Exit date</span>
             <span class="text-rose-400">{{ e.exitDate | date:'dd/MM/yyyy' }}</span>
           </div>
         </div>
@@ -95,14 +97,14 @@
     <!-- Compensation & Performance -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="erp-card p-6">
-        <h3 class="erp-kicker text-accent mb-4">Rémunération</h3>
+        <h3 class="erp-kicker text-accent mb-4">Compensation</h3>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Salaire actuel</span>
+            <span class="text-slate-400">Current salary</span>
             <span class="text-white font-semibold">${{ e.salary | number:'1.0-0' }} {{ e.currency || 'USD' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Évaluation actuelle</span>
+            <span class="text-slate-400">Current rating</span>
             <span class="text-white">{{ e.currentEmployeeRating ? (e.currentEmployeeRating | number:'1.1-1') : '—' }}</span>
           </div>
           <div class="flex justify-between items-center gap-4">
@@ -115,54 +117,65 @@
       </div>
 
       <div class="erp-card p-6">
-        <h3 class="erp-kicker text-accent mb-4">Engagement & Bien-être</h3>
+        <h3 class="erp-kicker text-accent mb-4">Engagement & Well-being</h3>
         <div class="space-y-3 text-sm">
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Engagement moyen</span>
+            <span class="text-slate-400">Average engagement</span>
             <span class="text-white">{{ avgEngagement !== null ? (avgEngagement | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Satisfaction moyenne</span>
+            <span class="text-slate-400">Average satisfaction</span>
             <span class="text-white">{{ avgSatisfaction !== null ? (avgSatisfaction | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Équilibre vie pro/perso</span>
+            <span class="text-slate-400">Work-life balance</span>
             <span class="text-white">{{ avgWlb !== null ? (avgWlb | number:'1.1-1') + ' / 5' : '—' }}</span>
           </div>
           <div class="flex justify-between gap-4">
-            <span class="text-slate-400">Sondages complétés</span>
+            <span class="text-slate-400">Surveys completed</span>
             <span class="text-white">{{ surveys.length }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Termination Info (if applicable) -->
-    <div *ngIf="e.exitDate || e.terminationType || e.terminationDescription" class="erp-card p-6 border-rose-500/30">
-      <h3 class="erp-kicker text-rose-400 mb-4">Informations de Départ</h3>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between gap-4">
-          <span class="text-slate-400">Type de départ</span>
-          <span class="text-white">{{ e.terminationType || '—' }}</span>
+    <!-- Departure Information: only for employees who actually left
+         (hidden for Active, On Leave, Future Start) -->
+    <div *ngIf="(e.employeeStatus || '').toLowerCase().includes('terminat')"
+         class="erp-card p-6 border-rose-500/30">
+      <h3 class="erp-kicker text-rose-400 mb-4">Departure Information</h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+        <div>
+          <div class="text-xs text-slate-500 mb-1">Departure type</div>
+          <div class="text-white">
+            {{ e.terminationType === 'Unk' ? 'Unknown' : (e.terminationType || '—') }}
+          </div>
         </div>
-        <div *ngIf="e.terminationDescription">
-          <span class="text-slate-400 block mb-1">Description</span>
-          <span class="text-slate-300">{{ e.terminationDescription }}</span>
+
+        <div>
+          <div class="text-xs text-slate-500 mb-1">Exit date</div>
+          <div class="text-white">{{ e.exitDate ? (e.exitDate | date:'dd/MM/yyyy') : '—' }}</div>
+        </div>
+
+        <div *ngIf="e.terminationDescription" class="sm:col-span-2">
+          <div class="text-xs text-slate-500 mb-1">Reason</div>
+          <div class="text-slate-300 leading-relaxed">{{ e.terminationDescription }}</div>
         </div>
       </div>
     </div>
 
     <!-- Salary History -->
     <div class="erp-card p-6">
-      <h3 class="erp-kicker text-accent mb-4">Historique des Salaires</h3>
+      <h3 class="erp-kicker text-accent mb-4">Salary History</h3>
       <div *ngIf="salaryHistory.length > 0" class="overflow-x-auto">
         <table class="erp-table">
           <thead>
             <tr>
-              <th>Date d'effet</th>
-              <th class="text-right">Salaire</th>
-              <th class="text-right">Devise</th>
-              <th>Motif</th>
+              <th>Effective date</th>
+              <th class="text-right">Salary</th>
+              <th class="text-right">Currency</th>
+              <th>Reason</th>
             </tr>
           </thead>
           <tbody>
@@ -175,20 +188,20 @@
           </tbody>
         </table>
       </div>
-      <p *ngIf="salaryHistory.length === 0" class="text-slate-500 text-sm">Aucun historique de salaire.</p>
+      <p *ngIf="salaryHistory.length === 0" class="text-slate-500 text-sm">No salary history.</p>
     </div>
 
     <!-- Training History -->
     <div class="erp-card p-6">
-      <h3 class="erp-kicker text-accent mb-4">Formations Suivies</h3>
+      <h3 class="erp-kicker text-accent mb-4">Training History</h3>
       <div *ngIf="trainings.length > 0" class="overflow-x-auto">
         <table class="erp-table">
           <thead>
             <tr>
-              <th>Programme</th>
+              <th>Program</th>
               <th>Date</th>
-              <th>Statut</th>
-              <th>Lieu</th>
+              <th>Status</th>
+              <th>Location</th>
             </tr>
           </thead>
           <tbody>
@@ -205,20 +218,20 @@
           </tbody>
         </table>
       </div>
-      <p *ngIf="trainings.length === 0" class="text-slate-500 text-sm">Aucune formation enregistrée.</p>
+      <p *ngIf="trainings.length === 0" class="text-slate-500 text-sm">No training recorded.</p>
     </div>
 
     <!-- Engagement Survey History -->
     <div class="erp-card p-6">
-      <h3 class="erp-kicker text-accent mb-4">Historique des Sondages d'Engagement</h3>
+      <h3 class="erp-kicker text-accent mb-4">Engagement Survey History</h3>
       <div *ngIf="surveys.length > 0" class="overflow-x-auto">
         <table class="erp-table">
           <thead>
             <tr>
-              <th>Date du sondage</th>
+              <th>Survey date</th>
               <th class="text-right">Engagement</th>
               <th class="text-right">Satisfaction</th>
-              <th class="text-right">Équilibre vie pro/perso</th>
+              <th class="text-right">Work-life balance</th>
             </tr>
           </thead>
           <tbody>
@@ -231,7 +244,7 @@
           </tbody>
         </table>
       </div>
-      <p *ngIf="surveys.length === 0" class="text-slate-500 text-sm">Aucun sondage d'engagement enregistré.</p>
+      <p *ngIf="surveys.length === 0" class="text-slate-500 text-sm">No engagement survey recorded.</p>
     </div>
   </div>
 </div>

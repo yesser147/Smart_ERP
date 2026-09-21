@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-8">
   <div>
     <div class="erp-title-row">
       <svg class="erp-page-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -27,11 +27,17 @@
   <!-- Side-by-Side Charts -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="erp-card p-6">
-      <h4 class="erp-section-title mb-4">Recruitment funnel (ATS)</h4>
+      <h4 class="erp-section-title">Recruitment funnel (ATS)</h4>
+      <p class="text-xs text-slate-400 mt-1 mb-4">
+        Cumulative stages. Rejected applications are excluded from later stages
+        because the stage of rejection isn't recorded.
+      </p>
       <apx-chart *ngIf="funnelChart"
         [series]="funnelChart.series" [chart]="funnelChart.chart"
         [xaxis]="funnelChart.xaxis" [plotOptions]="funnelChart.plotOptions"
-        [colors]="funnelChart.colors" [tooltip]="funnelChart.tooltip">
+        [colors]="funnelChart.colors" [dataLabels]="funnelChart.dataLabels"
+        [fill]="funnelChart.fill" [grid]="funnelChart.grid"
+        [legend]="funnelChart.legend" [tooltip]="funnelChart.tooltip">
       </apx-chart>
     </div>
 
@@ -41,15 +47,14 @@
         [series]="jobPostingsChart.series" [chart]="jobPostingsChart.chart"
         [xaxis]="jobPostingsChart.xaxis" [plotOptions]="jobPostingsChart.plotOptions"
         [colors]="jobPostingsChart.colors" [dataLabels]="jobPostingsChart.dataLabels"
-        [grid]="jobPostingsChart.grid" [tooltip]="jobPostingsChart.tooltip">
+        [grid]="jobPostingsChart.grid" [legend]="jobPostingsChart.legend"
+        [tooltip]="jobPostingsChart.tooltip">
       </apx-chart>
     </div>
   </div>
 
+  <!-- "block" is required: custom elements are inline by default, so spacing ignores them -->
+  <app-candidate-match class="block" [jobPostings]="jobPostings"></app-candidate-match>
 
-
-
-  <app-candidate-match [jobPostings]="jobPostings"></app-candidate-match>
-
-  <app-applicant-cv-manager></app-applicant-cv-manager>
+  <app-applicant-cv-manager class="block"></app-applicant-cv-manager>
 </div>

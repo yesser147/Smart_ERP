@@ -304,26 +304,41 @@ GROUP BY e.department_id, d.department_type, e.termination_description;
 
 DROP VIEW IF EXISTS v_ai_training_budget_features CASCADE;
 CREATE OR REPLACE VIEW v_ai_training_budget_features AS
-SELECT 
+WITH dept_staff AS (
+    SELECT e.department_id,
+           COUNT(*) AS headcount,
+           ROUND(AVG(e.current_employee_rating), 2) AS avg_performance
+    FROM employees e
+    WHERE e.is_deleted = FALSE
+      AND UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE')
+    GROUP BY e.department_id
+),
+dept_engagement AS (
+    SELECT e.department_id,
+           ROUND(AVG(es.engagement_score), 2) AS avg_engagement
+    FROM employees e
+    JOIN engagement_surveys es ON es.employee_id = e.employee_id
+    WHERE e.is_deleted = FALSE
+      AND UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE')
+    GROUP BY e.department_id
+)
+SELECT
     d.department_id,
     d.business_unit,
     d.department_type,
     d.division_description,
     COALESCE(ta.total_training_investment, 0.00) AS training_budget,
-    COUNT(DISTINCT e.employee_id) AS headcount,
-    COALESCE(ROUND(AVG(e.current_employee_rating), 2), 3.00) AS avg_performance,
-    COALESCE(ROUND(AVG(es.engagement_score), 2), 3.00) AS avg_engagement,
+    COALESCE(s.headcount, 0) AS headcount,
+    s.avg_performance,                 -- NULL when no rating: no more fake 3.00
+    de.avg_engagement,                 -- NULL when no survey
     COALESCE(dt.turnover_rate_pct, 0.00) AS department_turnover_rate
 FROM departments d
-LEFT JOIN employees e ON d.department_id = e.department_id 
-    AND e.is_deleted = FALSE 
-    AND UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE')
-LEFT JOIN v_training_analytics ta ON d.department_id = ta.department_id
-LEFT JOIN engagement_surveys es ON e.employee_id = es.employee_id
-LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id
-GROUP BY 
-    d.department_id, d.business_unit, d.department_type, d.division_description,
-    ta.total_training_investment, dt.turnover_rate_pct;
+LEFT JOIN dept_staff s ON s.department_id = d.department_id
+LEFT JOIN dept_engagement de ON de.department_id = d.department_id
+LEFT JOIN v_training_analytics ta ON ta.department_id = d.department_id
+LEFT JOIN v_department_turnover dt ON dt.department_id = d.department_id;
+
+GRANT SELECT ON v_ai_training_budget_features TO ai_readonly_user;
 
 DROP VIEW IF EXISTS v_gender_pay_gap CASCADE;
 CREATE OR REPLACE VIEW v_gender_pay_gap AS

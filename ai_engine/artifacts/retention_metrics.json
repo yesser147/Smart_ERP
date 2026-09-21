@@ -1,0 +1,19 @@
+{
+  "n_rows": 3001,
+  "n_churned": 1378,
+  "churn_rate": 0.459,
+  "features": [
+    "division_description",
+    "job_function",
+    "performance_score",
+    "gender",
+    "salary",
+    "tenure_days",
+    "avg_engagement_score",
+    "avg_satisfaction_score",
+    "avg_work_life_balance"
+  ],
+  "cv_auc": 0.5,
+  "cv_auc_std": 0.02,
+  "cv_pr_auc": 0.474
+}

@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
 export class ApplicantCvManagerComponent implements OnInit {
   private hrService = inject(HrService);
   private aiService = inject(AiService);
-    private router = inject(Router);
+  private router = inject(Router);
 
   applicants: ApplicantWithCvStatus[] = [];
   loading = true;
@@ -108,7 +108,7 @@ export class ApplicantCvManagerComponent implements OnInit {
   processCv(applicantId: number): void {
     this.processingId = applicantId;
     this.processErrorId = null;
-    this.processErrorMessage = null; // NEW field
+    this.processErrorMessage = null;
 
     this.aiService.processCv(applicantId).subscribe({
       next: () => {
@@ -120,12 +120,19 @@ export class ApplicantCvManagerComponent implements OnInit {
         this.processingId = null;
         this.processErrorId = applicantId;
         // FastAPI's HTTPException serializes as { "detail": "..." }
-        this.processErrorMessage = err?.error?.detail || 'Erreur inconnue';
+        this.processErrorMessage = err?.error?.detail || 'Unknown error';
       }
     });
   }
-goToDetail(applicantId: number): void {
-  console.log('Navigating to applicant:', applicantId);
-  this.router.navigate(['/dashboard/applicant', applicantId]);
-}
+
+  goToDetail(applicantId: number): void {
+    console.log('Navigating to applicant:', applicantId);
+    this.router.navigate(['/dashboard/applicant', applicantId]);
+  }
+
+  goToNewApplicant(): void {
+    // Placeholder route: change it to match your applicant form route.
+    // If you also have 'applicant/:id', declare 'applicant/new' BEFORE it.
+    this.router.navigate(['/dashboard/apply']);
+  }
 }

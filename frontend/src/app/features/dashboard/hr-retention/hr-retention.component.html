@@ -25,6 +25,39 @@
     <p class="text-sm text-slate-400 mt-1">Risk exposure and recommended interventions</p>
   </div>
 
+  <!-- Data reliability warning (driven by cross-validation metrics) -->
+  <div *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"
+       class="p-5 rounded-lg border"
+       [ngClass]="data.model_quality.level === 'low'
+         ? 'border-amber-400/30 bg-amber-400/10'
+         : 'border-rose-400/30 bg-rose-400/10'">
+    <p class="font-semibold text-sm"
+       [ngClass]="data.model_quality.level === 'low' ? 'text-amber-300' : 'text-rose-300'">
+      <ng-container *ngIf="data.model_quality.level === 'insufficient'">Risk predictions are not reliable</ng-container>
+      <ng-container *ngIf="data.model_quality.level === 'low'">Low-confidence risk predictions</ng-container>
+      <ng-container *ngIf="data.model_quality.level === 'unknown'">Model quality not measured</ng-container>
+    </p>
+
+    <p *ngIf="data.model_quality.level !== 'unknown'" class="text-xs text-slate-300 mt-2 leading-relaxed">
+      Tested on employees it had not seen, the model reached an AUC of
+      {{ data.model_quality.cv_auc | number:'1.2-2' }}
+      (0.50 = pure chance, 1.00 = perfect), on {{ data.model_quality.n_rows }} employees
+      of whom {{ data.model_quality.n_churned }} left.
+      <ng-container *ngIf="data.model_quality.level === 'insufficient'">
+        None of the available employee data (salary, tenure, engagement, satisfaction, performance...)
+        predicts who leaves in this dataset, so individual risk scores, the at-risk count and the risk drivers
+        are indicative only. This is a data limitation, not a model error.
+      </ng-container>
+      <ng-container *ngIf="data.model_quality.level === 'low'">
+        Treat risk scores and drivers as rough estimates.
+      </ng-container>
+    </p>
+
+    <p *ngIf="data.model_quality.level === 'unknown'" class="text-xs text-slate-300 mt-2">
+      Quality metrics are missing. Run the training script again to measure how reliable the predictions are.
+    </p>
+  </div>
+
   <!-- Top Risk Exposure Metrics -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="erp-card p-5">
@@ -36,13 +69,19 @@
     <div class="erp-card p-5">
       <p class="erp-kpi-label">High-risk population</p>
       <h3 class="erp-kpi text-rose-400">{{ data.macro_metrics?.high_risk_count || 0 }}</h3>
-      <p class="erp-kpi-meta text-rose-400/80">Risk score ≥ 70%</p>
+      <p class="erp-kpi-meta text-rose-400/80">
+        Risk score ≥ 70%
+        <span *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"> · indicative only</span>
+      </p>
     </div>
 
     <div class="erp-card p-5">
       <p class="erp-kpi-label">Risk exposure rate</p>
       <h3 class="erp-kpi text-amber-400">{{ data.macro_metrics?.high_risk_percentage || 0 }}%</h3>
-      <p class="erp-kpi-meta">Share of headcount at risk</p>
+      <p class="erp-kpi-meta">
+        Share of headcount at risk
+        <span *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"> · indicative only</span>
+      </p>
     </div>
   </div>
 
@@ -63,8 +102,12 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Root Causes (SHAP Drivers) -->
     <div class="erp-card p-6 lg:col-span-1">
-      <h4 class="erp-section-title mb-4">Major risk drivers (SHAP)</h4>
-      <div class="space-y-3">
+      <h4 class="erp-section-title mb-1">Major risk drivers (SHAP)</h4>
+      <p *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"
+         class="text-xs text-amber-300 mb-3">
+        Indicative only: the model cannot reliably predict who leaves.
+      </p>
+      <div class="space-y-3 mt-3">
         <div *ngFor="let cause of data.generalized_root_causes; let i = index"
              class="p-3 rounded-lg bg-canvas/60 border border-line text-xs text-slate-300 flex items-start gap-3">
           <span class="text-rose-400 font-bold">{{ i + 1 }}.</span>

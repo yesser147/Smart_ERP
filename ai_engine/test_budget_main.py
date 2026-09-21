@@ -15,15 +15,13 @@ def main():
 
     print("\n[Step 2/3] Simulating Budget Elasticity & Multi-Point Curves...")
     prescriptor = BudgetPrescriptor()
-    elasticity_df, comparison_chart, sensitivity_curve = prescriptor.calculate_elasticity_and_charts()
-
+    elasticity_df, comparison_chart, sensitivity_curve, worst_depts_analysis = prescriptor.calculate_elasticity_and_charts()
     if elasticity_df.empty:
         print("Error: No data available for elasticity analysis.")
         return
 
     print("\n[Step 3/3] Generating Executive Allocation Proposal & Chart AI Deductions...\n")
-    payload = generate_budget_proposal(elasticity_df, comparison_chart, sensitivity_curve)
-
+    payload = generate_budget_proposal(elasticity_df, comparison_chart, sensitivity_curve, worst_depts_analysis)
     # ---------------------------------------------------------
     # PRINTING THE INTERPRETED RESULTS FOR HUMAN READABILITY
     # ---------------------------------------------------------

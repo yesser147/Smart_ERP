@@ -6,6 +6,9 @@ export interface CurvePoint {
 export interface DepartmentBaseline {
   department_id: number;
   department_name: string;
+  department_type: string | null;   // NEW
+  business_unit: string | null;      // NEW
+  division_description: string | null; // NEW
   current_budget: number;
   current_performance: number;
   slider_min: number;
@@ -13,8 +16,6 @@ export interface DepartmentBaseline {
   curve: CurvePoint[];
   peak_budget: number;
   peak_performance: number;
-  sliderValue: number;
-
 }
 
 export interface SimulationResult {

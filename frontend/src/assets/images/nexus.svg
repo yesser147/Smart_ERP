@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0b1120"/>
+    </linearGradient>
+    
+    <!-- Cyan Glow -->
+    <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Coral Red Glow (Workforce Mix Mix) -->
+    <linearGradient id="coralGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+
+    <!-- Teal Glow -->
+    <linearGradient id="tealGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+
+    <!-- Neon Glow Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Container -->
+  <rect width="400" height="400" rx="24" fill="url(#bgGlow)"/>
+
+  <!-- Orbital Data Rings -->
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <circle cx="200" cy="200" r="95" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Connecting AI Neural Lines -->
+  <g stroke="url(#cyanGlow)" stroke-width="1.5" opacity="0.4">
+    <line x1="200" y1="60" x2="200" y2="340"/>
+    <line x1="60" y1="200" x2="340" y2="200"/>
+    <line x1="101" y1="101" x2="299" y2="299"/>
+    <line x1="101" y1="299" x2="299" y2="101"/>
+  </g>
+
+  <!-- Hexagonal Tech Node -->
+  <polygon points="200,105 282,152 282,248 200,295 118,248 118,152" 
+           fill="#0f172a" stroke="url(#cyanGlow)" stroke-width="2.5" filter="url(#neonGlow)"/>
+
+  <!-- Outer Orbital Nodes -->
+  <circle cx="200" cy="60" r="7" fill="#38bdf8" filter="url(#neonGlow)"/>
+  <circle cx="340" cy="200" r="7" fill="url(#coralGlow)" filter="url(#neonGlow)"/>
+  <circle cx="200" cy="340" r="7" fill="url(#tealGlow)" filter="url(#neonGlow)"/>
+  <circle cx="60" cy="200" r="7" fill="#38bdf8" filter="url(#neonGlow)"/>
+
+  <!-- Inner Core -->
+  <circle cx="200" cy="200" r="42" fill="#0b1120" stroke="url(#cyanGlow)" stroke-width="2"/>
+
+  <!-- Stylized "NX" Monogram -->
+  <path d="M 180,214 V 186 L 194,206 V 186 M 206,186 L 220,214 M 220,186 L 206,214" 
+        fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonGlow)"/>
+</svg>

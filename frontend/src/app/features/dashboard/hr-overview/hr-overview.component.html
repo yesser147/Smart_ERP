@@ -9,7 +9,7 @@
     <p class="text-sm text-slate-400 mt-1">Workforce KPIs and top performers</p>
   </div>
 
-  <!-- Top KPI Grid: now 5 cards -- engagement and risk split apart -->
+  <!-- Top KPI Grid -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
     <div class="erp-card p-5">
       <p class="erp-kpi-label">Total headcount</p>
@@ -41,32 +41,32 @@
 
     <div class="erp-card p-5">
       <p class="erp-kpi-label">High flight risk</p>
-      <h3 class="erp-kpi text-rose-400">{{ kpi?.highRiskCount || 0 }}</h3>
-      <p class="erp-kpi-meta">Employees, ML-predicted</p>
+      <h3 class="erp-kpi text-rose-400">{{ highRiskCount ?? kpi?.highRiskCount ?? 0 }}</h3>
+      <p class="erp-kpi-meta">
+        {{ riskIndicative ? 'Indicative only · low model reliability' : 'Employees, ML-predicted' }}
+      </p>
     </div>
   </div>
-  <!-- New: quick links into the two AI advisors, using data already fetched elsewhere -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4" *ngIf="recruitmentSummary">
-  <div class="erp-card p-5 flex items-center justify-between">
-    <div>
+
+  <!-- Quick links into the two AI advisors -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" *ngIf="recruitmentSummary">
+    <div class="erp-card p-5">
       <p class="erp-kpi-label">Recruitment pipeline</p>
       <h3 class="erp-kpi text-sky-400">{{ recruitmentSummary.activeApplications }}</h3>
       <p class="erp-kpi-meta">
         {{ recruitmentSummary.interviewing }} interviewing · {{ recruitmentSummary.offered }} offered
       </p>
     </div>
-    
-  </div>
 
-  <div class="erp-card p-5 flex items-center justify-between" *ngIf="budgetAlertCount > 0">
-    <div>
-      <p class="erp-kpi-label">Budget optimization</p>
-      <h3 class="erp-kpi text-amber-400">{{ budgetAlertCount }}</h3>
-      <p class="erp-kpi-meta">Underperforming departments flagged by AI</p>
+    <div class="erp-card p-5 flex items-center justify-between" *ngIf="budgetAlertCount > 0">
+      <div>
+        <p class="erp-kpi-label">Budget optimization</p>
+        <h3 class="erp-kpi text-amber-400">{{ budgetAlertCount }}</h3>
+        <p class="erp-kpi-meta">Underperforming departments flagged by AI</p>
+      </div>
+      <span class="erp-page-icon text-amber-400">💰</span>
     </div>
-    <span class="erp-page-icon text-amber-400">💰</span>
   </div>
-</div>
 
   <!-- Charts Row -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

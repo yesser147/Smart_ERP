@@ -17,10 +17,15 @@ export class HrOverviewComponent {
   @Input() budgetAlertCount: number = 0;
   @Input() departmentTypeCount: number = 0;
 
+  // High-risk count coming from the AI retention endpoint (same source as the Retention page)
+  @Input() highRiskCount: number | null = null;
+  @Input() riskIndicative = false;
+
   normalizedEngagement(value: number | undefined): number {
     const v = value ?? 0;
     return v > 5 ? v / 20 : v;
   }
+
   get dedupedTopPerformers(): { title: string; performanceScore: string; avgEngagement: number; count: number }[] {
     const map = new Map<string, { title: string; performanceScore: string; avgEngagement: number; count: number }>();
 

@@ -9,6 +9,7 @@ import {
 
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { HrService } from '../../../core/services/hr.service';
+import { AiService } from '../../../core/services/ai.service';
 import { EmployeeDTO, JobPostingDTO } from '../../../core/models/hr.model';
 import {
   KpiSummaryDTO,
@@ -52,16 +53,21 @@ export type ChartOptions = {
 };
 
 const DARK_THEME_BASE: Partial<ApexChart> = {
-  foreColor: '#94a3b8', 
+  foreColor: '#94a3b8',
   toolbar: { show: false },
   background: 'transparent',
+  width: '100%', // follows the container width (sidebar collapse / expand)
 };
+
+/** 120000 -> "120k", 850 -> "850" (avoids labels like 120000.0000000000) */
+const compactNumber = (v: number): string =>
+  Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : `${Math.round(v)}`;
 
 @Component({
   selector: 'app-hr-dashboard',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     NgApexchartsModule,
     HrOverviewComponent,
     HrTurnoverComponent,
@@ -77,9 +83,10 @@ const DARK_THEME_BASE: Partial<ApexChart> = {
 export class HrDashboardComponent implements OnInit {
   private analyticsService = inject(AnalyticsService);
   private hrService = inject(HrService);
+  private aiService = inject(AiService);
 
   @Input() currentView: string = 'overview';
-  
+
   loading = true;
 
   kpi!: KpiSummaryDTO;
@@ -88,10 +95,14 @@ export class HrDashboardComponent implements OnInit {
   topPerformers: TopPerformerBenchmarksDTO[] = [];
   turnoverData: DepartmentTurnoverDTO[] = [];
   payGapData: GenderPayGapDTO[] = [];
-  timeToHireData: TimeToHireDTO[] = []; 
+  timeToHireData: TimeToHireDTO[] = [];
   recruitmentSummary: { activeApplications: number; interviewing: number; offered: number } | null = null;
   departmentTypeCount = 0;
   departmentSummary: DepartmentSummaryDTO[] = [];
+
+  // High-risk count from the AI retention endpoint (same source as the Retention page)
+  highRiskCount: number | null = null;
+  riskIndicative = false;
 
   turnoverChart!: ChartOptions;
   turnoverTypeChart!: ChartOptions;
@@ -104,6 +115,8 @@ export class HrDashboardComponent implements OnInit {
   payGapChart!: ChartOptions;
 
   ngOnInit(): void {
+    this.loadRiskSummary();
+
     forkJoin({
       kpis: this.analyticsService.getDashboardKpis(),
       turnover: this.analyticsService.getTurnoverStats(),
@@ -119,7 +132,7 @@ export class HrDashboardComponent implements OnInit {
       jobPostings: this.hrService.getAllJobPostings(),
       departmentSummary: this.analyticsService.getDepartmentSummary()
     }).subscribe(({ kpis, turnover, turnoverType, salary, funnel, training, topPerformers, performance, payGap, timeToHire, employees, jobPostings, departmentSummary }) => {
-      
+
       this.kpi = kpis;
       this.employees = employees;
       this.jobPostings = jobPostings;
@@ -127,14 +140,21 @@ export class HrDashboardComponent implements OnInit {
       this.payGapData = payGap;
       this.timeToHireData = timeToHire;
 
+      // "Active" = every application that has not been rejected
+      const sumOf = (pick: (f: RecruitmentFunnelAtsDTO) => number | undefined) =>
+        funnel.reduce((s, f) => s + (pick(f) ?? 0), 0);
+      const notRejected =
+        sumOf(f => f.appliedCount) + sumOf(f => f.inReviewCount) +
+        sumOf(f => f.interviewingCount) + sumOf(f => f.offeredCount);
+
       this.recruitmentSummary = {
-        activeApplications: funnel.reduce((sum, f) => sum + (f.appliedCount || 0) + (f.inReviewCount || 0), 0),
-        interviewing: funnel.reduce((sum, f) => sum + (f.interviewingCount || 0), 0),
-        offered: funnel.reduce((sum, f) => sum + (f.offeredCount || 0), 0)
+        activeApplications: notRejected,
+        interviewing: sumOf(f => f.interviewingCount),
+        offered: sumOf(f => f.offeredCount)
       };
 
       this.departmentTypeCount = new Set(
-        departmentSummary.map((d: DepartmentSummaryDTO) => d.departmentType || 'Non classé')
+        departmentSummary.map((d: DepartmentSummaryDTO) => d.departmentType || 'Unclassified')
       ).size;
       this.departmentSummary = departmentSummary;
 
@@ -153,6 +173,17 @@ export class HrDashboardComponent implements OnInit {
       this.payGapChart = this.buildPayGapChart(payGap);
 
       this.loading = false;
+    });
+  }
+
+  /** Separate from the forkJoin so a slow/failed AI call never blocks the dashboard. */
+  private loadRiskSummary(): void {
+    this.aiService.getRetentionStrategy().subscribe({
+      next: (r) => {
+        this.highRiskCount = r?.macro_metrics?.high_risk_count ?? null;
+        this.riskIndicative = !!r?.model_quality && r.model_quality.level !== 'acceptable';
+      },
+      error: () => { this.highRiskCount = null; } // Overview falls back to kpi.highRiskCount
     });
   }
 
@@ -182,7 +213,7 @@ export class HrDashboardComponent implements OnInit {
     return {
       series: [active, terminated],
       chart: { type: 'donut', height: 320, ...DARK_THEME_BASE },
-      labels: ['Actifs', 'Terminés'],
+      labels: ['Active', 'Terminated'],
       colors: ['#2dd4bf', '#f87171'],
       legend: { position: 'bottom', labels: { colors: '#94a3b8' } },
       dataLabels: { enabled: true },
@@ -194,9 +225,10 @@ export class HrDashboardComponent implements OnInit {
 
   private buildSalaryChart(salary: DepartmentSalarySummaryDTO[]): ChartOptions {
     return {
-      series: [{ name: 'Salaire Moyen', data: salary.map(s => Math.round(s.avgSalary ?? 0)) }],
+      series: [{ name: 'Average salary', data: salary.map(s => Math.round(s.avgSalary ?? 0)) }],
       chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
       xaxis: { categories: salary.map(s => s.divisionDescription || s.businessUnit || 'Unknown') },
+      yaxis: { labels: { formatter: compactNumber } },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
       dataLabels: { enabled: false },
       colors: ['#38bdf8'],
@@ -210,27 +242,45 @@ export class HrDashboardComponent implements OnInit {
     };
   }
 
+  /**
+   * Cumulative funnel. Each application has ONE current status, so raw counts per
+   * status are a distribution, not a funnel. Here everyone who reached a stage is
+   * counted in the earlier stages too. Rejected applications are only counted in
+   * "Received" because the stage at which they were rejected is not recorded.
+   */
   private buildFunnelChart(funnel: RecruitmentFunnelAtsDTO[]): ChartOptions {
-    const totals = funnel.reduce(
-      (acc, f) => {
-        acc.applied += f.appliedCount ?? 0;
-        acc.inReview += f.inReviewCount ?? 0;
-        acc.interviewing += f.interviewingCount ?? 0;
-        acc.offered += f.offeredCount ?? 0;
-        acc.rejected += f.rejectedCount ?? 0;
-        return acc;
-      },
-      { applied: 0, inReview: 0, interviewing: 0, offered: 0, rejected: 0 }
-    );
+    const sumOf = (pick: (f: RecruitmentFunnelAtsDTO) => number | undefined) =>
+      funnel.reduce((s, f) => s + (pick(f) ?? 0), 0);
+
+    const applied = sumOf(f => f.appliedCount);
+    const inReview = sumOf(f => f.inReviewCount);
+    const interviewing = sumOf(f => f.interviewingCount);
+    const offered = sumOf(f => f.offeredCount);
+    const rejected = sumOf(f => f.rejectedCount);
+
+    const received = applied + inReview + interviewing + offered + rejected;
+    const screened = inReview + interviewing + offered;
+    const interviewed = interviewing + offered;
+
+    const categories = ['Received', 'Screened', 'Interviewed', 'Offered'];
+    const stages = [received, screened, interviewed, offered];
+
     return {
-      series: [{ name: 'Candidats', data: [totals.applied, totals.inReview, totals.interviewing, totals.offered, totals.rejected] }],
-      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
-      xaxis: { categories: ['Candidatures', 'En Examen', 'Entretien', 'Offre Envoyée', 'Rejetés'] },
-      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', distributed: true } },
-      dataLabels: { enabled: true },
-      colors: ['#818cf8', '#facc15', '#38bdf8', '#4ade80', '#f87171'],
+      series: [{ name: 'Applications', data: stages }],
+      chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
+      plotOptions: { bar: { horizontal: true, isFunnel: true, distributed: true } as any },
+      xaxis: { categories },
+      colors: ['#818cf8', '#38bdf8', '#2dd4bf', '#4ade80'],
+      dataLabels: {
+        enabled: true,
+        formatter: (val: number, opts: any) => {
+          const pct = received ? ((val / received) * 100).toFixed(0) : '0';
+          return `${categories[opts.dataPointIndex]}: ${val} (${pct}%)`;
+        },
+        dropShadow: { enabled: false }
+      },
       fill: { opacity: 0.9 },
-      grid: { borderColor: '#334155', strokeDashArray: 4 },
+      grid: { show: false },
       tooltip: { theme: 'dark' },
       legend: { show: false },
     };
@@ -247,9 +297,20 @@ export class HrDashboardComponent implements OnInit {
     const data = Object.values(investmentByDivision);
 
     return {
-      series: [{ name: 'Investissement', data }],
+      series: [{ name: 'Investment', data }],
       chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
-      xaxis: { categories, labels: { hideOverlappingLabels: true, rotate: -45 } },
+      xaxis: {
+        categories,
+        labels: {
+          hideOverlappingLabels: false, // show every division, not every other one
+          rotate: -45,
+          rotateAlways: true,
+          trim: true,
+          maxHeight: 120,
+          style: { fontSize: '10px' }
+        }
+      },
+      yaxis: { labels: { formatter: compactNumber } },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
       dataLabels: { enabled: false },
       colors: ['#a78bfa'],
@@ -319,30 +380,30 @@ export class HrDashboardComponent implements OnInit {
     };
   }
 
-private buildJobPostingsChart(postings: JobPostingDTO[]): ChartOptions {
-  const openPostings = postings.filter(j => !j.status || j.status.toUpperCase() === 'OPEN');
-  const groupCounts: { [key: string]: number } = {};
+  private buildJobPostingsChart(postings: JobPostingDTO[]): ChartOptions {
+    const openPostings = postings.filter(j => !j.status || j.status.toUpperCase() === 'OPEN');
+    const groupCounts: { [key: string]: number } = {};
 
-  openPostings.forEach(j => {
-    const groupKey = j.departmentType || j.divisionDescription || j.businessUnit || 'Non assigné';
-    groupCounts[groupKey] = (groupCounts[groupKey] || 0) + 1;
-  });
+    openPostings.forEach(j => {
+      const groupKey = j.departmentType || j.divisionDescription || j.businessUnit || 'Unassigned';
+      groupCounts[groupKey] = (groupCounts[groupKey] || 0) + 1;
+    });
 
-  const categories = Object.keys(groupCounts);
-  const data = Object.values(groupCounts);
+    const categories = Object.keys(groupCounts);
+    const data = Object.values(groupCounts);
 
-  return {
-    series: [{ name: 'Postes Ouverts', data }],
-    chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
-    xaxis: { categories },
-    plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
-    colors: ['#38bdf8'],
-    dataLabels: { enabled: true },
-    grid: { borderColor: '#334155', strokeDashArray: 4 },
-    tooltip: { theme: 'dark' },
-    legend: { show: false }
-  };
-}
+    return {
+      series: [{ name: 'Open postings', data }],
+      chart: { type: 'bar', height: 300, ...DARK_THEME_BASE },
+      xaxis: { categories },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '45%' } },
+      colors: ['#38bdf8'],
+      dataLabels: { enabled: true },
+      grid: { borderColor: '#334155', strokeDashArray: 4 },
+      tooltip: { theme: 'dark' },
+      legend: { show: false }
+    };
+  }
 
   /** Groups by division (the real, comparable job-function unit) with the
    * department type appended for context -- business_unit is a site/location
@@ -369,6 +430,7 @@ private buildJobPostingsChart(postings: JobPostingDTO[]): ChartOptions {
       series,
       chart: { type: 'bar', height: 320, ...DARK_THEME_BASE },
       xaxis: { categories: divisions.map(labelFor), labels: { rotate: -45, hideOverlappingLabels: true } },
+      yaxis: { labels: { formatter: compactNumber } },
       plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
       dataLabels: { enabled: false },
       colors: ['#38bdf8', '#f472b6', '#a78bfa'],

@@ -1,15 +1,47 @@
+import os
 import json
 import pandas as pd
 from sqlalchemy import text
 from database import engine
-from groq import Groq  # Updated import
+from groq import Groq
 import config
+
+METRICS_PATH = os.path.join(config.ARTIFACT_DIR, "retention_metrics.json")
+
+
+def _load_model_quality():
+    """Data-driven reliability level, computed from the cross-validation
+    metrics saved by train.py."""
+    try:
+        with open(METRICS_PATH, encoding="utf-8") as f:
+            m = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"level": "unknown", "cv_auc": None, "cv_pr_auc": None,
+                "churn_rate": None, "n_rows": None, "n_churned": None}
+
+    auc = m.get("cv_auc")
+    if auc is None or auc < 0.60:
+        level = "insufficient"
+    elif auc < 0.70:
+        level = "low"
+    else:
+        level = "acceptable"
+
+    return {
+        "level": level,
+        "cv_auc": auc,
+        "cv_pr_auc": m.get("cv_pr_auc"),
+        "churn_rate": m.get("churn_rate"),
+        "n_rows": m.get("n_rows"),
+        "n_churned": m.get("n_churned"),
+    }
+
 
 def get_cohort_exit_reasons(department_ids):
     """Pulls aggregated historical exit reasons for departments in the high-risk pool."""
     if not department_ids:
         return []
-    
+
     valid_ids = [str(int(d)) for d in department_ids if pd.notna(d)]
     if not valid_ids:
         return []
@@ -24,19 +56,21 @@ def get_cohort_exit_reasons(department_ids):
         ORDER BY total_exits DESC
         LIMIT 5;
     """)
-    
+
     with engine.connect() as conn:
         result = conn.execute(query).fetchall()
         return [f"{row[0]} Depts - '{row[1]}' ({row[2]} past terminations)" for row in result if row[1]]
+
 
 def generate_macro_retention_strategy(high_risk_df, total_active_count, threshold=0.70):
     """
     Analyzes all employees above the risk threshold, aggregates SHAP drivers into percentages,
     and prompts Groq LLM to generate a generalized company-wide strategy.
     """
-    # Initialize native Groq client
     client = Groq(api_key=config.GROQ_API_KEY)
-    
+    quality = _load_model_quality()
+    quality_str = json.dumps(quality)
+
     high_risk_count = len(high_risk_df)
     high_risk_pct = round((high_risk_count / total_active_count) * 100, 1) if total_active_count > 0 else 0
 
@@ -46,11 +80,10 @@ def generate_macro_retention_strategy(high_risk_df, total_active_count, threshol
         for d in drivers:
             feat = d['feature']
             driver_counts[feat] = driver_counts.get(feat, 0) + 1
-            
-    # Convert counts to percentages of the high-risk population
+
     driver_summary = []
     for feat, count in sorted(driver_counts.items(), key=lambda x: x[1], reverse=True):
-        pct_of_high_risk = round((count / high_risk_count) * 100, 1)
+        pct_of_high_risk = round((count / high_risk_count) * 100, 1) if high_risk_count else 0
         driver_summary.append(f"- {feat}: Primary risk trigger for {pct_of_high_risk}% of high-risk employees ({count}/{high_risk_count}).")
 
     driver_summary_str = "\n".join(driver_summary)
@@ -58,7 +91,7 @@ def generate_macro_retention_strategy(high_risk_df, total_active_count, threshol
     # 2. Gather Historical Context for affected departments
     unique_depts = high_risk_df["department_id"].dropna().unique().tolist()
     exit_notes = get_cohort_exit_reasons(unique_depts)
-    
+
     historical_context = ""
     if exit_notes:
         exits_text = "\n".join([f"- {note}" for note in exit_notes])
@@ -67,6 +100,11 @@ def generate_macro_retention_strategy(high_risk_df, total_active_count, threshol
     # 3. Prompt Groq for a Macro Strategy
     prompt = f"""You are an AI Chief HR Officer.
 An XGBoost ML model analyzed the entire workforce ({total_active_count} active employees).
+
+MODEL QUALITY (cross-validated on employees the model had not seen): {quality_str}
+- cv_auc 0.50 means the model ranks employees no better than chance; 1.00 is perfect.
+- If level is "insufficient" or "low", the executive_summary MUST state clearly that the risk model has
+  little or no reliable predictive power, so the at-risk figures and drivers are indicative only.
 
 WORKFORCE EXPOSURE METRICS:
 - Risk Threshold: Risk Score >= {int(threshold * 100)}%
@@ -90,7 +128,7 @@ Constraints:
         "high_risk_percentage": {high_risk_pct},
         "risk_threshold": {threshold}
     }},
-    "executive_summary": "Summarize the workforce risk exposure and generalized core issues in 2-3 sentences.",
+    "executive_summary": "Summarize the workforce risk exposure, the reliability of the model and the generalized core issues in 2-3 sentences.",
     "generalized_root_causes": [
         "Root cause 1 derived from dominant ML drivers and exit history",
         "Root cause 2..."
@@ -113,8 +151,10 @@ Constraints:
             timeout=30.0,
             response_format={"type": "json_object"}
         )
-        return json.loads(response.choices[0].message.content)
-        
+        result = json.loads(response.choices[0].message.content)
+        result["model_quality"] = quality
+        return result
+
     except Exception as e:
         print(f"\n[API Warning] LLM Generation Failed: {str(e)}")
         return {
@@ -126,5 +166,6 @@ Constraints:
             },
             "executive_summary": "Warning: AI Strategy generation failed. Review macro metrics and ML drivers manually.",
             "generalized_root_causes": [f"AI analysis temporarily unavailable: {str(e)}"],
-            "systemic_interventions": []
+            "systemic_interventions": [],
+            "model_quality": quality
         }

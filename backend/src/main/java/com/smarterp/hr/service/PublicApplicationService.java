@@ -11,7 +11,6 @@ import com.smarterp.hr.repository.JobApplicationRepository;
 import com.smarterp.hr.repository.JobPostingRepository;
 import com.smarterp.shared.exception.ResourceNotFoundException;
 import com.smarterp.shared.storage.MinioService;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +28,6 @@ public class PublicApplicationService {
     private final JobPostingRepository jobPostingRepository;
     private final JobApplicationRepository jobApplicationRepository;
     private final MinioService minioService;
-    private final EntityManager entityManager; // NEW
 
     @Transactional
     public JobApplicationSubmissionDTO submitApplication(
@@ -38,7 +35,7 @@ public class PublicApplicationService {
             String educationLevel, Long jobId, Double desiredSalary, MultipartFile cv
     ) {
         JobPosting job = jobPostingRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune offre trouvée avec l'id : " + jobId));
+                .orElseThrow(() -> new ResourceNotFoundException("No job posting found with id: " + jobId));
 
         Applicant applicant = applicantRepository.findByEmail(email)
                 .orElseGet(() -> {
@@ -61,21 +58,21 @@ public class PublicApplicationService {
         applicantCv.setExtractedSkillsJson(null);
         applicantCvRepository.save(applicantCv);
 
-       JobApplication application = new JobApplication();
-// REMOVED: application.setApplicationId(UUID.randomUUID());
-application.setApplicant(applicant);
-application.setJobPosting(job);
-application.setApplicationDate(LocalDate.now());
-application.setDesiredSalary(
-        desiredSalary != null ? BigDecimal.valueOf(desiredSalary) : null
-);
-application.setStatus("APPLIED");
+        JobApplication application = new JobApplication();
+        application.setApplicant(applicant);
+        application.setJobPosting(job);
+        application.setApplicationDate(LocalDate.now());
+        application.setDesiredSalary(
+                desiredSalary != null ? BigDecimal.valueOf(desiredSalary) : null
+        );
+        application.setStatus("APPLIED");
 
-JobApplication saved = jobApplicationRepository.save(application); // back to plain save(), works correctly now
+        JobApplication saved = jobApplicationRepository.save(application);
 
-return new JobApplicationSubmissionDTO(
-        applicant.getApplicantId(),
-        saved.getApplicationId(),
-        "Candidature reçue. Merci !"
-);}
+        return new JobApplicationSubmissionDTO(
+                applicant.getApplicantId(),
+                saved.getApplicationId(),
+                "Application received. Thank you!"
+        );
+    }
 }

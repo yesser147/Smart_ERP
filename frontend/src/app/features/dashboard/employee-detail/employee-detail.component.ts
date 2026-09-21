@@ -98,4 +98,7 @@ export class EmployeeDetailComponent implements OnInit {
     if (this.surveys.length === 0) return null;
     return Math.round((this.surveys.reduce((s, x) => s + (x.workLifeBalanceScore ?? 0), 0) / this.surveys.length) * 10) / 10;
   }
+  isTerminated(e: { employeeStatus?: string | null }): boolean {
+    return (e.employeeStatus ?? '').toLowerCase().includes('terminat');
+  }
 }

@@ -2,35 +2,73 @@ import json
 from groq import Groq
 import config
 
+METRICS_PATH = 'models/budget/saved_models/budget_metrics.json'
+
+
+def _clean(value):
+    """Keep only real, non-empty strings."""
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _load_model_quality():
+    """Data-driven reliability level, computed from the cross-validation
+    metrics saved by train.py."""
+    try:
+        with open(METRICS_PATH, encoding='utf-8') as f:
+            m = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"level": "unknown", "cv_r2": None, "cv_mae": None,
+                "n_rows": None, "n_rows_total": None, "min_headcount": None}
+
+    r2 = m.get("cv_r2")
+    if r2 is None or r2 < 0.05:
+        level = "insufficient"
+    elif r2 < 0.25:
+        level = "low"
+    else:
+        level = "acceptable"
+
+    return {
+        "level": level,
+        "cv_r2": r2,
+        "cv_mae": m.get("cv_mae"),
+        "n_rows": m.get("n_rows"),
+        "n_rows_total": m.get("n_rows_total"),
+        "min_headcount": m.get("min_headcount"),
+    }
+
 
 def generate_budget_proposal(elasticity_df, comparison_chart, sensitivity_curve, worst_depts_analysis):
     client = Groq(api_key=config.GROQ_API_KEY)
 
-    worst_depts_str = json.dumps(worst_depts_analysis, indent=2)
+    quality = _load_model_quality()
+    analysis_str = json.dumps(worst_depts_analysis, indent=2)
+    quality_str = json.dumps(quality)
 
     prompt = f"""You are an AI Chief Financial Officer.
 An XGBoost Regression model evaluated department training budget elasticity.
 
-CRITICAL PRIORITY: Target the bottom 3 worst-performing departments with optimal budget increases.
+MODEL QUALITY (cross-validated on unseen departments): {quality_str}
+- cv_r2 near 0 means the model cannot predict performance better than guessing the average.
+- If level is "insufficient" or "low", the memo MUST clearly say that the available data is not
+  enough for reliable predictions and that the figures are illustrative only.
 
-Bottom 3 Departments Analysis & Price Variation Tests:
-{worst_depts_str}
+You are given 6 departments: the 3 TOP performers (group "top") and the 3 BOTTOM performers (group "bottom"),
+ranked by current predicted performance. For each one, the model already computed the OPTIMAL training budget
+(the peak of its performance/budget curve). "budget_change" is optimal_budget minus current_budget and can be
+negative, which means the model predicts higher performance with a LOWER budget.
 
-Task: Formulate a budget reallocation proposal in JSON format.
-Select optimal price variations for these 3 departments that deliver high ROI before diminishing returns set in.
+Analysis:
+{analysis_str}
 
-Constraints:
-1. Return ONLY a valid JSON object matching this structure:
+Task: Write an executive memo and strategic insights that explain these optimal budgets.
+Do NOT change or invent any number. Mention departments where the model recommends a reduction.
+
+Return ONLY a valid JSON object matching this structure:
 {{
-    "recommended_allocations": [
-        {{
-            "department_id": 1,
-            "department_name": "Name",
-            "recommended_budget_increase": 5000,
-            "expected_performance_gain": 0.00
-        }}
-    ],
-    "executive_proposal_memo": "Justify your selected price points for the bottom 3 departments.",
+    "executive_proposal_memo": "Explain the optimal budgets and the reliability of the predictions.",
     "chart_insights": [
         "Insight 1: Identify diminishing return thresholds.",
         "Insight 2: Strategic takeaway."
@@ -42,35 +80,47 @@ Constraints:
             model=config.GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
-            max_tokens=1024,
+            max_tokens=1500,
             response_format={"type": "json_object"}
         )
         llm_payload = json.loads(response.choices[0].message.content)
     except Exception as e:
         llm_payload = {
-            "recommended_allocations": [],
             "executive_proposal_memo": f"API Error: {str(e)}",
             "chart_insights": ["Review charts manually."]
         }
 
-    # BUG FIXED HERE: the JSON schema above never asks the LLM to return
-    # current_budget/current_performance, so the Angular chart's fallback
-    # chain (a.current_budget ?? a.base_budget ?? 100000) was hitting the
-    # hardcoded $100,000 placeholder for every single department. Never
-    # rely on an LLM to accurately echo back a ground-truth number it was
-    # never asked to return -- merge the real, deterministic ML numbers
-    # in here instead, matched by department_id.
-    ground_truth_by_id = {int(d["department_id"]): d for d in worst_depts_analysis}
-    for alloc in llm_payload.get("recommended_allocations", []):
-        try:
-            dept_id = int(alloc.get("department_id"))
-        except (TypeError, ValueError):
-            continue
-        truth = ground_truth_by_id.get(dept_id)
-        if truth:
-            alloc["current_budget"] = truth["current_budget"]
-            alloc["current_performance"] = truth["current_performance"]
+    meta_by_id = {}
+    if elasticity_df is not None and not elasticity_df.empty:
+        for _, row in elasticity_df.iterrows():
+            meta_by_id[int(row["department_id"])] = {
+                "division_description": _clean(row.get("division_description")),
+                "department_type": _clean(row.get("department_type")),
+                "business_unit": _clean(row.get("business_unit")),
+            }
 
+    allocations = []
+    for d in worst_depts_analysis:
+        dept_id = int(d["department_id"])
+        allocations.append({
+            "department_id": dept_id,
+            "department_name": d["department_name"],
+            "group": d["group"],
+            "current_budget": d["current_budget"],
+            "current_performance": d["current_performance"],
+            "optimal_budget": d["optimal_budget"],
+            "recommended_budget_increase": d["budget_change"],  # signed change vs current
+            "predicted_performance": d["optimal_performance"],
+            "expected_performance_gain": d["performance_gain"],
+            **meta_by_id.get(dept_id, {
+                "division_description": None,
+                "department_type": None,
+                "business_unit": None,
+            }),
+        })
+
+    llm_payload["recommended_allocations"] = allocations
+    llm_payload["model_quality"] = quality
     llm_payload["chart_data"] = {
         "department_comparison_bar_chart": comparison_chart,
         "worst_departments_price_tests": worst_depts_analysis

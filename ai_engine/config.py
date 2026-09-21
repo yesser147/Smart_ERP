@@ -89,7 +89,7 @@ NUMERIC_FEATURES = [
     "avg_engagement_score",
     "avg_satisfaction_score",
     "avg_work_life_balance",
-    "department_turnover_rate",
+    # "department_turnover_rate",  <- removed: it contains the employee's own exit
 ]
 
 CHURN_STATUSES = ["Terminated"]

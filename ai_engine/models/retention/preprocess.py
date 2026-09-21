@@ -34,13 +34,19 @@ def is_churned(status_series, churn_statuses=None):
     return status_series.fillna("").str.upper().str.contains(pattern, regex=True)
 
 
+def _unique_categories(series):
+    """Sorted unique text values, always including 'Unknown' exactly once.
+    (fillna('Unknown') can already produce 'Unknown', so a plain
+    `+ ['Unknown']` would create a duplicate category and crash pandas.)"""
+    values = set(series.fillna("Unknown").astype(str).unique().tolist())
+    values.add("Unknown")
+    return sorted(values)
+
+
 def capture_text_categories(df):
     """STEP 1B: Create a dictionary of all text categories (e.g., Departments).
     This ensures the model knows all possible text values during training."""
-    return {
-        col: sorted(df[col].fillna("Unknown").astype(str).unique().tolist() + ["Unknown"])
-        for col in config.CATEGORICAL_FEATURES
-    }
+    return {col: _unique_categories(df[col]) for col in config.CATEGORICAL_FEATURES}
 
 
 def format_ml_features(df, schema=None):
@@ -54,7 +60,7 @@ def format_ml_features(df, schema=None):
     # 2. Format text columns based on the schema
     for col in config.CATEGORICAL_FEATURES:
         df[col] = df[col].fillna("Unknown").astype(str)
-        categories = schema[col] if schema else sorted(df[col].unique().tolist() + ["Unknown"])
+        categories = schema[col] if schema else _unique_categories(df[col])
         df[col] = pd.Categorical(df[col], categories=categories)
 
     # 3. Combine Categorical (text) and Numeric features

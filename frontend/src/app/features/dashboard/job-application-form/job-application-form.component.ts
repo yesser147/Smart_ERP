@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -17,6 +17,7 @@ export class JobApplicationFormComponent implements OnInit {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private hrService = inject(HrService);
+  private location = inject(Location);
 
   private baseUrl = 'http://localhost:8080/api/v1/public/applications';
 
@@ -27,7 +28,7 @@ export class JobApplicationFormComponent implements OnInit {
   errorMessage: string | null = null;
 
   // yearsOfExperience removed on purpose -- it's deduced by the LLM from
-  // the actual CV text once "Traiter CV" runs, not asked of the applicant.
+  // the actual CV text once "Process CV" runs, not asked of the applicant.
   applicationForm = this.fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
@@ -52,10 +53,14 @@ export class JobApplicationFormComponent implements OnInit {
     this.selectedFile = input.files?.[0] ?? null;
   }
 
+  goBack(): void {
+    this.location.back();
+  }
+
   onSubmit(): void {
     if (this.applicationForm.invalid || !this.selectedFile) {
       this.applicationForm.markAllAsTouched();
-      if (!this.selectedFile) this.errorMessage = 'Veuillez joindre votre CV (PDF).';
+      if (!this.selectedFile) this.errorMessage = 'Please attach your CV (PDF).';
       return;
     }
 
@@ -70,25 +75,20 @@ export class JobApplicationFormComponent implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
-    // IMPORTANT: never set a Content-Type header manually here. The
-    // browser must set it itself (including the multipart boundary
-    // string) when the body is a FormData object. Manually setting
-    // Content-Type: multipart/form-data (via an interceptor or an
-    // explicit headers object on this call) is what produces a broken
-    // request with no boundary -- and in some setups, code that builds
-    // the request URL by concatenating strings can end up appending the
-    // content-type value onto the URL path itself, which is exactly the
-    // ".../applications/multipart/form-data" 404 you saw.
+    // IMPORTANT: never set a Content-Type header manually here. The browser
+    // must set it itself (including the multipart boundary) for a FormData body.
     this.http.post<{ message: string }>(this.baseUrl, formData).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        this.successMessage = res.message;
+        this.successMessage = res?.message || 'Application submitted.';
         this.applicationForm.reset();
         this.selectedFile = null;
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = err?.error?.message || "Erreur lors de l'envoi de la candidature.";
+        console.error('Application submit failed', err.status, err.error);
+        this.errorMessage =
+          err?.error?.message || `Failed to submit the application (HTTP ${err.status}).`;
       }
     });
   }

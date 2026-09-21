@@ -2,18 +2,20 @@
   <ng-container [ngSwitch]="currentView">
 
     <app-hr-overview *ngSwitchCase="'overview'"
-  [kpi]="kpi"
-  [statusDonut]="statusDonut"
-  [topPerformers]="topPerformers"
-  [recruitmentSummary]="recruitmentSummary"
-  [departmentTypeCount]="departmentTypeCount">
-</app-hr-overview>
-<app-hr-turnover *ngSwitchCase="'turnover'"
-  [turnoverTypeChart]="turnoverTypeChart"
-  [departmentSummary]="departmentSummary">
-</app-hr-turnover>
+      [kpi]="kpi"
+      [statusDonut]="statusDonut"
+      [topPerformers]="topPerformers"
+      [recruitmentSummary]="recruitmentSummary"
+      [departmentTypeCount]="departmentTypeCount"
+      [highRiskCount]="highRiskCount"
+      [riskIndicative]="riskIndicative">
+    </app-hr-overview>
 
-    <!-- payGapChart added -->
+    <app-hr-turnover *ngSwitchCase="'turnover'"
+      [turnoverTypeChart]="turnoverTypeChart"
+      [departmentSummary]="departmentSummary">
+    </app-hr-turnover>
+
     <app-hr-compensation *ngSwitchCase="'compensation'"
       [salaryChart]="salaryChart"
       [performanceChart]="performanceChart"
@@ -21,11 +23,11 @@
       [payGapChart]="payGapChart">
     </app-hr-compensation>
 
-<app-hr-recruitment *ngSwitchCase="'recruitment'"
-  [funnelChart]="funnelChart"
-  [jobPostingsChart]="jobPostingsChart"
-  [jobPostings]="jobPostings">
-</app-hr-recruitment>
+    <app-hr-recruitment *ngSwitchCase="'recruitment'"
+      [funnelChart]="funnelChart"
+      [jobPostingsChart]="jobPostingsChart"
+      [jobPostings]="jobPostings">
+    </app-hr-recruitment>
 
     <app-hr-budget-advisor *ngSwitchCase="'budget'">
     </app-hr-budget-advisor>

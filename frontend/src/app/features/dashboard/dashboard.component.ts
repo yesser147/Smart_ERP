@@ -21,6 +21,18 @@ const ROLE_LABELS: Record<string, string> = {
   ROLE_MANAGER: 'Manager',
 };
 
+const MENU_META: Record<string, { title: string; group: string }> = {
+  overview:       { title: 'Overview',                   group: 'Analytics' },
+  turnover:       { title: 'Turnover & Retention',       group: 'Analytics' },
+  compensation:   { title: 'Compensation & Performance', group: 'Analytics' },
+  recruitment:    { title: 'Recruitment & Training',     group: 'Analytics' },
+  employees:      { title: 'Employees',                  group: 'Management' },
+  departments:    { title: 'Departments',                group: 'Management' },
+  budget:         { title: 'Budget Optimization (AI)',   group: 'AI & Strategy' },
+  retention:      { title: 'Retention Strategy (AI)',    group: 'AI & Strategy' },
+  admin_overview: { title: 'System Settings',            group: 'Admin' },
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -43,10 +55,10 @@ export class DashboardComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   userInfo: any = null;
-  activeMenu: string = 'overview'; // Tracks which sidebar menu is clicked
+  activeMenu: string = 'overview';
   sidebarCollapsed = false;
+  today = new Date();
 
-  /** true while a child page (applicant detail, hire form...) is open */
   childActive = !!this.route.snapshot.firstChild;
 
   constructor() {
@@ -59,7 +71,6 @@ export class DashboardComponent implements OnInit {
     this.userInfo = {
       email: 'hr@smarterp.com',
       role: 'ROLE_HR_MANAGER'
-      // TODO: once login returns firstName/lastName, add them here too
     };
 
     try {
@@ -69,7 +80,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  /** Sidebar click: select the tab, and leave the child page if one is open. */
   selectMenu(menu: string): void {
     this.activeMenu = menu;
     if (this.childActive) this.router.navigate(['/dashboard']);
@@ -82,6 +92,9 @@ export class DashboardComponent implements OnInit {
     } catch {
       /* ignore quota / private mode errors */
     }
+
+    // The sidebar transition lasts 200ms: once it ends, tell ApexCharts to re-measure
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
   }
 
   get roleLabel(): string {
@@ -97,6 +110,23 @@ export class DashboardComponent implements OnInit {
     if (full) return full;
     const email = (info?.email as string) || '';
     return email.includes('@') ? email.split('@')[0] : email;
+  }
+
+  get pageTitle(): string {
+    return MENU_META[this.activeMenu]?.title || 'Dashboard';
+  }
+
+  get pageGroup(): string {
+    return MENU_META[this.activeMenu]?.group || '';
+  }
+
+  get userInitials(): string {
+    const name = this.displayName;
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return parts.length > 1
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : name.slice(0, 2).toUpperCase();
   }
 
   isGroupActive(keys: string[]): boolean {

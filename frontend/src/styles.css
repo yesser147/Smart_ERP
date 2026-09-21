@@ -262,3 +262,40 @@ body .apexcharts-tooltip-text-value {
     
   min-height: 100vh;
 }
+.erp-card {
+  background-color: rgb(30 41 59 / 0.75); /* slate-800 at 75% */
+  backdrop-filter: blur(6px);
+}
+
+/* Dark scrollbars everywhere */
+html {
+  color-scheme: dark; /* also darkens native form controls, e.g. your <select> and checkbox */
+}
+
+* {
+  scrollbar-width: thin;                          /* Firefox + Chrome 121+ */
+  scrollbar-color: #334155 transparent;           /* thumb (slate-700), track */
+}
+
+/* Fallback for older Chrome/Edge/Safari, which ignore scrollbar-color */
+@supports not (scrollbar-color: auto) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #475569;                    /* slate-600 */
+  }
+  *::-webkit-scrollbar-button {
+    display: none;                                /* removes the up/down arrows */
+  }
+}

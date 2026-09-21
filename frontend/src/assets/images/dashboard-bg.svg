@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none" stroke="#38bdf8" stroke-width="1.5">
+  <defs>
+    <radialGradient id="glow" cx="75%" cy="20%" r="55%">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#glow)" stroke="none"/>
+
+  <!-- neural network -->
+  <path opacity=".6" d="M1000 140L1130 90L1260 180L1400 110L1520 210L1480 380L1350 290L1260 180L1210 320L1080 270L1000 140M1080 270L1000 380L1130 430L1210 320L1280 470L1350 290M1280 470L1130 430M1280 470L1420 520L1480 380M1420 520L1540 520L1480 380"/>
+  <g fill="#38bdf8" stroke="none" opacity=".8">
+    <circle cx="1000" cy="140" r="6"/><circle cx="1130" cy="90" r="6"/><circle cx="1260" cy="180" r="6"/>
+    <circle cx="1400" cy="110" r="6"/><circle cx="1520" cy="210" r="6"/><circle cx="1080" cy="270" r="6"/>
+    <circle cx="1210" cy="320" r="6"/><circle cx="1350" cy="290" r="6"/><circle cx="1480" cy="380" r="6"/>
+    <circle cx="1000" cy="380" r="6"/><circle cx="1130" cy="430" r="6"/><circle cx="1280" cy="470" r="6"/>
+    <circle cx="1420" cy="520" r="6"/><circle cx="1540" cy="520" r="6"/>
+  </g>
+
+  <!-- bar chart + trend line -->
+  <g opacity=".5">
+    <path d="M90 800H560"/>
+    <rect x="120" y="720" width="36" height="80" rx="4"/>
+    <rect x="180" y="660" width="36" height="140" rx="4"/>
+    <rect x="240" y="690" width="36" height="110" rx="4"/>
+    <rect x="300" y="600" width="36" height="200" rx="4"/>
+    <rect x="360" y="630" width="36" height="170" rx="4"/>
+    <rect x="420" y="540" width="36" height="260" rx="4"/>
+    <rect x="480" y="570" width="36" height="230" rx="4"/>
+    <polyline points="138,690 198,630 258,660 318,570 378,600 438,510 498,540" stroke-dasharray="6 6"/>
+  </g>
+
+  <!-- report sheet -->
+  <g opacity=".45">
+    <rect x="700" y="560" width="230" height="290" rx="14"/>
+    <path d="M730 610H890M730 650H890M730 690H840M730 730H880M730 770H820"/>
+    <circle cx="880" cy="810" r="14"/>
+  </g>
+</svg>

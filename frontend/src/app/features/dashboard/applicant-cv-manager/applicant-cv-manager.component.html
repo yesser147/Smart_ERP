@@ -1,10 +1,19 @@
 <div class="erp-card p-6">
   <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
     <div>
-      <h3 class="erp-section-title">Gestion des CV</h3>
-      <p class="text-xs text-slate-400">Extraction de texte, compétences et embedding via LLM local</p>
+      <h3 class="erp-section-title">CV Management</h3>
+      <p class="text-xs text-slate-400">Text, skills and embedding extraction via local LLM</p>
     </div>
-    <button (click)="load()" class="erp-btn-ghost text-xs underline">Rafraîchir</button>
+    <div class="flex items-center gap-3">
+      <button (click)="load()" class="erp-btn-ghost text-xs underline">Refresh</button>
+      <button (click)="goToNewApplicant()"
+              class="erp-btn-primary px-3 py-1.5 text-xs inline-flex items-center gap-1.5">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Add applicant
+      </button>
+    </div>
   </div>
 
   <div *ngIf="loading" class="space-y-3 py-2">
@@ -14,16 +23,17 @@
   </div>
 
   <div *ngIf="error && !loading" class="erp-alert-error">
-    Impossible de charger les candidats.
+    Unable to load applicants.
   </div>
 
   <div *ngIf="!loading && !error">
     <div class="flex gap-3 mb-4 flex-col sm:flex-row sm:items-center">
-      <input [(ngModel)]="searchTerm" (ngModelChange)="onSearchOrFilterChange()" placeholder="Rechercher par nom ou email..."
+      <input [(ngModel)]="searchTerm" (ngModelChange)="onSearchOrFilterChange()"
+             placeholder="Search by name or email..."
              class="erp-input flex-1" />
       <label class="flex items-center gap-2 text-xs text-slate-400 whitespace-nowrap">
         <input type="checkbox" [(ngModel)]="showLastTenOnly" (ngModelChange)="onSearchOrFilterChange()" />
-        10 derniers seulement
+        Last 10 only
       </label>
     </div>
 
@@ -32,13 +42,13 @@
         <thead>
           <tr>
             <th class="cursor-pointer select-none hover:text-accent" (click)="toggleSort('name')">
-              Candidat
+              Applicant
               <span *ngIf="sortColumn === 'name'" class="ml-1">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
             </th>
             <th>Email</th>
-            <th>Niveau d'études</th>
-            <th>Expérience</th>
-            <th>Statut CV</th>
+            <th>Education level</th>
+            <th>Experience</th>
+            <th>CV status</th>
             <th class="text-right">Action</th>
           </tr>
         </thead>
@@ -47,16 +57,16 @@
             <td class="font-medium text-white">{{ a.firstName }} {{ a.lastName }}</td>
             <td class="text-slate-400">{{ a.email }}</td>
             <td class="text-slate-400">{{ a.educationLevel || '—' }}</td>
-            <td class="text-slate-400">{{ (a.yearsOfExperience !== null && a.yearsOfExperience !== undefined) ? a.yearsOfExperience + ' ans' : '—' }}</td>
+            <td class="text-slate-400">{{ (a.yearsOfExperience !== null && a.yearsOfExperience !== undefined) ? a.yearsOfExperience + ' yrs' : '—' }}</td>
             <td>
               <span *ngIf="!a.hasCv" class="erp-badge bg-slate-700 text-slate-400 border-slate-600">
-                Aucun CV
+                No CV
               </span>
               <span *ngIf="a.hasCv && !a.isProcessed" class="erp-badge bg-amber-500/10 text-amber-400 border-amber-500/20">
-                Non traité
+                Not processed
               </span>
               <span *ngIf="a.hasCv && a.isProcessed" class="erp-badge bg-teal-500/10 text-teal-400 border-teal-500/20">
-                Traité
+                Processed
               </span>
             </td>
             <td class="text-right">
@@ -65,30 +75,30 @@
                 (click)="processCv(a.applicantId)"
                 [disabled]="processingId === a.applicantId"
                 class="erp-btn-primary px-3 py-1.5 text-xs">
-                {{ processingId === a.applicantId ? 'Traitement...' : 'Traiter CV' }}
+                {{ processingId === a.applicantId ? 'Processing...' : 'Process CV' }}
               </button>
               <span *ngIf="processErrorId === a.applicantId" class="text-xs text-rose-400 ml-2" [title]="processErrorMessage">
-  Échec: {{ processErrorMessage }}
-</span>
+                Failed: {{ processErrorMessage }}
+              </span>
             </td>
           </tr>
           <tr *ngIf="filteredApplicants.length === 0">
-            <td colspan="6" class="p-3 text-center text-slate-500">Aucun candidat trouvé.</td>
+            <td colspan="6" class="p-3 text-center text-slate-500">No applicants found.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div *ngIf="filteredApplicants.length > pageSize" class="flex items-center justify-between mt-4 text-xs text-slate-400">
-      <span>{{ filteredApplicants.length }} candidats · Page {{ currentPage }}/{{ totalPages }}</span>
+      <span>{{ filteredApplicants.length }} applicants · Page {{ currentPage }}/{{ totalPages }}</span>
       <div class="flex gap-2">
         <button (click)="prevPage()" [disabled]="currentPage === 1"
                 class="erp-btn-secondary px-3 py-1.5 text-xs">
-          Précédent
+          Previous
         </button>
         <button (click)="nextPage()" [disabled]="currentPage === totalPages"
                 class="erp-btn-secondary px-3 py-1.5 text-xs">
-          Suivant
+          Next
         </button>
       </div>
     </div>

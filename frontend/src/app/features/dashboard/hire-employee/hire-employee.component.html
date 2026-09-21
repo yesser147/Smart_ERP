@@ -1,57 +1,60 @@
 <div class="erp-page max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-  <h2 class="erp-page-title text-xl sm:text-2xl">Transformer le Candidat en Employé</h2>
+  <h2 class="erp-page-title text-xl sm:text-2xl">Convert Applicant to Employee</h2>
 
-  <div *ngIf="isLoading()" class="text-slate-400">Chargement...</div>
+  <div *ngIf="isLoading()" class="text-slate-400">Loading...</div>
 
   <div *ngIf="applicant() as a" class="erp-card p-5 space-y-2">
-    <h3 class="erp-kicker text-accent mb-2">Informations du candidat (déjà complètes)</h3>
+    <h3 class="erp-kicker text-accent mb-2">Applicant information (already complete)</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-      <div><span class="text-slate-400">Nom : </span><span class="text-white">{{ a.firstName }} {{ a.lastName }}</span></div>
-      <div><span class="text-slate-400">Email : </span><span class="text-white">{{ a.email }}</span></div>
-      <div><span class="text-slate-400">Genre : </span><span class="text-white">{{ a.gender || 'N/A' }}</span></div>
-      <div><span class="text-slate-400">Éducation : </span><span class="text-white">{{ a.educationLevel || 'N/A' }}</span></div>
-      <div><span class="text-slate-400">Expérience : </span><span class="text-white">{{ a.yearsOfExperience ?? 'N/A' }} ans</span></div>
+      <div><span class="text-slate-400">Name: </span><span class="text-white">{{ a.firstName }} {{ a.lastName }}</span></div>
+      <div><span class="text-slate-400">Email: </span><span class="text-white">{{ a.email }}</span></div>
+      <div><span class="text-slate-400">Gender: </span><span class="text-white">{{ a.gender || 'N/A' }}</span></div>
+      <div><span class="text-slate-400">Education: </span><span class="text-white">{{ a.educationLevel || 'N/A' }}</span></div>
+      <div>
+        <span class="text-slate-400">Experience: </span>
+        <span class="text-white">{{ (a.yearsOfExperience !== null && a.yearsOfExperience !== undefined) ? a.yearsOfExperience + ' years' : 'N/A' }}</span>
+      </div>
     </div>
   </div>
 
   <form [formGroup]="hireForm" (ngSubmit)="onSubmit()" class="erp-card p-5 space-y-4">
-    <h3 class="erp-kicker text-accent">Détails du poste (à compléter)</h3>
+    <h3 class="erp-kicker text-accent">Position details (to complete)</h3>
 
     <div>
-  <label class="text-xs text-slate-400 block mb-1">Département</label>
+      <label class="text-xs text-slate-400 block mb-1">Department</label>
 
-  <ng-container *ngIf="job() as j; else deptPicker">
-    <div class="erp-input bg-slate-900/40 text-slate-300 cursor-not-allowed">
-      {{ j.businessUnit }} - {{ j.departmentType }}<span *ngIf="j.divisionDescription"> · {{ j.divisionDescription }}</span>
+      <ng-container *ngIf="job() as j; else deptPicker">
+        <div class="erp-input bg-slate-900/40 text-slate-300 cursor-not-allowed">
+          {{ j.businessUnit }} - {{ j.departmentType }}<span *ngIf="j.divisionDescription"> · {{ j.divisionDescription }}</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Set by the job posting “{{ j.title }}”</p>
+      </ng-container>
+
+      <ng-template #deptPicker>
+        <select formControlName="departmentId" class="erp-input">
+          <option [ngValue]="null" disabled>Select...</option>
+          <option *ngFor="let d of departments()" [ngValue]="d.departmentId">
+            {{ d.businessUnit }} - {{ d.departmentType }}
+          </option>
+        </select>
+      </ng-template>
     </div>
-    <p class="text-[11px] text-slate-500 mt-1">Défini par l'offre « {{ j.title }} »</p>
-  </ng-container>
-
-  <ng-template #deptPicker>
-    <select formControlName="departmentId" class="erp-input">
-      <option [ngValue]="null" disabled>Sélectionner...</option>
-      <option *ngFor="let d of departments()" [ngValue]="d.departmentId">
-        {{ d.businessUnit }} - {{ d.departmentType }}
-      </option>
-    </select>
-  </ng-template>
-</div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Titre du poste</label>
+        <label class="text-xs text-slate-400 block mb-1">Job title</label>
         <input formControlName="title" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Fonction</label>
+        <label class="text-xs text-slate-400 block mb-1">Job function</label>
         <input formControlName="jobFunction" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Type d'emploi</label>
+        <label class="text-xs text-slate-400 block mb-1">Employment type</label>
         <select formControlName="employeeType" class="erp-input">
-          <option value="Full-time">Temps plein</option>
-          <option value="Part-time">Temps partiel</option>
-          <option value="Contract">Contrat</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
         </select>
       </div>
       <div>
@@ -62,29 +65,29 @@
         </select>
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">État</label>
+        <label class="text-xs text-slate-400 block mb-1">State</label>
         <input formControlName="state" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Localisation</label>
+        <label class="text-xs text-slate-400 block mb-1">Location</label>
         <input formControlName="location" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Date de début</label>
+        <label class="text-xs text-slate-400 block mb-1">Start date</label>
         <input type="date" formControlName="startDate" class="erp-input" />
       </div>
       <div>
-        <label class="text-xs text-slate-400 block mb-1">Salaire annuel ($)</label>
+        <label class="text-xs text-slate-400 block mb-1">Annual salary ($)</label>
         <input type="number" formControlName="salary" class="erp-input" />
       </div>
     </div>
 
     <div>
-      <label class="text-xs text-slate-400 block mb-1">Rôle système</label>
+      <label class="text-xs text-slate-400 block mb-1">System role</label>
       <select formControlName="roleName" class="erp-input">
-        <option value="ROLE_EMPLOYEE">Employé</option>
-        <option value="ROLE_HR_MANAGER">Responsable RH</option>
-        <option value="ROLE_ADMIN">Administrateur</option>
+        <option value="ROLE_EMPLOYEE">Employee</option>
+        <option value="ROLE_HR_MANAGER">HR Manager</option>
+        <option value="ROLE_ADMIN">Administrator</option>
       </select>
     </div>
 
@@ -93,7 +96,4 @@
 
     <button type="submit" [disabled]="isSubmitting()"
             class="erp-btn-primary w-full py-2.5">
-      {{ isSubmitting() ? 'Création en cours...' : "Confirmer l'embauche" }}
-    </button>
-  </form>
-</div>
+      {{ isSubmitting() ? 'Creating...' : 'Confirm hire' }}
