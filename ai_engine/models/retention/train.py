@@ -10,17 +10,13 @@ from models.retention import preprocess as prep
 
 METRICS_PATH = os.path.join(config.ARTIFACT_DIR, "retention_metrics.json")
 
-def make_model(scale_pos_weight=1.0):
+
+def make_model():
     return xgb.XGBClassifier(
-        n_estimators=100,             # Reduced from 200 to prevent overfitting
-        max_depth=3,                  # Shallower trees for HR tabular data
-        learning_rate=0.03,           # Lower learning rate
-        subsample=0.8,                # Train on 80% of rows per tree
-        colsample_bytree=0.8,         # Train on 80% of features per tree
-        reg_alpha=1.0,                # L1 regularization
-        reg_lambda=1.0,               # L2 regularization
-        scale_pos_weight=scale_pos_weight, # Handles class imbalance
-        enable_categorical=True,
+        n_estimators=200,
+        max_depth=4,
+        learning_rate=0.08,
+        enable_categorical=True,  # Tells XGBoost to accept our text categories
         eval_metric="logloss",
         random_state=42,
     )
