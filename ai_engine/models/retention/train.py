@@ -26,6 +26,11 @@ def train_model():
     print("1. Fetching all historical data (Active + Terminated)...")
     raw_df = prep.fetch_raw_data(only_active=False)
 
+    print("1b. Cleaning: normalizing gender, bucketing rare categories...")
+    raw_df, category_mapping = prep.clean_raw_data(raw_df)
+    for col, keep in category_mapping.items():
+        print(f"    {col}: kept {len(keep)} categories (>= {config.MIN_CATEGORY_COUNT} rows), rest -> 'Other'")
+
     print("2. Pre-treating data...")
     schema = prep.capture_text_categories(raw_df)
     X = prep.format_ml_features(raw_df, schema=schema)  # The Features (inputs)
@@ -67,7 +72,14 @@ def train_model():
 
     os.makedirs(config.ARTIFACT_DIR, exist_ok=True)
     final_model.save_model(config.RETENTION_MODEL_PATH)
-    joblib.dump({"category_schema": schema, "feature_cols": list(X.columns)}, config.RETENTION_SCHEMA_PATH)
+    joblib.dump(
+        {
+            "category_schema": schema,
+            "feature_cols": list(X.columns),
+            "category_mapping": category_mapping,  # needed by predict.py to bucket the same way
+        },
+        config.RETENTION_SCHEMA_PATH,
+    )
 
     metrics = {
         "n_rows": int(len(y)),

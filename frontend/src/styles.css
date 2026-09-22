@@ -299,3 +299,32 @@ html {
     display: none;                                /* removes the up/down arrows */
   }
 }
+/* Rendering for LLM-generated markdown converted to HTML via [innerHTML]
+   (budget memo, floating AI assistant, applicant chat) */
+.erp-card strong {
+  color: #e2e8f0; /* slate-200 */
+  font-weight: 600;
+}
+
+.erp-card em {
+  color: #94a3b8; /* slate-400 */
+  font-style: italic;
+}
+
+.erp-card ul {
+  list-style-type: disc;
+  padding-left: 1.1rem;
+  margin-top: 0.25rem;
+}
+
+.erp-card ul li {
+  margin-top: 0.15rem;
+}
+
+.erp-card p {
+  margin-top: 0.25rem;
+}
+
+.erp-card p:first-child {
+  margin-top: 0;
+}

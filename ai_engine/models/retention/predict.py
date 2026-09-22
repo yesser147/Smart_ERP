@@ -16,6 +16,10 @@ class RetentionPredictor:
         saved_data = joblib.load(config.RETENTION_SCHEMA_PATH)
         self.category_schema = saved_data["category_schema"]
         self.feature_cols = saved_data["feature_cols"]
+        # Older artifacts (trained before this fix) won't have this key --
+        # default to {} so bucket_rare_categories just keeps every category
+        # as-is instead of crashing on a missing mapping.
+        self.category_mapping = saved_data.get("category_mapping", {})
 
         # Initialize SHAP (The math that explains WHY the model made a prediction)
         self.explainer = shap.TreeExplainer(self.model)
@@ -26,6 +30,13 @@ class RetentionPredictor:
         raw_df = prep.fetch_raw_data(only_active=True)
         if raw_df.empty:
             return raw_df
+
+        # Must mirror train.py exactly: same gender normalization, and rare
+        # categories collapsed into "Other" using the SAME mapping learned
+        # at training time (not recomputed from this smaller active-only
+        # batch, which would bucket differently and drift from what the
+        # model was actually trained on).
+        raw_df, _ = prep.clean_raw_data(raw_df, category_mapping=self.category_mapping)
 
         X_current = prep.format_ml_features(raw_df, schema=self.category_schema)
 

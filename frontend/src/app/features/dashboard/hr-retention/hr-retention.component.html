@@ -25,37 +25,47 @@
     <p class="text-sm text-slate-400 mt-1">Risk exposure and recommended interventions</p>
   </div>
 
-  <!-- Data reliability warning (driven by cross-validation metrics) -->
+  <!-- Data reliability warning: one plain sentence, stats hidden behind a toggle -->
   <div *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"
-       class="p-5 rounded-lg border"
+       class="p-4 rounded-lg border flex items-start gap-3"
        [ngClass]="data.model_quality.level === 'low'
          ? 'border-amber-400/30 bg-amber-400/10'
          : 'border-rose-400/30 bg-rose-400/10'">
-    <p class="font-semibold text-sm"
-       [ngClass]="data.model_quality.level === 'low' ? 'text-amber-300' : 'text-rose-300'">
-      <ng-container *ngIf="data.model_quality.level === 'insufficient'">Risk predictions are not reliable</ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'low'">Low-confidence risk predictions</ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'unknown'">Model quality not measured</ng-container>
-    </p>
+    <span class="text-lg leading-none mt-0.5">
+      {{ data.model_quality.level === 'low' ? '⚠️' : '⛔' }}
+    </span>
+    <div class="flex-1">
+      <p class="font-semibold text-sm"
+         [ngClass]="data.model_quality.level === 'low' ? 'text-amber-300' : 'text-rose-300'">
+        <ng-container *ngIf="data.model_quality.level === 'insufficient'">These risk scores can't be trusted yet</ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'low'">These risk scores are rough estimates</ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'unknown'">Model quality hasn't been checked</ng-container>
+      </p>
 
-    <p *ngIf="data.model_quality.level !== 'unknown'" class="text-xs text-slate-300 mt-2 leading-relaxed">
-      Tested on employees it had not seen, the model reached an AUC of
-      {{ data.model_quality.cv_auc | number:'1.2-2' }}
-      (0.50 = pure chance, 1.00 = perfect), on {{ data.model_quality.n_rows }} employees
-      of whom {{ data.model_quality.n_churned }} left.
-      <ng-container *ngIf="data.model_quality.level === 'insufficient'">
-        None of the available employee data (salary, tenure, engagement, satisfaction, performance...)
-        predicts who leaves in this dataset, so individual risk scores, the at-risk count and the risk drivers
-        are indicative only. This is a data limitation, not a model error.
-      </ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'low'">
-        Treat risk scores and drivers as rough estimates.
-      </ng-container>
-    </p>
+      <p class="text-xs text-slate-300 mt-1">
+        <ng-container *ngIf="data.model_quality.level === 'insufficient'">
+          The AI couldn't find a real pattern linking employee data to who leaves, so the numbers below are for illustration only, not real predictions.
+        </ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'low'">
+          The AI found a weak pattern, so treat the risk scores and drivers below as rough guesses, not certainties.
+        </ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'unknown'">
+          Run the training script to measure how reliable these predictions are.
+        </ng-container>
+      </p>
 
-    <p *ngIf="data.model_quality.level === 'unknown'" class="text-xs text-slate-300 mt-2">
-      Quality metrics are missing. Run the training script again to measure how reliable the predictions are.
-    </p>
+      <button *ngIf="data.model_quality.level !== 'unknown'"
+              (click)="showQualityDetails = !showQualityDetails"
+              class="text-[11px] text-slate-400 underline mt-2">
+        {{ showQualityDetails ? 'Hide' : 'Show' }} technical details
+      </button>
+
+      <p *ngIf="showQualityDetails" class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+        Cross-validated AUC: {{ data.model_quality.cv_auc | number:'1.2-2' }}
+        (0.50 = random guessing, 1.00 = perfect). Tested on
+        {{ data.model_quality.n_rows }} employees, {{ data.model_quality.n_churned }} of whom left.
+      </p>
+    </div>
   </div>
 
   <!-- Top Risk Exposure Metrics -->
@@ -93,9 +103,9 @@
       </svg>
       Retention executive summary
     </h4>
-    <p class="text-sm text-slate-300 leading-relaxed bg-canvas/60 p-4 rounded-lg border border-line">
-      {{ data.executive_summary }}
-    </p>
+    <div class="text-sm text-slate-300 leading-relaxed bg-canvas/60 p-4 rounded-lg border border-line"
+         [innerHTML]="formatMemo(data.executive_summary)">
+    </div>
   </div>
 
   <!-- Causes Root & Interventions Row -->
@@ -111,7 +121,7 @@
         <div *ngFor="let cause of data.generalized_root_causes; let i = index"
              class="p-3 rounded-lg bg-canvas/60 border border-line text-xs text-slate-300 flex items-start gap-3">
           <span class="text-rose-400 font-bold">{{ i + 1 }}.</span>
-          <span>{{ cause }}</span>
+          <span [innerHTML]="formatMemo(cause)"></span>
         </div>
       </div>
     </div>
@@ -131,7 +141,7 @@
           <tbody>
             <tr *ngFor="let init of data.systemic_interventions" class="hover:bg-slate-800/70">
               <td class="font-medium text-white">{{ init.initiative_name }}</td>
-              <td class="text-xs text-slate-300">{{ init.description }}</td>
+              <td class="text-xs text-slate-300" [innerHTML]="formatMemo(init.description)"></td>
               <td>
                 <span class="erp-badge bg-accent-muted text-accent border-accent/20">
                   {{ init.target_metric_to_improve }}

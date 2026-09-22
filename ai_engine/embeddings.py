@@ -1,4 +1,3 @@
-# C:\Users\yasser\Documents\stage\Smart_ERP_Core\ai_engine\embeddings.py
 """
 Real sentence embeddings for candidate/job matching. Same model as the
 ETL's embeddings.py (kept in sync manually since this is a separate
@@ -19,5 +18,5 @@ def get_model():
 
 def embed_text(text: str) -> list[float]:
     model = get_model()
-    vec = model.encode(text, normalize_embeddings=True)  # pre-normalized -> cosine similarity == dot product
+    vec = model.encode(text, normalize_embeddings=True) 
     return vec.tolist()

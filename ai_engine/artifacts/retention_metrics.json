@@ -13,7 +13,7 @@
     "avg_satisfaction_score",
     "avg_work_life_balance"
   ],
-  "cv_auc": 0.5,
-  "cv_auc_std": 0.02,
-  "cv_pr_auc": 0.474
+  "cv_auc": 0.491,
+  "cv_auc_std": 0.017,
+  "cv_pr_auc": 0.464
 }

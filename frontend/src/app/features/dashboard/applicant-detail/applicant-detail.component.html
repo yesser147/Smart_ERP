@@ -100,8 +100,8 @@
              [ngClass]="m.role === 'user'
                ? 'ml-auto bg-accent-muted border-accent/20 text-right'
                : 'mr-auto bg-slate-900/60 border-slate-700'"
-             class="max-w-[80%] p-3 rounded-lg border text-sm text-slate-200 whitespace-pre-wrap">
-          {{ m.content }}
+             class="max-w-[80%] p-3 rounded-lg border text-sm text-slate-200"
+             [innerHTML]="formatMessage(m.content)">
         </div>
 
         <!-- typing dots until the first streamed token arrives -->

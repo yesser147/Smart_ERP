@@ -196,6 +196,41 @@ export class ApplicantDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Converts the LLM's lightweight markdown (**bold**, *italic*, "- " bullets,
+   *  blank-line paragraphs) into safe HTML for [innerHTML]. Angular's default
+   *  sanitizer allows strong/em/ul/li/p, so no DomSanitizer bypass is needed.
+   *  Kept in sync with the identical method in ai-assistant.component.ts. */
+  formatMessage(text: string | undefined | null): string {
+    if (!text) return '';
+
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    html = html
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    const lines = html.split('\n');
+    const out: string[] = [];
+    let inList = false;
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (line.startsWith('- ')) {
+        if (!inList) { out.push('<ul class="list-disc pl-4 space-y-0.5 mt-1">'); inList = true; }
+        out.push(`<li>${line.slice(2)}</li>`);
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        if (line) out.push(`<p class="mt-1 first:mt-0">${line}</p>`);
+      }
+    }
+    if (inList) out.push('</ul>');
+
+    return out.join('');
+  }
+
   private scrollToBottom(): void {
     setTimeout(() => {
       const el = this.chatScroll?.nativeElement;

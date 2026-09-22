@@ -18,20 +18,53 @@ def fetch_raw_data(only_active=False):
 def is_churned(status_series, churn_statuses=None):
     """Whether each employee_status counts as 'left the company'.
 
-    BUG FIXED HERE: every one of your SQL views (v_department_turnover,
-    v_attrition_risk_indicators, etc.) matches termination with
-    `UPPER(employee_status) LIKE '%TERMINATED%'` -- catching any casing
-    and any suffix like 'Terminated - Voluntary'. The old label logic in
-    train_model() used a strict `.isin(["Terminated"])`, which misses
-    every one of those variants your own dashboard already counts as
-    churn. That's not a crash -- it silently mislabels real churners as
-    "stayed", corrupting the ground truth the whole model learns from.
-    This mirrors the SQL views' logic exactly instead of duplicating a
-    different, stricter definition in Python.
+    Uses substring matching so "Terminated" also catches "Voluntarily
+    Terminated" and "Terminated For Cause", mirroring how the SQL views
+    (v_department_turnover, v_attrition_risk_indicators, etc.) define churn.
     """
     churn_statuses = churn_statuses or config.CHURN_STATUSES
     pattern = "|".join(s.upper() for s in churn_statuses)
     return status_series.fillna("").str.upper().str.contains(pattern, regex=True)
+
+
+def normalize_gender(df):
+    """Collapses inconsistent casing ("Male" vs "MALE") into one category
+    per real value, instead of letting them silently become two."""
+    df = df.copy()
+    if "gender" in df.columns:
+        df["gender"] = df["gender"].fillna("Unknown").astype(str).str.strip().str.upper()
+    return df
+
+
+def bucket_rare_categories(df, columns, min_count=None, other_label="Other", mapping=None):
+    """Collapses categories with fewer than `min_count` rows into `other_label`.
+
+    Pass `mapping` (a dict of {column: set(values_to_keep)}) to apply a mapping
+    computed earlier (e.g. at training time) rather than recomputing thresholds
+    from this df -- required at prediction time so the same categories are
+    treated as "Other" as during training, even if this batch's counts differ.
+
+    Returns (bucketed_df, mapping) so callers can save the mapping for reuse.
+    """
+    min_count = min_count if min_count is not None else config.MIN_CATEGORY_COUNT
+    df = df.copy()
+    out_mapping = {}
+
+    for col in columns:
+        if col not in df.columns:
+            continue
+        series = df[col].fillna("Unknown").astype(str)
+
+        if mapping is not None and col in mapping:
+            keep = mapping[col]
+        else:
+            counts = series.value_counts()
+            keep = set(counts[counts >= min_count].index)
+
+        out_mapping[col] = keep
+        df[col] = series.where(series.isin(keep), other_label)
+
+    return df, out_mapping
 
 
 def _unique_categories(series):
@@ -41,6 +74,24 @@ def _unique_categories(series):
     values = set(series.fillna("Unknown").astype(str).unique().tolist())
     values.add("Unknown")
     return sorted(values)
+
+
+def clean_raw_data(df, category_mapping=None):
+    """Single entry point for all pre-treatment that must be IDENTICAL between
+    training and prediction: gender normalization + rare-category bucketing.
+
+    At training time, call with category_mapping=None; it computes the
+    mapping from this data and returns it so it can be saved alongside the
+    model. At prediction time, pass the saved mapping so new/unseen data is
+    bucketed the same way training data was.
+    """
+    df = normalize_gender(df)
+    df, mapping = bucket_rare_categories(
+        df,
+        columns=["division_description", "job_function"],
+        mapping=category_mapping,
+    )
+    return df, mapping
 
 
 def capture_text_categories(df):

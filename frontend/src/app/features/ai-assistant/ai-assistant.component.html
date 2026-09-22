@@ -2,11 +2,9 @@
 <button
   (click)="toggleAssistant()"
   class="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-accent hover:bg-accent-hover text-slate-950 shadow-lg shadow-accent/20 transition-transform hover:scale-110 flex items-center justify-center">
-  <!-- Sparkles/Robot Icon -->
   <svg *ngIf="!isOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
   </svg>
-  <!-- Close Icon -->
   <svg *ngIf="isOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
   </svg>
@@ -23,7 +21,7 @@
         <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
         SmartERP AI
       </h3>
-      <p class="text-xs text-slate-400">Assistant RH & Stratégie</p>
+      <p class="text-xs text-slate-400">HR & Strategy Assistant</p>
     </div>
   </div>
 
@@ -35,28 +33,27 @@
       <div [ngClass]="msg.sender === 'user' ? 'bg-accent-muted text-teal-100 border-accent/30' : 'bg-surface text-slate-300 border-line'"
            class="max-w-[85%] rounded-xl p-3 border text-sm shadow-sm">
 
-        <!-- Text -->
-        <p class="whitespace-pre-wrap">{{ msg.text }}</p>
+        <!-- Text: rendered as HTML so **bold**/*italic*/"- " bullets show correctly -->
+        <div [innerHTML]="formatMessage(msg.text)"></div>
 
         <!-- Optional Tabular Data Preview -->
-    <!-- Optional Tabular Data Preview -->
-<div *ngIf="msg.data && msg.data.length > 0" class="mt-3 overflow-x-auto rounded border border-line bg-canvas/50">
-  <table class="w-full text-left text-xs">
-    <thead class="text-slate-400 border-b border-line">
-      <tr>
-        <th *ngFor="let key of getKeys(msg.data[0])" class="p-2">{{ key }}</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-line">
-      <tr *ngFor="let row of msg.data | slice:0:3">
-        <td *ngFor="let key of getKeys(row)" class="p-2 truncate max-w-[100px]">{{ row[key] }}</td>
-      </tr>
-    </tbody>
-  </table>
-  <p *ngIf="msg.data.length > 3" class="text-[10px] text-center text-slate-400 p-1 bg-surface">
-    + {{ msg.data.length - 3 }} autres lignes
-  </p>
-</div>
+        <div *ngIf="msg.data && msg.data.length > 0" class="mt-3 overflow-x-auto rounded border border-line bg-canvas/50">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-line">
+              <tr>
+                <th *ngFor="let key of getKeys(msg.data[0])" class="p-2">{{ key }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr *ngFor="let row of msg.data | slice:0:3">
+                <td *ngFor="let key of getKeys(row)" class="p-2 truncate max-w-[100px]">{{ row[key] }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p *ngIf="msg.data.length > 3" class="text-[10px] text-center text-slate-400 p-1 bg-surface">
+            + {{ msg.data.length - 3 }} more rows
+          </p>
+        </div>
 
       </div>
     </div>
@@ -71,15 +68,7 @@
     </div>
   </div>
 
-  <!-- Quick Actions -->
-  <div class="p-2 bg-surface border-t border-line flex gap-2 overflow-x-auto no-scrollbar">
-    <button (click)="runBudgetAdvisor()" class="erp-btn-secondary whitespace-nowrap px-3 py-1.5 text-xs">
-      💰 Optimiser Budget
-    </button>
-    <button (click)="runRetentionAnalysis()" class="erp-btn-secondary whitespace-nowrap px-3 py-1.5 text-xs">
-      🛡️ Analyser Rétention
-    </button>
-  </div>
+  
 
   <!-- Input Area -->
   <div class="p-3 bg-canvas border-t border-line">
@@ -88,7 +77,7 @@
         type="text"
         [(ngModel)]="userInput"
         name="prompt"
-        placeholder="Posez une question en langage naturel..."
+        placeholder="Ask a question in plain language..."
         class="erp-input">
       <button
         type="submit"

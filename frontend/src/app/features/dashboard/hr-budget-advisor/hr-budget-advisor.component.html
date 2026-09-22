@@ -10,37 +10,48 @@
 
 <div *ngIf="!loading && !error && data" class="space-y-6">
 
-  <!-- Data reliability warning (driven by cross-validation metrics) -->
+  <!-- Data reliability warning: one plain sentence, stats hidden behind a toggle -->
   <div *ngIf="data.model_quality && data.model_quality.level !== 'acceptable'"
-       class="p-5 rounded-lg border"
+       class="p-4 rounded-lg border flex items-start gap-3"
        [ngClass]="data.model_quality.level === 'low'
          ? 'border-amber-400/30 bg-amber-400/10'
          : 'border-rose-400/30 bg-rose-400/10'">
-    <p class="font-semibold text-sm"
-       [ngClass]="data.model_quality.level === 'low' ? 'text-amber-300' : 'text-rose-300'">
-      <ng-container *ngIf="data.model_quality.level === 'insufficient'">Not enough data for reliable predictions</ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'low'">Low-confidence predictions</ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'unknown'">Model quality not measured</ng-container>
-    </p>
+    <span class="text-lg leading-none mt-0.5">
+      {{ data.model_quality.level === 'low' ? '⚠️' : '⛔' }}
+    </span>
+    <div class="flex-1">
+      <p class="font-semibold text-sm"
+         [ngClass]="data.model_quality.level === 'low' ? 'text-amber-300' : 'text-rose-300'">
+        <ng-container *ngIf="data.model_quality.level === 'insufficient'">These budget numbers can't be trusted yet</ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'low'">These budget numbers are rough estimates</ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'unknown'">Model quality hasn't been checked</ng-container>
+      </p>
 
-    <p *ngIf="data.model_quality.level !== 'unknown'" class="text-xs text-slate-300 mt-2 leading-relaxed">
-      Tested on departments it had not seen, the model scored a cross-validated R² of
-      {{ data.model_quality.cv_r2 | number:'1.2-2' }} (0 means no better than guessing the average).
-      Only {{ data.model_quality.n_rows }} of {{ data.model_quality.n_rows_total }} departments had enough
-      employees (at least {{ data.model_quality.min_headcount }}) and ratings to be used.
-      <ng-container *ngIf="data.model_quality.level === 'insufficient'">
-        The available data does not show a measurable link between training budget and performance,
-        so the budgets and gains below are illustrative only, not reliable recommendations.
-        This is a data limitation, not a model error: more departments with more rated employees are needed.
-      </ng-container>
-      <ng-container *ngIf="data.model_quality.level === 'low'">
-        Treat the budgets and gains below as rough estimates.
-      </ng-container>
-    </p>
+      <p class="text-xs text-slate-300 mt-1">
+        <ng-container *ngIf="data.model_quality.level === 'insufficient'">
+          The AI couldn't find a real link between training budget and performance in the available data, so the numbers below are for illustration only, not real recommendations.
+        </ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'low'">
+          The AI found a weak link, so treat the budgets and gains below as rough guesses, not certainties.
+        </ng-container>
+        <ng-container *ngIf="data.model_quality.level === 'unknown'">
+          Run the training script to measure how reliable these predictions are.
+        </ng-container>
+      </p>
 
-    <p *ngIf="data.model_quality.level === 'unknown'" class="text-xs text-slate-300 mt-2">
-      Quality metrics are missing. Run the training script again to measure how reliable the predictions are.
-    </p>
+      <button *ngIf="data.model_quality.level !== 'unknown'"
+              (click)="showQualityDetails = !showQualityDetails"
+              class="text-[11px] text-slate-400 underline mt-2">
+        {{ showQualityDetails ? 'Hide' : 'Show' }} technical details
+      </button>
+
+      <p *ngIf="showQualityDetails" class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+        Cross-validated R²: {{ data.model_quality.cv_r2 | number:'1.2-2' }}
+        (0 = no better than guessing the average). Only {{ data.model_quality.n_rows }} of
+        {{ data.model_quality.n_rows_total }} departments had enough employees
+        (at least {{ data.model_quality.min_headcount }}) and ratings to be used.
+      </p>
+    </div>
   </div>
 
   <!-- Executive Memo -->
@@ -56,9 +67,9 @@
         <p class="text-xs text-slate-400">XGBoost elasticity model</p>
       </div>
     </div>
-    <p class="text-sm text-slate-300 leading-relaxed bg-canvas/60 p-4 rounded-lg border border-line">
-      {{ data.executive_proposal_memo }}
-    </p>
+    <div class="text-sm text-slate-300 leading-relaxed bg-canvas/60 p-4 rounded-lg border border-line"
+         [innerHTML]="formatMemo(data.executive_proposal_memo)">
+    </div>
   </div>
 
   <!-- Single-department current vs optimal -->
@@ -68,17 +79,17 @@
 
       <div class="flex gap-2 flex-wrap items-center">
         <select [(ngModel)]="divisionFilter" (ngModelChange)="onFilterChange()" class="erp-input w-44">
-          <option value="">Toutes les divisions</option>
+          <option value="">All divisions</option>
           <option *ngFor="let v of availableDivisions" [value]="v">{{ v }}</option>
         </select>
 
         <select [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()" class="erp-input w-44">
-          <option value="">Tous les types</option>
+          <option value="">All types</option>
           <option *ngFor="let v of availableTypes" [value]="v">{{ v }}</option>
         </select>
 
         <select [(ngModel)]="unitFilter" (ngModelChange)="onFilterChange()" class="erp-input w-40">
-          <option value="">Toutes les unités</option>
+          <option value="">All units</option>
           <option *ngFor="let v of availableUnits" [value]="v">{{ v }}</option>
         </select>
 
@@ -101,7 +112,7 @@
           [grid]="comparisonChart.grid" [tooltip]="comparisonChart.tooltip" [legend]="comparisonChart.legend">
         </apx-chart>
         <p class="text-xs text-slate-400 text-center mt-2">
-          Gain de performance prédit :
+          Predicted performance gain:
           <span class="text-accent font-semibold">
             +{{ (selectedDept.peak_performance - selectedDept.current_performance) | number:'1.3-3' }} pts
           </span>
@@ -115,7 +126,7 @@
           [stroke]="performanceCurveChart.stroke" [markers]="performanceCurveChart.markers"
           [grid]="performanceCurveChart.grid" [tooltip]="performanceCurveChart.tooltip" [legend]="performanceCurveChart.legend">
         </apx-chart>
-        <p class="text-xs text-slate-400 text-center mt-2">Courbe performance / budget pour ce département</p>
+        <p class="text-xs text-slate-400 text-center mt-2">Performance vs. budget curve for this department</p>
       </div>
     </div>
   </div>
@@ -184,7 +195,7 @@
       <div *ngFor="let insight of data.chart_insights; let i = index"
            class="p-3 rounded-lg bg-canvas/60 border border-line text-xs text-slate-300 flex items-start gap-3">
         <span class="text-accent font-bold">{{ i + 1 }}.</span>
-        <span>{{ insight }}</span>
+        <span [innerHTML]="formatMemo(insight)"></span>
       </div>
     </div>
   </div>
