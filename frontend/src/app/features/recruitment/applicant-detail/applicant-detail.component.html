@@ -1,0 +1,209 @@
+<div class="erp-page">
+  <app-page-header [title]="applicant ? applicant.firstName + ' ' + applicant.lastName : (notFound ? 'Applicant not found' : 'Loading...')"
+                   [subtitle]="applicant ? 'Applicant #' + applicant.applicantId : ''" icon="user-circle"
+                   [backLink]="backLink" [backLabel]="backLink[1] ? 'Candidates' : 'Applicants'" />
+
+  @if (notFound) {
+    <div class="erp-alert-error">There is no applicant #{{ applicantId }}.</div>
+  }
+
+  @if (applicant; as a) {
+    <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+
+      <!-- ============ left column ============ -->
+      <aside class="space-y-4 lg:sticky lg:top-4">
+        <div class="erp-card p-5">
+          <div class="flex items-center gap-3">
+            <span class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-from/30 to-brand-to/30 text-sm font-semibold text-white ring-1 ring-white/10">
+              {{ a.firstName[0] }}{{ a.lastName[0] }}
+            </span>
+            <div class="min-w-0">
+              <p class="font-semibold text-white truncate">{{ a.firstName }} {{ a.lastName }}</p>
+              <p class="text-xs text-slate-400 truncate">{{ a.city ? a.city + (a.country ? ', ' + a.country : '') : 'Location unknown' }}</p>
+            </div>
+          </div>
+          <div class="mt-4 space-y-2.5 text-sm">
+            <div class="flex items-center gap-2"><app-icon name="mail" class="h-4 w-4 text-slate-500" /><span class="text-slate-200 break-all">{{ a.email }}</span></div>
+            <div class="flex items-center gap-2"><app-icon name="chat" class="h-4 w-4 text-slate-500" /><span class="text-slate-200">{{ a.phoneNumber || '—' }}</span></div>
+            <div class="flex items-center gap-2"><app-icon name="academic-cap" class="h-4 w-4 text-slate-500" /><span class="text-slate-200">{{ a.educationLevel || '—' }}</span></div>
+            <div class="flex items-center gap-2"><app-icon name="briefcase" class="h-4 w-4 text-slate-500" /><span class="text-slate-200">{{ a.yearsOfExperience ?? '—' }} years of experience</span></div>
+          </div>
+        </div>
+
+        <div class="erp-card p-5">
+          <label class="erp-label" for="job">Position</label>
+          <select id="job" class="erp-input" [ngModel]="selectedJobId" (ngModelChange)="selectJob($event)">
+            <option [ngValue]="null" disabled>Choose a position...</option>
+            @if (applications.length) {
+              <optgroup label="Applied for">
+                @for (app of applications; track app.applicationId) { <option [ngValue]="app.jobId">{{ app.jobTitle }} (#{{ app.jobId }})</option> }
+              </optgroup>
+            }
+            @if (otherOpenJobs.length) {
+              <optgroup label="Evaluate for another open role">
+                @for (j of otherOpenJobs; track j.jobId) { <option [ngValue]="j.jobId">{{ j.title }} (#{{ j.jobId }})</option> }
+              </optgroup>
+            }
+          </select>
+
+          @if (selectedJobId !== null) {
+            <div class="mt-4 space-y-3">
+              @if (application; as app) {
+                <div class="flex items-center justify-between">
+                  <span class="erp-kicker">Status</span>
+                  <app-status-badge [status]="app.status" />
+                </div>
+                @if (app.aiMatchScore != null) {
+                  <div class="flex items-center justify-between">
+                    <span class="erp-kicker">AI match</span>
+                    <span class="text-sm font-semibold text-white tabular-nums">{{ app.aiMatchScore }}%</span>
+                  </div>
+                }
+                <div class="flex flex-col gap-2 pt-1">
+                  @if (canInterview) {
+                    <button type="button" class="erp-btn-secondary w-full" (click)="act('interview')" [disabled]="actioning">
+                      <app-icon name="calendar" class="h-4 w-4" /> Invite to interview
+                    </button>
+                  }
+                  @if (canOffer) {
+                    <button type="button" class="erp-btn-success w-full" (click)="act('offer')" [disabled]="actioning">
+                      <app-icon name="mail" class="h-4 w-4" /> Make offer
+                    </button>
+                  }
+                  @if (canHire) {
+                    <button type="button" class="erp-btn-primary w-full" (click)="hire()">
+                      <app-icon name="user-plus" class="h-4 w-4" /> Hire
+                    </button>
+                  }
+                  @if (canReject) {
+                    <button type="button" class="erp-btn-danger w-full" (click)="act('reject')" [disabled]="actioning">Reject</button>
+                  }
+                </div>
+                @if (actionError) { <p class="text-xs text-rose-300">{{ actionError }}</p> }
+              } @else {
+                <p class="text-xs text-slate-500">This person did not apply for this role; you can still evaluate the fit with the AI.</p>
+              }
+            </div>
+          }
+        </div>
+
+        @if (history.length) {
+          <div class="erp-card p-5">
+            <p class="erp-kicker mb-3">History</p>
+            <ol class="relative border-l border-line ml-1.5 space-y-4">
+              @for (h of history; track h.changedAt + h.newStatus; let last = $last) {
+                <li class="ml-4">
+                  <span class="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-surface"
+                        [ngClass]="last ? 'bg-accent' : 'bg-slate-600'"></span>
+                  <p class="text-sm text-white">{{ h.newStatus }}</p>
+                  <p class="text-xs text-slate-500">{{ h.changedAt | date:'d MMM y, HH:mm' }}{{ h.changedBy ? ' · ' + h.changedBy : '' }}</p>
+                </li>
+              }
+            </ol>
+          </div>
+        }
+      </aside>
+
+      <!-- ============ right column ============ -->
+      @if (selectedJobId === null) {
+        <section class="erp-card p-10 text-center text-sm text-slate-500">
+          Choose a position on the left to evaluate this candidate with the AI.
+        </section>
+      } @else {
+        <section class="erp-card flex flex-col h-[calc(100vh-12rem)] min-h-[520px]">
+          <div class="flex items-center justify-between gap-3 px-4 border-b border-line">
+            <div class="erp-tabs border-b-0">
+              <button type="button" class="erp-tab" [class.erp-tab-active]="tab === 'chat'" (click)="tab = 'chat'">AI assistant</button>
+              <button type="button" class="erp-tab" [class.erp-tab-active]="tab === 'questions'" (click)="tab = 'questions'">Interview questions</button>
+            </div>
+            <span class="hidden sm:block text-xs text-slate-500 truncate">for {{ selectedJobTitle }}</span>
+          </div>
+
+          @if (tab === 'chat') {
+            <div #chatScroll class="flex-1 overflow-y-auto p-5 space-y-3">
+              @for (m of chatMessages; track $index) {
+                <div class="flex" [class.justify-end]="m.role === 'user'">
+                  <div class="max-w-[82%] rounded-2xl px-4 py-2.5 text-sm erp-prose"
+                       [ngClass]="m.role === 'user' ? 'bg-accent text-slate-950 rounded-br-md' : 'bg-surface-muted border border-line text-slate-200 rounded-bl-md'"
+                       [innerHTML]="m.content | markdown"></div>
+                </div>
+              }
+              @if (chatSending && !replyStarted) {
+                <div class="flex">
+                  <div class="rounded-2xl rounded-bl-md bg-surface-muted border border-line px-4 py-3">
+                    <span class="inline-flex gap-1">
+                      <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+                      <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:150ms]"></span>
+                      <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:300ms]"></span>
+                    </span>
+                  </div>
+                </div>
+              }
+              @if (!chatMessages.length && !chatSending) {
+                <div class="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
+                  <app-icon name="sparkles" class="h-8 w-8 text-accent" />
+                  <p class="text-sm text-slate-400">Ask anything about this CV. The AI only sees the CV and the job description (contact details are hidden).</p>
+                  <div class="flex flex-wrap justify-center gap-2">
+                    @for (s of suggestions; track s) {
+                      <button type="button" class="erp-chip hover:border-accent/40 hover:text-white transition-colors" (click)="ask(s)">{{ s }}</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (chatError) { <div class="erp-alert-error text-xs mx-4 mb-2">{{ chatError }}</div> }
+
+            <div class="flex gap-2 p-4 border-t border-line">
+              <input [(ngModel)]="chatInput" (keyup.enter)="ask()" [disabled]="chatSending"
+                     placeholder="Ask a question about this candidate..." class="erp-input flex-1" />
+              <button type="button" class="erp-btn-primary" (click)="ask()" [disabled]="chatSending || !chatInput.trim()">Send</button>
+              @if (chatMessages.length) {
+                <button type="button" class="erp-icon-btn" title="New conversation" (click)="resetChat()"><app-icon name="arrow-path" class="h-4 w-4" /></button>
+              }
+            </div>
+          } @else {
+            <div class="flex-1 overflow-y-auto p-5">
+              @if (!questions && !questionsLoading) {
+                <div class="h-full flex flex-col items-center justify-center gap-3 text-center">
+                  <app-icon name="clipboard" class="h-8 w-8 text-accent" />
+                  <p class="text-sm text-slate-400 max-w-md">The AI compares the CV with the job and prepares questions that check the gaps and confirm the strengths.</p>
+                  <button type="button" class="erp-btn-primary" (click)="generateQuestions()">
+                    <app-icon name="sparkles" class="h-4 w-4" /> Prepare the interview
+                  </button>
+                  @if (questionsError) { <p class="text-xs text-rose-300">{{ questionsError }}</p> }
+                </div>
+              } @else if (questionsLoading) {
+                <div class="space-y-3">@for (i of [1, 2, 3, 4]; track i) { <div class="erp-skeleton h-16"></div> }</div>
+              } @else if (questions) {
+                @if (questions.gaps.length) {
+                  <div class="erp-alert-warning mb-4 flex-col">
+                    <p class="font-medium">Gaps to check</p>
+                    <ul class="list-disc pl-5 text-xs space-y-0.5">@for (g of questions.gaps; track g) { <li>{{ g }}</li> }</ul>
+                  </div>
+                }
+                <ol class="space-y-3">
+                  @for (q of questions.questions; track i; let i = $index) {
+                    <li class="rounded-xl border border-line bg-surface-muted/60 p-4">
+                      <div class="flex items-start gap-3">
+                        <span class="text-xs font-semibold text-slate-500 mt-0.5">{{ i + 1 }}.</span>
+                        <div class="flex-1">
+                          <p class="text-sm text-white">{{ q.question }}</p>
+                          <p class="text-xs text-slate-400 mt-1">{{ q.purpose }}</p>
+                        </div>
+                        <span class="erp-badge" [ngClass]="questionTone(q.type)">{{ q.type }}</span>
+                      </div>
+                    </li>
+                  }
+                </ol>
+                <div class="mt-4 flex justify-end gap-2 no-print">
+                  <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="generateQuestions()"><app-icon name="arrow-path" class="h-4 w-4" /> Regenerate</button>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>

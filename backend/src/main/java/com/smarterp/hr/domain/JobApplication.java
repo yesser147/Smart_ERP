@@ -34,4 +34,7 @@ public class JobApplication {
     private String status = "APPLIED";
     private Integer aiMatchScore;
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    /** When the status last changed in the app (interview / offer / reject). */
+    private LocalDateTime statusUpdatedAt;
 }

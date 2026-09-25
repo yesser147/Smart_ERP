@@ -1,6 +1,7 @@
 course_id,program_name,training_type,trainer,duration_days,cost,is_active
-1,Customer Service,Internal,Amanda Daniels,4,510.83,True
-2,Leadership Development,Internal,Brittany Chambers,2,582.37,True
-3,Technical Skills,Internal,Mark Roberson,4,777.06,True
-4,Communication Skills,External,Heather Shaffer,4,145.99,True
-5,Project Management,Internal,Michael Duke,2,838.07,True
+1,Technical Skills,Internal,Amanda Daniels,3.0,617.76,True
+2,Project Management,External,Brittany Chambers,3.0,718.21,True
+3,Leadership Development,External,Carlos Mendez,3.0,739.37,True
+4,Communication Skills,Internal,Diana Ross,2.0,357.47,True
+5,Customer Service,Internal,Ethan Park,2.0,343.5,True
+6,Regulatory Compliance,Internal,Fatima Zahra,1.0,324.33,True

@@ -2,7 +2,8 @@ package com.smarterp.shared.storage;
 
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.SetBucketPolicyArgs;
+import io.minio.DeleteBucketPolicyArgs;
+import io.minio.GetBucketPolicyArgs;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,12 +18,12 @@ public class MinioService {
 
     private final MinioClient minioClient;
     private final String bucket;
-    private final String publicBaseUrl;
+    private final String baseUrl;
 
     public MinioService(
             @Value("${minio.endpoint:http://localhost:9000}") String endpoint,
             @Value("${minio.access-key:minioadmin}") String accessKey,
-            @Value("${minio.secret-key:minioadmin123}") String secretKey,
+            @Value("${minio.secret-key}") String secretKey,
             @Value("${minio.bucket:applicant-cvs}") String bucket
     ) {
         this.minioClient = MinioClient.builder()
@@ -30,7 +31,7 @@ public class MinioService {
                 .credentials(accessKey, secretKey)
                 .build();
         this.bucket = bucket;
-        this.publicBaseUrl = endpoint + "/" + bucket;
+        this.baseUrl = endpoint + "/" + bucket;
     }
 
     @PostConstruct
@@ -41,30 +42,21 @@ public class MinioService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
 
-            // Public-read policy: the ai_engine's process-cv step downloads
-            // the PDF via a plain, unauthenticated GET request. Without
-            // this, MinIO's default private bucket returns 403, which is
-            // what turns into the "Échec de l'extraction du PDF" error
-            // shown in the CV manager.
-            String policy = """
-                {
-                  "Version": "2012-10-17",
-                  "Statement": [
-                    {
-                      "Effect": "Allow",
-                      "Principal": {"AWS": ["*"]},
-                      "Action": ["s3:GetObject"],
-                      "Resource": ["arn:aws:s3:::%s/*"]
-                    }
-                  ]
-                }
-                """.formatted(bucket);
-
-            minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(bucket).config(policy).build()
-            );
+            // The bucket stays PRIVATE: CVs are personal data. The AI engine
+            // downloads them with its own MinIO credentials (signed request).
+            // Older versions of this service made the bucket public-read, so
+            // remove any policy left behind.
+            String policy;
+            try {
+                policy = minioClient.getBucketPolicy(GetBucketPolicyArgs.builder().bucket(bucket).build());
+            } catch (io.minio.errors.ErrorResponseException e) {
+                policy = null; // NoSuchBucketPolicy: already private
+            }
+            if (policy != null && !policy.isBlank()) {
+                minioClient.deleteBucketPolicy(DeleteBucketPolicyArgs.builder().bucket(bucket).build());
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Échec de l'initialisation du bucket MinIO: " + e.getMessage(), e);
+            throw new RuntimeException("Could not initialise the MinIO bucket: " + e.getMessage(), e);
         }
     }
 
@@ -78,9 +70,9 @@ public class MinioService {
                             .contentType(file.getContentType())
                             .build()
             );
-            return publicBaseUrl + "/" + objectName;
+            return baseUrl + "/" + objectName;
         } catch (Exception e) {
-            throw new RuntimeException("Échec de l'upload du CV: " + e.getMessage(), e);
+            throw new RuntimeException("Could not upload the CV: " + e.getMessage(), e);
         }
     }
 }

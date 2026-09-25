@@ -16,5 +16,4 @@ public class KpiSummaryDTO {
     private long openJobPostings;
     private double avgEngagement;
     private double companyTurnoverRate;
-    private long highRiskCount;
 }

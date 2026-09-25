@@ -1,0 +1,97 @@
+<div class="erp-page">
+  <app-page-header title="Job openings" subtitle="Open roles, their applicants and AI candidate ranking" icon="briefcase">
+    <a routerLink="/careers" target="_blank" class="erp-btn-secondary erp-btn-sm">
+      <app-icon name="external" class="h-4 w-4" /> Careers page
+    </a>
+    <a routerLink="/dashboard/jobs/new" class="erp-btn-primary erp-btn-sm">
+      <app-icon name="plus" class="h-4 w-4" /> New opening
+    </a>
+  </app-page-header>
+
+  <div class="erp-card overflow-hidden">
+    <!-- filters -->
+    <div class="flex flex-col gap-3 px-4 pt-3 lg:flex-row lg:items-end lg:justify-between border-b border-line">
+      <div class="erp-tabs border-b-0">
+        @for (tab of [{ key: 'OPEN', label: 'Open' }, { key: 'FILLED', label: 'Filled' }, { key: 'CLOSED', label: 'Closed' }, { key: '', label: 'All' }]; track tab.key) {
+          <button type="button" class="erp-tab" [class.erp-tab-active]="status === tab.key" (click)="setStatus($any(tab.key))">
+            {{ tab.label }}
+            <span class="ml-1 text-xs text-slate-500">{{ tab.key ? count(tab.key) : jobs.length }}</span>
+          </button>
+        }
+      </div>
+      <div class="flex flex-wrap gap-2 pb-3">
+        <div class="relative">
+          <app-icon name="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <input [(ngModel)]="search" (ngModelChange)="resetPage()" placeholder="Search title, team, city..." class="erp-input w-60 py-1.5 pl-8" />
+        </div>
+        <select [(ngModel)]="department" (ngModelChange)="resetPage()" class="erp-input w-48 py-1.5">
+          <option value="">All departments</option>
+          @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+        </select>
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="p-4 space-y-3">
+        @for (i of [1, 2, 3, 4, 5]; track i) { <div class="erp-skeleton h-12"></div> }
+      </div>
+    } @else if (error) {
+      <div class="p-4"><div class="erp-alert-error">The job openings could not be loaded.</div></div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Department</th>
+              <th>Location</th>
+              <th class="text-right">Experience</th>
+              <th class="text-right">Salary</th>
+              <th class="text-right">Applicants</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (j of pageJobs; track j.jobId) {
+              <tr class="cursor-pointer" [routerLink]="['/dashboard/jobs', j.jobId]">
+                <td>
+                  <span class="font-medium text-white">{{ j.title }}</span>
+                  <span class="block text-xs text-slate-500">#{{ j.jobId }} · posted {{ j.createdAt | date:'d MMM y' }}</span>
+                </td>
+                <td>
+                  <span class="text-slate-300">{{ j.departmentType }}</span>
+                  <span class="block text-xs text-slate-500">{{ j.divisionDescription }}</span>
+                </td>
+                <td class="text-slate-400">{{ j.location || '—' }}</td>
+                <td class="text-right tabular-nums text-slate-400">{{ j.requiredExperienceYears != null ? j.requiredExperienceYears + ' yrs' : '—' }}</td>
+                <td class="text-right tabular-nums text-slate-400 whitespace-nowrap">{{ salary(j) }}</td>
+                <td class="text-right">
+                  <span class="inline-flex min-w-[2rem] justify-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums"
+                        [class]="j.applicantCount > 0 ? 'bg-accent-muted text-accent' : 'bg-slate-800 text-slate-500'">
+                    {{ j.applicantCount }}
+                  </span>
+                </td>
+                <td><app-status-badge [status]="j.status" /></td>
+                <td class="text-right">
+                  <app-icon name="chevron-right" class="h-4 w-4 text-slate-500" />
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8" class="erp-empty">No job opening matches these filters.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages > 1) {
+        <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+          <span>{{ filtered.length }} openings · page {{ page }} of {{ totalPages }}</span>
+          <div class="flex gap-2">
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page - 1)" [disabled]="page === 1">Previous</button>
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page + 1)" [disabled]="page >= totalPages">Next</button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

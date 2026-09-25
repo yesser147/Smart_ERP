@@ -1,35 +1,17 @@
 package com.smarterp.hr.web;
 
-import com.smarterp.hr.dto.ApplicantCvDTO;
-import com.smarterp.hr.dto.ApplicantDTO;
-import com.smarterp.hr.dto.ApplicantWithCvStatusDTO;
-import com.smarterp.hr.dto.DepartmentDTO;
-import com.smarterp.hr.dto.EmployeeDTO;
-import com.smarterp.hr.dto.EmployeeTrainingDTO;
-import com.smarterp.hr.dto.EngagementSurveyDTO;
-import com.smarterp.hr.dto.HireRequestDTO;
-import com.smarterp.hr.dto.HireResultDTO;
-import com.smarterp.hr.dto.JobApplicationDTO;
-import com.smarterp.hr.dto.JobPostingDTO;
-import com.smarterp.hr.dto.SalaryHistoryDTO;
-import com.smarterp.hr.dto.TrainingCourseDTO;
+import com.smarterp.hr.dto.*;
 import com.smarterp.hr.service.HrService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+/** Employees, teams, job postings and the recruitment workflow (HR roles, see SecurityConfig). */
 @RestController
 @RequestMapping("/hr")
 @RequiredArgsConstructor
@@ -37,112 +19,110 @@ public class HrController {
 
     private final HrService hrService;
 
-    @GetMapping("/employees")
-    public ResponseEntity<List<EmployeeDTO>> getAllEmployees() {
-        return ResponseEntity.ok(hrService.getAllEmployees());
-    }
-    // =========================
-    // DEPARTMENTS
-    // =========================
+    // ---------------- teams
 
     @GetMapping("/departments")
-    public ResponseEntity<List<DepartmentDTO>> getAllDepartments() {
-        return ResponseEntity.ok(hrService.getAllDepartments());
+    public List<DepartmentDTO> departments() {
+        return hrService.getAllDepartments();
     }
 
-    @GetMapping("/departments/{id}")
-    public ResponseEntity<DepartmentDTO> getDepartmentById(@PathVariable Long id) {
-        return ResponseEntity.ok(hrService.getDepartementById(id));
+    // ---------------- employees
+
+    @GetMapping("/employees/paged")
+    public Page<EmployeeDTO> employees(@RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "25") int size,
+                                       @RequestParam(required = false) String search,
+                                       @RequestParam(defaultValue = "name") String sortBy,
+                                       @RequestParam(defaultValue = "asc") String sortDir) {
+        return hrService.getEmployeesPaged(page, size, search, sortBy, sortDir);
     }
 
-    // =========================
-    // SALARY & TRAINING
-    // =========================
-
-    @GetMapping("/salary-history")
-    public ResponseEntity<List<SalaryHistoryDTO>> getAllSalaryHistory() {
-        return ResponseEntity.ok(hrService.getAllSalaryHistory());
+    @GetMapping("/employees/{id}")
+    public EmployeeDTO employee(@PathVariable Long id) {
+        return hrService.getEmployeeById(id);
     }
 
-    @GetMapping("/training-courses")
-    public ResponseEntity<List<TrainingCourseDTO>> getAllTrainingCourses() {
-        return ResponseEntity.ok(hrService.getAllTrainingCourses());
+    @GetMapping("/employees/{id}/salary-history")
+    public List<SalaryHistoryDTO> salaryHistory(@PathVariable Long id) {
+        return hrService.getSalaryHistoryForEmployee(id);
     }
 
-    @GetMapping("/employee-trainings")
-    public ResponseEntity<List<EmployeeTrainingDTO>> getAllEmployeeTrainings() {
-        return ResponseEntity.ok(hrService.getAllEmployeeTrainings());
+    @GetMapping("/employees/{id}/trainings")
+    public List<EmployeeTrainingDTO> trainings(@PathVariable Long id) {
+        return hrService.getTrainingsForEmployee(id);
     }
 
-    // =========================
-    // ENGAGEMENT & RECRUITMENT
-    // =========================
-
-    @GetMapping("/engagement-surveys")
-    public ResponseEntity<List<EngagementSurveyDTO>> getAllEngagementSurveys() {
-        return ResponseEntity.ok(hrService.getAllEngagementSurveys());
+    @GetMapping("/employees/{id}/surveys")
+    public List<EngagementSurveyDTO> surveys(@PathVariable Long id) {
+        return hrService.getSurveysForEmployee(id);
     }
 
-    @GetMapping("/applicants")
-    public ResponseEntity<List<ApplicantDTO>> getAllApplicants() {
-        return ResponseEntity.ok(hrService.getAllApplicants());
-    }
+    // ---------------- job postings
 
     @GetMapping("/job-postings")
-    public ResponseEntity<List<JobPostingDTO>> getAllJobPostings() {
-        return ResponseEntity.ok(hrService.getAllJobPostings());
+    public List<JobPostingDTO> jobPostings() {
+        return hrService.getAllJobPostings();
     }
 
-    @GetMapping("/job-applications")
-    public ResponseEntity<List<JobApplicationDTO>> getAllJobApplications() {
-        return ResponseEntity.ok(hrService.getAllJobApplications());
+    @GetMapping("/job-postings/{id}")
+    public JobPostingDTO jobPosting(@PathVariable Long id) {
+        return hrService.getJobPosting(id);
     }
 
-    @GetMapping("/applicant-cvs")
-    public ResponseEntity<List<ApplicantCvDTO>> getAllApplicantCvs() {
-        return ResponseEntity.ok(hrService.getAllApplicantCvs());
+    @PostMapping("/job-postings")
+    public JobPostingDTO createJobPosting(@Valid @RequestBody JobPostingCreateDTO req) {
+        return hrService.createJobPosting(req);
     }
 
-        @GetMapping("/employees/{id}")
-        public ResponseEntity<EmployeeDTO> getEmployeeById(@PathVariable Long id) {
-            return ResponseEntity.ok(hrService.getEmployeeById(id));
-}
+    @PatchMapping("/job-postings/{id}/status")
+    public JobPostingDTO updateJobPostingStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return hrService.updateJobPostingStatus(id, body.get("status"));
+    }
+
+    @GetMapping("/job-postings/{id}/applications")
+    public List<JobApplicationDTO> applicationsForJob(@PathVariable Long id) {
+        return hrService.getApplicationsForJob(id);
+    }
+
+    // ---------------- applicants & applications
+
+    @GetMapping("/applicants-with-cv-status")
+    public List<ApplicantWithCvStatusDTO> applicantsWithCvStatus() {
+        return hrService.getAllApplicantsWithCvStatus();
+    }
+
+    @GetMapping("/applicants/{id}")
+    public ApplicantDTO applicant(@PathVariable Long id) {
+        return hrService.getApplicantById(id);
+    }
+
+    @GetMapping("/applicants/{id}/applications")
+    public List<JobApplicationDTO> applicationsForApplicant(@PathVariable Long id) {
+        return hrService.getApplicationsForApplicant(id);
+    }
+
+    @GetMapping("/job-applications/{id}/history")
+    public List<StatusHistoryDTO> applicationHistory(@PathVariable UUID id) {
+        return hrService.getApplicationHistory(id);
+    }
 
     @PatchMapping("/job-applications/{id}/interview")
-    public ResponseEntity<JobApplicationDTO> moveToInterview(@PathVariable UUID id) {
-        return ResponseEntity.ok(hrService.moveToInterview(id));
+    public JobApplicationDTO interview(@PathVariable UUID id) {
+        return hrService.moveToInterview(id);
     }
 
     @PatchMapping("/job-applications/{id}/offer")
-    public ResponseEntity<JobApplicationDTO> moveToOffered(@PathVariable UUID id) {
-        return ResponseEntity.ok(hrService.moveToOffered(id));
+    public JobApplicationDTO offer(@PathVariable UUID id) {
+        return hrService.moveToOffered(id);
     }
 
     @PatchMapping("/job-applications/{id}/reject")
-    public ResponseEntity<JobApplicationDTO> rejectApplication(@PathVariable UUID id) {
-        return ResponseEntity.ok(hrService.rejectApplication(id));
+    public JobApplicationDTO reject(@PathVariable UUID id) {
+        return hrService.rejectApplication(id);
     }
-    @GetMapping("/applicants/{id}")
-public ResponseEntity<ApplicantDTO> getApplicantById(@PathVariable Long id) {
-    return ResponseEntity.ok(hrService.getApplicantById(id));
-}
 
-@PostMapping("/applicants/{id}/hire")
-public ResponseEntity<HireResultDTO> hireApplicant(@PathVariable Long id, @RequestBody HireRequestDTO request) {
-    return ResponseEntity.ok(hrService.hireApplicant(id, request));
-}
-@GetMapping("/applicants-with-cv-status")
-public ResponseEntity<List<ApplicantWithCvStatusDTO>> getApplicantsWithCvStatus() {
-    return ResponseEntity.ok(hrService.getAllApplicantsWithCvStatus());
-}
-@GetMapping("/employees/paged")
-public ResponseEntity<Page<EmployeeDTO>> getEmployeesPaged(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "25") int size,
-        @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "name") String sortBy,
-        @RequestParam(defaultValue = "asc") String sortDir
-) {
-    return ResponseEntity.ok(hrService.getEmployeesPaged(page, size, search, sortBy, sortDir));
-}
+    @PostMapping("/applicants/{id}/hire")
+    public HireResultDTO hire(@PathVariable Long id, @RequestBody HireRequestDTO request) {
+        return hrService.hireApplicant(id, request);
+    }
 }

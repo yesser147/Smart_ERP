@@ -1,0 +1,104 @@
+<div class="space-y-6">
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <app-stat-card label="Headcount" icon="users" color="sky"
+      [value]="kpi.activeEmployees"
+      [meta]="kpi.totalEmployees + ' people employed since the start'" />
+    <app-stat-card label="Turnover rate" icon="arrow-path" color="rose"
+      [value]="(kpi.companyTurnoverRate | number:'1.1-1') + '%'"
+      meta="Cumulative, all time" />
+    <app-stat-card label="Open roles" icon="briefcase" color="violet"
+      [value]="kpi.openJobPostings"
+      [meta]="'Across ' + (departmentTypeCount || kpi.departmentCount || 0) + ' departments'" />
+    <app-stat-card label="Engagement" icon="star" color="amber"
+      [value]="(toFive(kpi.avgEngagement) | number:'1.1-1') + ' / 5'"
+      meta="Company average" />
+    <app-stat-card label="High flight risk" icon="warning" color="rose"
+      [value]="riskValue"
+      [meta]="highRiskCount === null ? 'AI engine unavailable' : riskIndicative ? 'Indicative: low model reliability' : 'Active employees, ML prediction'" />
+  </div>
+
+  <!-- quick actions -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a routerLink="/dashboard/jobs" class="erp-card p-5 group hover:border-line-strong transition-colors flex items-center gap-4">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20">
+        <app-icon name="briefcase" class="h-5 w-5" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-medium text-white">Recruitment pipeline</span>
+        <span class="block text-xs text-slate-400 mt-0.5">
+          {{ recruitmentSummary?.activeApplications ?? 0 }} active applications · {{ recruitmentSummary?.interviewing ?? 0 }} interviewing
+        </span>
+      </span>
+      <app-icon name="chevron-right" class="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+    </a>
+    <a routerLink="/dashboard/retention" class="erp-card p-5 group hover:border-line-strong transition-colors flex items-center gap-4">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20">
+        <app-icon name="shield-check" class="h-5 w-5" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-medium text-white">Retention strategy</span>
+        <span class="block text-xs text-slate-400 mt-0.5">AI root causes and an action plan for the people at risk</span>
+      </span>
+      <app-icon name="chevron-right" class="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+    </a>
+    <a routerLink="/dashboard/budget" class="erp-card p-5 group hover:border-line-strong transition-colors flex items-center gap-4">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+        <app-icon name="cpu-chip" class="h-5 w-5" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-medium text-white">Budget advisor</span>
+        <span class="block text-xs text-slate-400 mt-0.5">Simulate training budgets and their predicted impact</span>
+      </span>
+      <app-icon name="chevron-right" class="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="erp-card">
+      <div class="erp-card-header"><h2 class="erp-section-title">Workforce</h2></div>
+      <div class="p-4">
+        @if (statusDonut) {
+          <apx-chart [series]="statusDonut.series" [chart]="statusDonut.chart" [labels]="statusDonut.labels"
+                     [colors]="statusDonut.colors" [legend]="statusDonut.legend" [tooltip]="statusDonut.tooltip"
+                     [plotOptions]="statusDonut.plotOptions" [dataLabels]="statusDonut.dataLabels" [stroke]="statusDonut.stroke" />
+        }
+      </div>
+    </div>
+
+    <div class="erp-card lg:col-span-2 overflow-hidden">
+      <div class="erp-card-header">
+        <h2 class="erp-section-title">Most engaged roles</h2>
+        <span class="text-xs text-slate-500">Top performers, by role</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead>
+            <tr><th>Role</th><th>Performance</th><th class="w-1/3">Engagement</th></tr>
+          </thead>
+          <tbody>
+            @for (row of performers; track row.title) {
+              <tr>
+                <td class="font-medium text-white">
+                  {{ row.title }}
+                  @if (row.count > 1) { <span class="text-slate-500 text-xs ml-1">×{{ row.count }}</span> }
+                </td>
+                <td class="text-slate-300">{{ row.performanceScore }}</td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="h-1.5 flex-1 rounded-full bg-slate-800 overflow-hidden">
+                      <div class="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300" [style.width.%]="row.avgEngagement * 20"></div>
+                    </div>
+                    <span class="text-xs tabular-nums text-amber-300 w-10 text-right">{{ row.avgEngagement | number:'1.1-1' }}</span>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="erp-empty">No data.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

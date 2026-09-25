@@ -1,0 +1,58 @@
+<div class="space-y-6">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="erp-card">
+      <div class="erp-card-header"><h2 class="erp-section-title">Best-paid teams (top 15)</h2></div>
+      <div class="p-4">
+        @if (salaryChart) {
+          <apx-chart [series]="salaryChart.series" [chart]="salaryChart.chart" [xaxis]="salaryChart.xaxis" [yaxis]="salaryChart.yaxis"
+                     [plotOptions]="salaryChart.plotOptions" [colors]="salaryChart.colors" [fill]="salaryChart.fill"
+                     [grid]="salaryChart.grid" [dataLabels]="salaryChart.dataLabels" [tooltip]="salaryChart.tooltip" />
+        }
+      </div>
+    </div>
+
+    <div class="erp-card">
+      <div class="erp-card-header"><h2 class="erp-section-title">Largest training budgets (top 15)</h2></div>
+      <div class="p-4">
+        @if (trainingChart) {
+          <apx-chart [series]="trainingChart.series" [chart]="trainingChart.chart" [xaxis]="trainingChart.xaxis" [yaxis]="trainingChart.yaxis"
+                     [plotOptions]="trainingChart.plotOptions" [colors]="trainingChart.colors" [grid]="trainingChart.grid"
+                     [dataLabels]="trainingChart.dataLabels" [tooltip]="trainingChart.tooltip" />
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="erp-card">
+    <div class="erp-card-header">
+      <div>
+        <h2 class="erp-section-title">Pay by gender</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Average salary per department, weighted by headcount</p>
+      </div>
+    </div>
+    <div class="p-4">
+      @if (payGapChart) {
+        <apx-chart [series]="payGapChart.series" [chart]="payGapChart.chart" [xaxis]="payGapChart.xaxis" [yaxis]="payGapChart.yaxis"
+                   [plotOptions]="payGapChart.plotOptions" [colors]="payGapChart.colors" [dataLabels]="payGapChart.dataLabels"
+                   [grid]="payGapChart.grid" [tooltip]="payGapChart.tooltip" [legend]="payGapChart.legend" />
+      }
+    </div>
+  </div>
+
+  <div class="erp-card">
+    <div class="erp-card-header">
+      <div>
+        <h2 class="erp-section-title">Performance vs engagement</h2>
+        <p class="text-xs text-slate-500 mt-0.5">By role, both on a 1-5 scale</p>
+      </div>
+    </div>
+    <div class="p-4 overflow-x-auto">
+      @if (performanceChart) {
+        <apx-chart [series]="performanceChart.series" [chart]="performanceChart.chart" [xaxis]="performanceChart.xaxis"
+                   [yaxis]="performanceChart.yaxis" [stroke]="performanceChart.stroke" [colors]="performanceChart.colors"
+                   [plotOptions]="performanceChart.plotOptions" [markers]="performanceChart.markers" [grid]="performanceChart.grid"
+                   [legend]="performanceChart.legend" [dataLabels]="performanceChart.dataLabels" [tooltip]="performanceChart.tooltip" />
+      }
+    </div>
+  </div>
+</div>

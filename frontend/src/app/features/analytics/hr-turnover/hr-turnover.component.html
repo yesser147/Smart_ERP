@@ -1,0 +1,144 @@
+<div class="space-y-6">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">Highest turnover teams</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Teams of 3+ people, cumulative rate</p>
+        </div>
+      </div>
+      <div class="p-4">
+        @if (turnoverChart) {
+          <apx-chart [series]="turnoverChart.series" [chart]="turnoverChart.chart" [xaxis]="turnoverChart.xaxis"
+                     [plotOptions]="turnoverChart.plotOptions" [colors]="turnoverChart.colors"
+                     [dataLabels]="turnoverChart.dataLabels" [grid]="turnoverChart.grid"
+                     [tooltip]="turnoverChart.tooltip" [legend]="turnoverChart.legend" />
+        } @else {
+          <p class="erp-empty">Not enough data.</p>
+        }
+      </div>
+    </div>
+
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">Turnover by department</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Share of everyone ever employed who left</p>
+        </div>
+      </div>
+      <div class="p-4">
+        @if (turnoverTypeChart) {
+          <apx-chart [series]="turnoverTypeChart.series" [chart]="turnoverTypeChart.chart" [xaxis]="turnoverTypeChart.xaxis"
+                     [plotOptions]="turnoverTypeChart.plotOptions" [colors]="turnoverTypeChart.colors"
+                     [dataLabels]="turnoverTypeChart.dataLabels" [grid]="turnoverTypeChart.grid"
+                     [tooltip]="turnoverTypeChart.tooltip" [legend]="turnoverTypeChart.legend" />
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- survival curves -->
+  <div class="erp-card">
+    <div class="erp-card-header">
+      <div>
+        <h2 class="erp-section-title">Retention curves</h2>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Share of hires still employed after N years (Kaplan-Meier: people still here are counted up to today)
+        </p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-4">
+      <div class="lg:col-span-3 p-4">
+        @switch (survivalState) {
+          @case ('loading') { <div class="erp-skeleton h-72"></div> }
+          @case ('error') {
+            <div class="erp-alert-warning">
+              <app-icon name="warning" class="h-5 w-5 shrink-0" />
+              The AI engine is not reachable, so the curves cannot be computed.
+            </div>
+          }
+          @default {
+            <apx-chart [series]="survivalChart.series" [chart]="survivalChart.chart" [xaxis]="survivalChart.xaxis"
+                       [yaxis]="survivalChart.yaxis" [stroke]="survivalChart.stroke" [colors]="survivalChart.colors"
+                       [grid]="survivalChart.grid" [legend]="survivalChart.legend" [tooltip]="survivalChart.tooltip"
+                       [dataLabels]="survivalChart.dataLabels" />
+          }
+        }
+      </div>
+      <div class="border-t lg:border-t-0 lg:border-l border-line p-4">
+        <p class="erp-kicker mb-3">Median tenure</p>
+        <ul class="space-y-2.5">
+          @for (m of survivalMedians; track m.name) {
+            <li class="flex items-center justify-between gap-2 text-sm">
+              <span class="text-slate-300 truncate">{{ m.name }} <span class="text-slate-500 text-xs">({{ m.employees }})</span></span>
+              <span class="tabular-nums font-medium" [class.text-white]="m.median !== null" [class.text-slate-500]="m.median === null">
+                {{ m.median !== null ? m.median + ' yrs' : '> 10 yrs' }}
+              </span>
+            </li>
+          }
+        </ul>
+        <p class="text-[11px] text-slate-500 mt-4">Year when fewer than half of the hires are still employed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- table -->
+  <div class="erp-card overflow-hidden">
+    <div class="erp-card-header flex-col items-stretch sm:flex-row sm:items-center">
+      <h2 class="erp-section-title">Departures by team</h2>
+      <div class="flex flex-wrap gap-2 items-center">
+        <label class="flex items-center gap-1.5 text-xs text-slate-400 whitespace-nowrap">
+          <input type="checkbox" [(ngModel)]="showTiny" (ngModelChange)="resetPage()" class="accent-sky-400" />
+          Show teams under 3 people
+        </label>
+        <input [(ngModel)]="searchTerm" (ngModelChange)="resetPage()" placeholder="Search team..." class="erp-input w-44 py-1.5" />
+        <select [(ngModel)]="typeFilter" (ngModelChange)="resetPage()" class="erp-input w-44 py-1.5">
+          <option value="">All departments</option>
+          @for (t of types; track t) { <option [value]="t">{{ t }}</option> }
+        </select>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Department</th>
+            <th class="text-right">Active</th>
+            <th class="text-right">Ever employed</th>
+            <th class="text-right">Departures</th>
+            <th class="text-right">Turnover</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of pageRows; track d.departmentId) {
+            <tr>
+              <td>
+                <a [routerLink]="['/dashboard/departments', d.departmentId]" class="font-medium text-white hover:text-accent">
+                  {{ d.divisionDescription || 'Unknown' }}
+                </a>
+                <span class="block text-xs text-slate-500">{{ d.businessUnit }}</span>
+              </td>
+              <td class="text-slate-400">{{ d.departmentType || '—' }}</td>
+              <td class="text-right tabular-nums">{{ d.headcount }}</td>
+              <td class="text-right tabular-nums text-slate-400">{{ d.totalEverEmployed }}</td>
+              <td class="text-right tabular-nums text-rose-300">{{ d.terminatedCount }}</td>
+              <td class="text-right tabular-nums font-semibold text-accent">{{ d.turnoverRatePct | number:'1.1-1' }}%</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="erp-empty">No team matches.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalPages > 1) {
+      <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+        <span>{{ filtered.length }} teams · page {{ page }} of {{ totalPages }}</span>
+        <div class="flex gap-2">
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page - 1)" [disabled]="page === 1">Previous</button>
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page + 1)" [disabled]="page >= totalPages">Next</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

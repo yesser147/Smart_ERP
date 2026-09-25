@@ -1,4 +1,20 @@
 -- =============================================================================
+-- 0. Read-only role used by the AI chatbot's generated SQL.
+--    Created here (if missing) so the GRANTs at the end of this file can't
+--    fail on a new machine. Its password comes from the Flyway placeholder
+--    ai_readonly_password (AI_DB_PASSWORD in backend/.env).
+-- =============================================================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ai_readonly_user') THEN
+        CREATE ROLE ai_readonly_user LOGIN PASSWORD '${ai_readonly_password}';
+    END IF;
+END
+$$;
+-- A runaway generated query must not hold a connection forever
+ALTER ROLE ai_readonly_user SET statement_timeout = '10s';
+
+-- =============================================================================
 -- 1. Department Turnover & Closure Analytics
 -- =============================================================================
 
@@ -179,8 +195,9 @@ SELECT
     d.division_description,
     COUNT(DISTINCT et.employee_id) AS trained_employees_count,
     COUNT(et.id) AS total_trainings_completed,
-    COALESCE(SUM(tc.cost), 0.00) AS total_training_investment,
-    ROUND(AVG(tc.duration_days), 1) AS avg_course_duration_days
+    -- real cost of each session; the catalog price is only a fallback
+    COALESCE(SUM(COALESCE(et.cost, tc.cost)), 0.00) AS total_training_investment,
+    ROUND(AVG(COALESCE(et.duration_days, tc.duration_days)), 1) AS avg_course_duration_days
 FROM departments d
 JOIN employees e ON d.department_id = e.department_id
 JOIN employee_trainings et ON e.employee_id = et.employee_id
@@ -259,19 +276,40 @@ GROUP BY
 -- =============================================================================
 
 DROP VIEW IF EXISTS v_ai_retention_features CASCADE;
+-- One row per employee: everything the attrition model and the chatbot need.
+-- job_function = job role, division_description = team, department_type = department.
 CREATE OR REPLACE VIEW v_ai_retention_features AS
 SELECT
     e.employee_id,
     e.department_id,
     d.business_unit,
+    d.department_type,
     d.division_description,
     e.job_function,
+    e.title,
     e.performance_score,
     e.salary,
     e.start_date,
+    e.exit_date,
     e.gender,
     e.employee_status,
     e.is_deleted,
+    e.job_level,
+    e.overtime,
+    e.business_travel,
+    e.distance_from_home,
+    e.education_level,
+    e.education_field,
+    e.total_working_years,
+    e.num_companies_worked,
+    e.years_in_current_role,
+    e.years_since_last_promotion,
+    e.years_with_curr_manager,
+    e.stock_option_level,
+    e.percent_salary_hike,
+    e.environment_satisfaction,
+    e.relationship_satisfaction,
+    e.training_times_last_year,
     AVG(es.engagement_score) AS avg_engagement_score,
     AVG(es.satisfaction_score) AS avg_satisfaction_score,
     AVG(es.work_life_balance_score) AS avg_work_life_balance,
@@ -282,9 +320,14 @@ LEFT JOIN engagement_surveys es ON es.employee_id = e.employee_id
 LEFT JOIN v_department_turnover dt ON dt.department_id = e.department_id
 WHERE e.is_deleted = FALSE
 GROUP BY
-    e.employee_id, e.department_id, d.business_unit, d.division_description, e.job_function,
-    e.performance_score, e.salary, e.start_date, e.gender,
-    e.employee_status, e.is_deleted, dt.turnover_rate_pct;
+    e.employee_id, e.department_id, d.business_unit, d.department_type, d.division_description,
+    e.job_function, e.title, e.performance_score, e.salary, e.start_date, e.exit_date, e.gender,
+    e.employee_status, e.is_deleted, e.job_level, e.overtime, e.business_travel,
+    e.distance_from_home, e.education_level, e.education_field, e.total_working_years,
+    e.num_companies_worked, e.years_in_current_role, e.years_since_last_promotion,
+    e.years_with_curr_manager, e.stock_option_level, e.percent_salary_hike,
+    e.environment_satisfaction, e.relationship_satisfaction, e.training_times_last_year,
+    dt.turnover_rate_pct;
 
 
 DROP VIEW IF EXISTS v_ai_exit_reason_frequencies CASCADE;
@@ -354,16 +397,21 @@ WHERE UPPER(e.employee_status) IN ('ACTIVE', 'ON LEAVE') AND e.is_deleted = FALS
 GROUP BY d.department_type, d.division_description, e.gender;
 
 DROP VIEW IF EXISTS v_time_to_hire CASCADE;
+-- Days between the application and the offer. The offer date is the moment
+-- the status changed to OFFERED in the app (job_applications.status_updated_at),
+-- so offers imported by the ETL (no known date) are not counted.
 CREATE OR REPLACE VIEW v_time_to_hire AS
 SELECT
     jp.job_id,
     jp.title AS job_title,
     jp.department_id,
-    ROUND(AVG(ja.application_date - jp.created_at::date), 1) AS avg_days_to_hire,
-    COUNT(*) FILTER (WHERE UPPER(ja.status) = 'OFFERED') AS hired_count
+    ROUND(AVG(ja.status_updated_at::date - ja.application_date), 1) AS avg_days_to_hire,
+    COUNT(*) AS hired_count
 FROM job_postings jp
 JOIN job_applications ja ON ja.job_id = jp.job_id
 WHERE UPPER(ja.status) = 'OFFERED'
+  AND ja.status_updated_at IS NOT NULL
+  AND ja.application_date IS NOT NULL
 GROUP BY jp.job_id, jp.title, jp.department_id;
 
 DROP VIEW IF EXISTS v_department_summary CASCADE;

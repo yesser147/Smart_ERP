@@ -1,0 +1,33 @@
+<div class="erp-page">
+  <app-page-header [title]="departmentType" icon="building" backLink="/dashboard/departments" backLabel="Departments"
+                   [subtitle]="teams.length + ' teams · ' + headcount + ' active employees'" />
+
+  <div class="erp-card overflow-hidden">
+    @if (loading) {
+      <div class="p-4 space-y-3">@for (i of [1, 2, 3]; track i) { <div class="erp-skeleton h-10"></div> }</div>
+    } @else if (error) {
+      <div class="p-4"><div class="erp-alert-error">The teams could not be loaded.</div></div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead>
+            <tr><th>Team</th><th>Site</th><th class="text-right">Active</th><th class="text-right">Average salary</th><th class="text-right">Turnover</th></tr>
+          </thead>
+          <tbody>
+            @for (t of teams; track t.departmentId) {
+              <tr class="cursor-pointer" [routerLink]="['/dashboard/departments', t.departmentId]">
+                <td class="font-medium text-white">{{ t.divisionDescription || '—' }}</td>
+                <td class="text-slate-400">{{ t.businessUnit }}</td>
+                <td class="text-right tabular-nums">{{ t.headcount }}</td>
+                <td class="text-right tabular-nums text-slate-300">{{ t.avgSalary !== null ? '$' + (t.avgSalary | number:'1.0-0') : '—' }}</td>
+                <td class="text-right"><span class="erp-badge" [ngClass]="turnoverTone(t.turnoverRatePct)">{{ t.turnoverRatePct | number:'1.1-1' }}%</span></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="erp-empty">No team in this department.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

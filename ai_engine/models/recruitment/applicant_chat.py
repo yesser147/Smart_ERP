@@ -1,8 +1,11 @@
 """
 Multi-turn chat about a specific applicant's fit for a specific job.
-Keeps conversation history server-side, keyed by (applicant_id, job_id),
-so the LLM has the candidate's resume/skills and the job's requirements
-as grounding on every turn without the frontend needing to resend them.
+
+The conversation is stored in the ai_chat_messages table, keyed by
+(applicant_id, job_id), so it survives an AI engine restart. The grounding
+context (CV + job requirements) is rebuilt on every turn from the database,
+so it always reflects the latest processed CV; reprocessing a CV clears its
+chats (see cv_intelligence_core.write_results).
 
 LLM calls go through llm_client (Groq first, Ollama as fallback).
 """
@@ -12,33 +15,45 @@ import re
 from sqlalchemy import text
 from database import engine
 from models.recruitment.matcher import _load_job, _safe_parse_skills
-from models.recruitment.llm_client import chat, stream_chat, LLMUnavailable
+from models.recruitment.llm_client import stream_chat
 
-# In-memory session store: {(applicant_id, job_id): [{"role": ..., "content": ...}, ...]}
-# Resets on server restart -- fine for a demo/school project. If you ever
-# need this to survive restarts, swap this dict for a DB table keyed the
-# same way.
-_SESSIONS: dict[tuple[int, int], list[dict]] = {}
+# system context + the last 12 messages are sent to the LLM
+HISTORY_LIMIT = 12
 
 _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+# phone-like sequences (digits with spaces, dots, dashes, parentheses, leading +);
+# only redacted when they hold 9+ digits, so date ranges like "2015 - 2019" stay
+_PHONE_RE = re.compile(r"\+?\(?\d[\d\s().-]{7,}\d")
 
 
-def _redact(resume_text: str) -> str:
-    """The resume may leave the machine (Groq), so strip email addresses."""
-    return _EMAIL_RE.sub("[email]", resume_text)
+def _redact_phone(match: re.Match) -> str:
+    return "[phone]" if sum(c.isdigit() for c in match.group()) >= 9 else match.group()
+
+
+class ChatError(Exception):
+    pass
+
+
+def _redact(resume_text: str, names: tuple[str, ...] = ()) -> str:
+    """The resume may leave the machine (Groq), so strip contact details and
+    the candidate's own name."""
+    text_out = _PHONE_RE.sub(_redact_phone, _EMAIL_RE.sub("[email]", resume_text))
+    for name in names:
+        if name and len(name) >= 2:
+            text_out = re.sub(r"\b" + re.escape(name) + r"\b", "[name]", text_out, flags=re.IGNORECASE)
+    return text_out
 
 
 def _build_context_block(applicant_id: int, job_id: int) -> str | None:
-    """The grounding text injected as the first message of a new session --
-    everything the LLM needs to know about this specific candidate and
-    this specific job, so the user's questions don't need to repeat it."""
+    """The grounding text sent as the system message: everything the LLM
+    needs to know about this candidate and this job."""
     job = _load_job(job_id)
     if job is None:
         return None
 
     with engine.connect() as conn:
-           applicant = conn.execute(text("""
-            SELECT a.applicant_id, a.education_level,
+        applicant = conn.execute(text("""
+            SELECT a.applicant_id, a.first_name, a.last_name, a.education_level,
                    COALESCE(ac.cv_years_of_experience, a.years_of_experience) AS years_of_experience,
                    ac.extracted_skills_json, ac.experience_profile, ac.parsed_text
             FROM applicants a
@@ -64,79 +79,61 @@ Required experience: {job.required_experience_years or 0} years
 CANDIDATE
 Education: {applicant.education_level or 'not specified'}
 Years of experience: {applicant.years_of_experience if applicant.years_of_experience is not None else 'not specified'}
+Past roles: {applicant.experience_profile or 'not specified'}
 Extracted skills: {json.dumps(skills)}
 Resume text:
-{_redact((applicant.parsed_text or '')[:3000])}
+{_redact((applicant.parsed_text or '')[:3000], (applicant.first_name, applicant.last_name))}
 
 From now on, answer the user's questions about this candidate's fit for this
 job directly and concisely, in plain text (not JSON) -- this is a conversation,
 not a structured report. Reply in the same language the user writes in."""
 
 
-def start_or_continue_chat(applicant_id: int, job_id: int, user_message: str) -> dict:
-    """Sends one user message and returns the assistant's reply, creating
-    the session (with grounding context) on first use."""
-    session_key = (applicant_id, job_id)
-
-    if session_key not in _SESSIONS:
-        context = _build_context_block(applicant_id, job_id)
-        if context is None:
-            return {"status": "error", "message": "Candidat ou poste introuvable, ou CV non traité."}
-        _SESSIONS[session_key] = [{"role": "system", "content": context}]
-
-    history = _SESSIONS[session_key]
-    history.append({"role": "user", "content": user_message})
-
-    try:
-        reply = chat(history, temperature=0.3)
-    except LLMUnavailable as e:
-        history.pop()  # don't keep a user message that never got a real reply
-        return {"status": "error", "message": f"IA indisponible : {e}"}
-    except Exception as e:
-        history.pop()
-        return {"status": "error", "message": f"Échec de la réponse IA: {e}"}
-
-    history.append({"role": "assistant", "content": reply})
-
-    # Keep sessions from growing unbounded across a long conversation --
-    # system context + last 12 turns is plenty for this use case.
-    if len(history) > 13:
-        _SESSIONS[session_key] = [history[0]] + history[-12:]
-
-    return {"status": "success", "reply": reply}
+def get_chat_history(applicant_id: int, job_id: int, limit: int | None = None) -> list[dict]:
+    """Visible conversation, oldest first."""
+    query = """
+        SELECT role, content FROM (
+            SELECT id, role, content FROM ai_chat_messages
+            WHERE applicant_id = :aid AND job_id = :jid
+            ORDER BY id DESC
+            {limit}
+        ) last ORDER BY id
+    """.format(limit="LIMIT :lim" if limit else "")
+    params = {"aid": applicant_id, "jid": job_id}
+    if limit:
+        params["lim"] = limit
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), params).fetchall()
+    return [{"role": r.role, "content": r.content} for r in rows]
 
 
-def get_chat_history(applicant_id: int, job_id: int) -> list[dict]:
-    """Returns the visible conversation (system context excluded) so the
-    frontend can render it after a page refresh within the same server
-    session, or when reopening the chat panel."""
-    history = _SESSIONS.get((applicant_id, job_id), [])
-    return [m for m in history if m["role"] != "system"]
+def _save_turn(applicant_id: int, job_id: int, user_message: str, reply: str) -> None:
+    with engine.begin() as conn:
+        conn.execute(text("""
+            INSERT INTO ai_chat_messages (applicant_id, job_id, role, content)
+            VALUES (:aid, :jid, 'user', :u), (:aid, :jid, 'assistant', :a)
+        """), {"aid": applicant_id, "jid": job_id, "u": user_message, "a": reply})
 
 
 def reset_chat(applicant_id: int, job_id: int) -> None:
-    _SESSIONS.pop((applicant_id, job_id), None)
-
-class ChatError(Exception):
-    pass
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ai_chat_messages WHERE applicant_id = :aid AND job_id = :jid"),
+                     {"aid": applicant_id, "jid": job_id})
 
 
 def stream_chat_message(applicant_id: int, job_id: int, user_message: str):
     """Returns a generator of text chunks. Raises ChatError / LLMUnavailable
     BEFORE streaming starts, so the endpoint can still return a proper HTTP error.
-    The turn is saved to history only once the stream finishes."""
-    session_key = (applicant_id, job_id)
+    The turn is saved only once the stream finishes."""
+    context = _build_context_block(applicant_id, job_id)
+    if context is None:
+        raise ChatError("Candidate or job not found, or the CV has not been processed yet.")
 
-    if session_key not in _SESSIONS:
-        context = _build_context_block(applicant_id, job_id)
-        if context is None:
-            raise ChatError("Candidat ou poste introuvable, ou CV non traité.")
-        _SESSIONS[session_key] = [{"role": "system", "content": context}]
+    messages = ([{"role": "system", "content": context}]
+                + get_chat_history(applicant_id, job_id, limit=HISTORY_LIMIT)
+                + [{"role": "user", "content": user_message}])
 
-    history = _SESSIONS[session_key]
-    pending = history + [{"role": "user", "content": user_message}]
-
-    stream = stream_chat(pending, temperature=0.3)
+    stream = stream_chat(messages, temperature=0.3)
     first = next(stream, None)          # connects here; raises LLMUnavailable if no provider works
 
     def generate():
@@ -147,9 +144,6 @@ def stream_chat_message(applicant_id: int, job_id: int, user_message: str):
         for chunk in stream:
             parts.append(chunk)
             yield chunk
-        history.append({"role": "user", "content": user_message})
-        history.append({"role": "assistant", "content": "".join(parts)})
-        if len(history) > 13:
-            _SESSIONS[session_key] = [history[0]] + history[-12:]
+        _save_turn(applicant_id, job_id, user_message, "".join(parts))
 
     return generate()

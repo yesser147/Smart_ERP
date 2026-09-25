@@ -1,25 +1,23 @@
 import json
 import joblib
 import pandas as pd
+import config
 from database import engine
 
 FEATURES = ['training_budget', 'headcount', 'avg_engagement', 'department_turnover_rate']
-METRICS_PATH = 'models/budget/saved_models/budget_metrics.json'
+METRICS_PATH = config.BUDGET_METRICS_PATH
 
 
 def _dept_label(row):
-    """department_type is a broad category (e.g. 'Sales') that many
-    departments share; business_unit (e.g. 'PL', 'EW', 'TNS') is what
-    actually distinguishes them. Combine both when available so labels
-    read as 'Sales - TNS (19)'. Always suffixed with department_id as
-    the uniqueness guarantee."""
+    """'Sales - Sales Executives - Team 3 (12)': department + team name,
+    suffixed with department_id as the uniqueness guarantee."""
     dept_type = row.get('department_type')
-    unit = row.get('business_unit')
+    team = row.get('division_description') or row.get('business_unit')
 
-    if dept_type and unit:
-        base = f"{dept_type} - {unit}"
+    if dept_type and team:
+        base = f"{dept_type} - {team}"
     else:
-        base = dept_type or unit or 'Dept'
+        base = dept_type or team or 'Dept'
 
     return f"{base} ({int(row['department_id'])})"
 
@@ -27,9 +25,9 @@ def _dept_label(row):
 class BudgetPrescriptor:
     def __init__(self):
         try:
-            self.model = joblib.load('models/budget/saved_models/budget_xgboost.pkl')
+            self.model = joblib.load(config.BUDGET_MODEL_PATH)
         except FileNotFoundError:
-            raise Exception("Model artifact missing. Run models/budget/train.py first.")
+            raise Exception("Model artifact missing. Run `python -m models.budget_advisor.train` first.")
 
         try:
             with open(METRICS_PATH, encoding='utf-8') as f:

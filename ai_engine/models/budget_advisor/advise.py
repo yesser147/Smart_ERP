@@ -1,8 +1,11 @@
 import json
-from groq import Groq
+import logging
 import config
+from models.recruitment.llm_client import generate_json
 
-METRICS_PATH = 'models/budget/saved_models/budget_metrics.json'
+log = logging.getLogger(__name__)
+
+METRICS_PATH = config.BUDGET_METRICS_PATH
 
 
 def _clean(value):
@@ -41,8 +44,6 @@ def _load_model_quality():
 
 
 def generate_budget_proposal(elasticity_df, comparison_chart, sensitivity_curve, worst_depts_analysis):
-    client = Groq(api_key=config.GROQ_API_KEY)
-
     quality = _load_model_quality()
     analysis_str = json.dumps(worst_depts_analysis, indent=2)
     quality_str = json.dumps(quality)
@@ -76,15 +77,9 @@ Return ONLY a valid JSON object matching this structure:
 }}"""
 
     try:
-        response = client.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=1500,
-            response_format={"type": "json_object"}
-        )
-        llm_payload = json.loads(response.choices[0].message.content)
+        llm_payload = generate_json(prompt, temperature=0.2, max_tokens=1500)
     except Exception as e:
+        log.warning("Budget memo generation failed: %s", e)
         llm_payload = {
             "executive_proposal_memo": f"API Error: {str(e)}",
             "chart_insights": ["Review charts manually."]

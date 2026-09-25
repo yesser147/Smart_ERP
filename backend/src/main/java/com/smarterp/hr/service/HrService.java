@@ -1,13 +1,6 @@
 package com.smarterp.hr.service;
 
-
-import com.smarterp.hr.domain.Applicant;
-import com.smarterp.hr.domain.ApplicantCv;
-import com.smarterp.hr.domain.Department;
-import com.smarterp.hr.domain.Employee;
-import com.smarterp.hr.domain.JobApplication;
-import com.smarterp.hr.domain.JobPosting;
-import com.smarterp.hr.domain.SalaryHistory;
+import com.smarterp.hr.domain.*;
 import com.smarterp.hr.dto.*;
 import com.smarterp.hr.repository.*;
 import com.smarterp.security.domain.RoleName;
@@ -16,303 +9,331 @@ import com.smarterp.security.dto.AuthResponse;
 import com.smarterp.security.dto.RegisterRequest;
 import com.smarterp.security.repository.UserRepository;
 import com.smarterp.security.service.AuthService;
+import com.smarterp.shared.audit.AuditService;
 import com.smarterp.shared.email.EmailService;
+import com.smarterp.shared.exception.BadRequestException;
 import com.smarterp.shared.exception.ResourceNotFoundException;
+import com.smarterp.shared.security.CurrentUser;
+import com.smarterp.shared.transaction.AfterCommit;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import com.smarterp.shared.storage.MinioService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/** Employees, departments, job postings and the recruitment workflow. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class HrService {
 
+    // A hired (OFFERED) or REJECTED application is closed.
+    private static final Set<String> CAN_INTERVIEW = Set.of("APPLIED", "IN REVIEW");
+    private static final Set<String> CAN_OFFER = Set.of("APPLIED", "IN REVIEW", "INTERVIEWING");
+    private static final Set<String> CAN_REJECT = Set.of("APPLIED", "IN REVIEW", "INTERVIEWING");
+    private static final Set<String> POSTING_STATUSES = Set.of("OPEN", "CLOSED", "FILLED");
+
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
     private final SalaryHistoryRepository salaryHistoryRepository;
-    private final TrainingCourseRepository trainingCourseRepository;
     private final EmployeeTrainingRepository employeeTrainingRepository;
     private final EngagementSurveyRepository engagementSurveyRepository;
     private final ApplicantRepository applicantRepository;
+    private final ApplicantCvRepository applicantCvRepository;
     private final JobPostingRepository jobPostingRepository;
     private final JobApplicationRepository jobApplicationRepository;
-    private final ApplicantCvRepository applicantCvRepository;
-    private final EmailService emailService;
-    private final JdbcTemplate jdbcTemplate;
-    private final MinioService minioService;
-    private final AuthService authService;
+    private final ApplicationStatusHistoryRepository statusHistoryRepository;
     private final UserRepository userRepository;
+    private final AuthService authService;
+    private final EmailService emailService;
+    private final AuditService auditService;
+
+    // =========================
+    // DEPARTMENTS (teams)
+    // =========================
 
     public List<DepartmentDTO> getAllDepartments() {
-        return departmentRepository.findAll()
-                .stream()
-                .map(DepartmentDTO::fromEntity)
-                .collect(Collectors.toList());
+        return departmentRepository.findAll().stream().map(DepartmentDTO::fromEntity).toList();
     }
 
-    public DepartmentDTO getDepartementById(Long id) {
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucun Departement trouvé avec l'id : " + id));
-        return DepartmentDTO.fromEntity(department);
+    // =========================
+    // EMPLOYEES
+    // =========================
+
+    public Page<EmployeeDTO> getEmployeesPaged(int page, int size, String search, String sortBy, String sortDir) {
+        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC,
+                mapSortColumn(sortBy));
+        return employeeRepository.findPageWithSearch(search, PageRequest.of(page, Math.min(size, 200), sort))
+                .map(EmployeeDTO::fromEntity);
     }
 
-    @Transactional(readOnly = true)
-    public List<EmployeeDTO> getAllEmployees() {
-        return employeeRepository.findAllWithRelations().stream()
+    private static String mapSortColumn(String sortBy) {
+        return switch (sortBy == null ? "" : sortBy) {
+            case "title" -> "title";
+            case "employeeStatus" -> "employeeStatus";
+            case "salary" -> "salary";
+            case "startDate" -> "startDate";
+            default -> "lastName";
+        };
+    }
+
+    public EmployeeDTO getEmployeeById(Long id) {
+        return employeeRepository.findById(id)
                 .map(EmployeeDTO::fromEntity)
+                .orElseThrow(() -> new ResourceNotFoundException("No employee with id " + id));
+    }
+
+    public List<SalaryHistoryDTO> getSalaryHistoryForEmployee(Long employeeId) {
+        return salaryHistoryRepository.findByEmployeeEmployeeIdOrderByEffectiveDateDesc(employeeId)
+                .stream().map(SalaryHistoryDTO::fromEntity).toList();
+    }
+
+    public List<EmployeeTrainingDTO> getTrainingsForEmployee(Long employeeId) {
+        return employeeTrainingRepository.findByEmployeeEmployeeIdOrderByTrainingDateDesc(employeeId)
+                .stream().map(EmployeeTrainingDTO::fromEntity).toList();
+    }
+
+    public List<EngagementSurveyDTO> getSurveysForEmployee(Long employeeId) {
+        return engagementSurveyRepository.findByEmployeeEmployeeIdOrderBySurveyDateDesc(employeeId)
+                .stream().map(EngagementSurveyDTO::fromEntity).toList();
+    }
+
+    // =========================
+    // JOB POSTINGS
+    // =========================
+
+    public List<JobPostingDTO> getAllJobPostings() {
+        Map<Long, Long> counts = jobApplicationRepository.countByJob().stream()
+                .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+        return jobPostingRepository.findAllWithRelations().stream()
+                .map(p -> JobPostingDTO.fromEntity(p, counts.getOrDefault(p.getJobId(), 0L).intValue()))
                 .toList();
     }
 
-    public List<SalaryHistoryDTO> getAllSalaryHistory() {
-        return salaryHistoryRepository.findAll()
-                .stream()
-                .map(SalaryHistoryDTO::fromEntity)
-                .collect(Collectors.toList());
+    public JobPostingDTO getJobPosting(Long jobId) {
+        JobPosting posting = findPosting(jobId);
+        return JobPostingDTO.fromEntity(posting, jobApplicationRepository.countByJobPostingJobId(jobId).intValue());
     }
 
-    public List<TrainingCourseDTO> getAllTrainingCourses() {
-        return trainingCourseRepository.findAll()
-                .stream()
-                .map(TrainingCourseDTO::fromEntity)
-                .collect(Collectors.toList());
+    @Transactional
+    public JobPostingDTO createJobPosting(JobPostingCreateDTO req) {
+        if (req.offeredSalaryMin() != null && req.offeredSalaryMax() != null
+                && req.offeredSalaryMin().compareTo(req.offeredSalaryMax()) > 0) {
+            throw new BadRequestException("The minimum salary is higher than the maximum salary.");
+        }
+        Department team = departmentRepository.findById(req.departmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("No team with id " + req.departmentId()));
+
+        JobPosting posting = new JobPosting();
+        posting.setTitle(req.title().trim());
+        posting.setDepartment(team);
+        posting.setLocation(req.location() == null || req.location().isBlank() ? "Head Office" : req.location());
+        posting.setRequiredExperienceYears(req.requiredExperienceYears());
+        posting.setOfferedSalaryMin(req.offeredSalaryMin());
+        posting.setOfferedSalaryMax(req.offeredSalaryMax());
+        posting.setDescription(req.description());
+        posting.setStatus("OPEN");
+        JobPosting saved = jobPostingRepository.save(posting);
+
+        auditService.log("JOB_POSTING_CREATED", "job_posting", saved.getJobId(), saved.getTitle());
+        return JobPostingDTO.fromEntity(saved, 0);
     }
 
-    public List<EmployeeTrainingDTO> getAllEmployeeTrainings() {
-        return employeeTrainingRepository.findAll()
-                .stream()
-                .map(EmployeeTrainingDTO::fromEntity)
-                .collect(Collectors.toList());
+    @Transactional
+    public JobPostingDTO updateJobPostingStatus(Long jobId, String status) {
+        String newStatus = status == null ? "" : status.toUpperCase();
+        if (!POSTING_STATUSES.contains(newStatus)) {
+            throw new BadRequestException("Unknown posting status: " + status);
+        }
+        JobPosting posting = findPosting(jobId);
+        String old = posting.getStatus();
+        posting.setStatus(newStatus);
+        auditService.log("JOB_POSTING_STATUS", "job_posting", jobId, old + " -> " + newStatus);
+        return getJobPosting(jobId);
     }
 
-    public List<EngagementSurveyDTO> getAllEngagementSurveys() {
-        return engagementSurveyRepository.findAll()
-                .stream()
-                .map(EngagementSurveyDTO::fromEntity)
-                .collect(Collectors.toList());
+    private JobPosting findPosting(Long jobId) {
+        return jobPostingRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("No job posting with id " + jobId));
     }
 
-    public List<ApplicantDTO> getAllApplicants() {
-        return applicantRepository.findAll()
-                .stream()
+    // =========================
+    // APPLICANTS & APPLICATIONS
+    // =========================
+
+    public ApplicantDTO getApplicantById(Long id) {
+        return applicantRepository.findById(id)
                 .map(ApplicantDTO::fromEntity)
-                .collect(Collectors.toList());
+                .orElseThrow(() -> new ResourceNotFoundException("No applicant with id " + id));
     }
 
-    public List<JobPostingDTO> getAllJobPostings() {
-        return jobPostingRepository.findAllWithRelations()
-                .stream()
-                .map(JobPostingDTO::fromEntity)
-                .collect(Collectors.toList());
+    public List<ApplicantWithCvStatusDTO> getAllApplicantsWithCvStatus() {
+        var statusByApplicant = applicantCvRepository.findAllCvStatus().stream()
+                .collect(Collectors.toMap(ApplicantCvStatusView::applicantId, Function.identity()));
+        return applicantRepository.findAll().stream()
+                .map(a -> {
+                    var status = statusByApplicant.get(a.getApplicantId());
+                    return new ApplicantWithCvStatusDTO(
+                            a.getApplicantId(), a.getFirstName(), a.getLastName(), a.getEmail(),
+                            a.getEducationLevel(), a.getYearsOfExperience(),
+                            status != null && status.hasCv(), status != null && status.isProcessed(),
+                            a.getCreatedAt());
+                })
+                .toList();
     }
 
-public List<JobApplicationDTO> getAllJobApplications() {
-    return jobApplicationRepository.findAllWithRelations()
-            .stream()
-            .map(JobApplicationDTO::fromEntity)
-            .collect(Collectors.toList());
-}
-
-    public List<ApplicantCvDTO> getAllApplicantCvs() {
-        return applicantCvRepository.findAll()
-                .stream()
-                .map(ApplicantCvDTO::fromEntity)
-                .collect(Collectors.toList());
+    public List<JobApplicationDTO> getApplicationsForJob(Long jobId) {
+        return jobApplicationRepository.findByJobIdWithRelations(jobId)
+                .stream().map(JobApplicationDTO::fromEntity).toList();
     }
 
-    // =========================
-    // APPLICATION STATUS ACTIONS (interview / offer / reject)
-    // =========================
+    public List<JobApplicationDTO> getApplicationsForApplicant(Long applicantId) {
+        return jobApplicationRepository.findByApplicantIdWithRelations(applicantId)
+                .stream().map(JobApplicationDTO::fromEntity).toList();
+    }
+
+    public List<StatusHistoryDTO> getApplicationHistory(UUID applicationId) {
+        return statusHistoryRepository.findByApplicationIdOrderByChangedAtAsc(applicationId)
+                .stream().map(StatusHistoryDTO::fromEntity).toList();
+    }
+
+    private JobApplication changeStatus(UUID applicationId, Set<String> allowedFrom, String newStatus) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("No application with id " + applicationId));
+
+        String current = application.getStatus() == null ? "" : application.getStatus().toUpperCase();
+        if (!allowedFrom.contains(current)) {
+            throw new BadRequestException("An application cannot go from " + current + " to " + newStatus + ".");
+        }
+        recordStatus(application, newStatus);
+        return jobApplicationRepository.save(application);
+    }
+
+    /** Sets the status, dates it, and keeps the history + audit trail. */
+    private void recordStatus(JobApplication application, String newStatus) {
+        String old = application.getStatus();
+        application.setStatus(newStatus);
+        application.setStatusUpdatedAt(LocalDateTime.now());
+        statusHistoryRepository.save(new ApplicationStatusHistory(
+                application.getApplicationId(), old, newStatus, CurrentUser.email()));
+        auditService.log("APPLICATION_" + newStatus.replace(' ', '_'), "job_application",
+                application.getApplicationId(),
+                applicantName(application) + " / " + application.getJobPosting().getTitle());
+    }
+
+    private static String applicantName(JobApplication application) {
+        return application.getApplicant().getFirstName() + " " + application.getApplicant().getLastName();
+    }
 
     @Transactional
     public JobApplicationDTO moveToInterview(UUID applicationId) {
-        JobApplication application = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
-
-        application.setStatus("INTERVIEWING");
-        JobApplication saved = jobApplicationRepository.save(application);
-
-        emailService.sendInterviewInvitationEmail(
-                saved.getApplicant().getEmail(),
-                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
-                saved.getJobPosting().getTitle()
-        );
-
+        JobApplication saved = changeStatus(applicationId, CAN_INTERVIEW, "INTERVIEWING");
+        String email = saved.getApplicant().getEmail(), name = applicantName(saved), job = saved.getJobPosting().getTitle();
+        AfterCommit.run(() -> emailService.sendInterviewInvitationEmail(email, name, job));
         return JobApplicationDTO.fromEntity(saved);
     }
 
     @Transactional
     public JobApplicationDTO moveToOffered(UUID applicationId) {
-        JobApplication application = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
-
-        application.setStatus("OFFERED");
-        JobApplication saved = jobApplicationRepository.save(application);
-
-        emailService.sendOfferEmail(
-                saved.getApplicant().getEmail(),
-                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
-                saved.getJobPosting().getTitle()
-        );
-
+        JobApplication saved = changeStatus(applicationId, CAN_OFFER, "OFFERED");
+        String email = saved.getApplicant().getEmail(), name = applicantName(saved), job = saved.getJobPosting().getTitle();
+        AfterCommit.run(() -> emailService.sendOfferEmail(email, name, job));
         return JobApplicationDTO.fromEntity(saved);
     }
 
     @Transactional
     public JobApplicationDTO rejectApplication(UUID applicationId) {
-        JobApplication application = jobApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucune candidature trouvée avec l'id : " + applicationId));
-
-        application.setStatus("REJECTED");
-        JobApplication saved = jobApplicationRepository.save(application);
-
-        emailService.sendRejectionEmail(
-                saved.getApplicant().getEmail(),
-                saved.getApplicant().getFirstName() + " " + saved.getApplicant().getLastName(),
-                saved.getJobPosting().getTitle()
-        );
-
+        JobApplication saved = changeStatus(applicationId, CAN_REJECT, "REJECTED");
+        String email = saved.getApplicant().getEmail(), name = applicantName(saved), job = saved.getJobPosting().getTitle();
+        AfterCommit.run(() -> emailService.sendRejectionEmail(email, name, job));
         return JobApplicationDTO.fromEntity(saved);
     }
 
-    public ApplicantDTO getApplicantById(Long id) {
-        Applicant applicant = applicantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + id));
-        return ApplicantDTO.fromEntity(applicant);
-    }
+    // =========================
+    // HIRING
+    // =========================
 
-public Page<EmployeeDTO> getEmployeesPaged(int page, int size, String search, String sortBy, String sortDir) {
-    Sort sort = Sort.by(sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
-                         mapSortColumn(sortBy));
-    Pageable pageable = PageRequest.of(page, size, sort);
-
-    return employeeRepository.findPageWithSearch(search, pageable)
-            .map(EmployeeDTO::fromEntity);
-}
-
-private String mapSortColumn(String sortBy) {
-    return switch (sortBy) {
-        case "name" -> "lastName";
-        case "title" -> "title";
-        case "employeeStatus" -> "employeeStatus";
-        case "salary" -> "salary";
-        case "startDate" -> "startDate";
-        default -> "lastName";
-    };
-}
     @Transactional
-public HireResultDTO hireApplicant(Long applicantId, HireRequestDTO req) {
-    Applicant applicant = applicantRepository.findById(applicantId)
-            .orElseThrow(() -> new ResourceNotFoundException("Aucun candidat trouvé avec l'id : " + applicantId));
+    public HireResultDTO hireApplicant(Long applicantId, HireRequestDTO req) {
+        if (req == null || req.departmentId() == null || req.startDate() == null || req.salary() == null
+                || req.title() == null || req.title().isBlank() || req.roleName() == null) {
+            throw new BadRequestException("Team, title, start date, salary and role are required.");
+        }
+        RoleName roleName;
+        try {
+            roleName = RoleName.valueOf(req.roleName());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unknown role: " + req.roleName());
+        }
 
-    Department department = departmentRepository.findById(req.departmentId())
-            .orElseThrow(() -> new ResourceNotFoundException("Aucun département trouvé avec l'id : " + req.departmentId()));
+        Applicant applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new ResourceNotFoundException("No applicant with id " + applicantId));
 
-    // 1. Create the real Employee record, reusing what the applicant
-    // already gave us (name, gender, dob) instead of asking HR to retype it.
-    Employee employee = new Employee();
-    employee.setDepartment(department);
-    employee.setFirstName(applicant.getFirstName());
-    employee.setLastName(applicant.getLastName());
-    employee.setStartDate(req.startDate());
-    employee.setTitle(req.title());
-    employee.setEmployeeStatus("Active");
-    employee.setEmployeeType(req.employeeType());
-    employee.setEmployeeClassificationType(req.employeeClassificationType());
-    employee.setDob(applicant.getDob());
-    employee.setState(req.state());
-    employee.setJobFunction(req.jobFunction());
-    employee.setGender(applicant.getGender());
-    employee.setLocation(req.location());
-    employee.setSalary(req.salary());
-    employee.setCurrency("USD");
-    Employee savedEmployee = employeeRepository.save(employee);
+        // One login per email: an existing account means this person was already hired
+        if (Boolean.TRUE.equals(userRepository.existsByEmail(applicant.getEmail()))) {
+            throw new BadRequestException("An account already exists for " + applicant.getEmail()
+                    + ": this candidate has already been hired.");
+        }
 
-    // employee_id is a plain BIGINT with no @GeneratedValue in this
-    // entity -- confirm the employees_employee_id_seq DEFAULT from the
-    // earlier schema.sql fix is in place, or this insert will fail
-    // needing an explicit ID.
+        Department team = departmentRepository.findById(req.departmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("No team with id " + req.departmentId()));
 
-    // 2. Initial salary history row, same as any other new hire.
-    SalaryHistory salaryHistory = new SalaryHistory();
-    salaryHistory.setEmployee(savedEmployee);
-    salaryHistory.setEffectiveDate(req.startDate());
-    salaryHistory.setSalary(req.salary());
-    salaryHistory.setCurrency("USD");
-    salaryHistory.setChangeReason("INITIAL_HIRE");
-    salaryHistoryRepository.save(salaryHistory);
+        // 1. The employee, reusing what the applicant already gave us
+        Employee employee = new Employee();
+        employee.setDepartment(team);
+        employee.setFirstName(applicant.getFirstName());
+        employee.setLastName(applicant.getLastName());
+        employee.setStartDate(req.startDate());
+        employee.setTitle(req.title());
+        employee.setEmployeeStatus("Active");
+        employee.setEmployeeType(req.employeeType());
+        employee.setEmployeeClassificationType(req.employeeClassificationType());
+        employee.setDob(applicant.getDob());
+        employee.setState(req.state());
+        employee.setJobFunction(req.jobFunction());
+        employee.setGender(applicant.getGender());
+        employee.setLocation(req.location());
+        employee.setSalary(req.salary());
+        employee.setCurrency("USD");
+        Employee saved = employeeRepository.save(employee);
 
-    // 3. Real login account, reusing AuthService's actual registration
-    // logic (role lookup, password hashing, activation token, email)
-    // instead of duplicating it with raw JDBC inserts.
-    RegisterRequest registerRequest = new RegisterRequest(
-            applicant.getEmail(),
-            UUID.randomUUID().toString(), // temporary password; user sets a real one via the activation link
-            RoleName.valueOf(req.roleName())
-    );
-    AuthResponse authResponse = authService.register(registerRequest);
-    User user = userRepository.findById(authResponse.userId())
-            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable après création."));
-    user.setEmployeeId(savedEmployee.getEmployeeId());
-    userRepository.save(user);
+        // 2. Initial salary history row
+        SalaryHistory history = new SalaryHistory();
+        history.setEmployee(saved);
+        history.setEffectiveDate(req.startDate());
+        history.setSalary(req.salary());
+        history.setCurrency("USD");
+        history.setChangeReason("INITIAL_HIRE");
+        salaryHistoryRepository.save(history);
 
-    // 4. Mark the application OFFERED and close the job posting so it
-    // stops accepting new applications / showing as open.
-    if (req.jobApplicationId() != null) {
-        jobApplicationRepository.findById(req.jobApplicationId()).ifPresent(app -> {
-            app.setStatus("OFFERED");
-            JobApplication savedApp = jobApplicationRepository.save(app);
+        // 3. Login account (role, temporary password, activation token and email)
+        AuthResponse account = authService.register(new RegisterRequest(
+                applicant.getEmail(), UUID.randomUUID().toString(), roleName));
+        User user = userRepository.findById(account.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found after creation."));
+        user.setEmployeeId(saved.getEmployeeId());
 
-            JobPosting posting = savedApp.getJobPosting();
-            posting.setStatus("FILLED");
-            jobPostingRepository.save(posting);
-        });
+        // 4. The application is OFFERED and the posting FILLED
+        if (req.jobApplicationId() != null) {
+            jobApplicationRepository.findById(req.jobApplicationId()).ifPresent(app -> {
+                if (!"OFFERED".equalsIgnoreCase(app.getStatus())) {
+                    recordStatus(app, "OFFERED");
+                }
+                app.getJobPosting().setStatus("FILLED");
+            });
+        }
+
+        auditService.log("EMPLOYEE_HIRED", "employee", saved.getEmployeeId(),
+                applicant.getFirstName() + " " + applicant.getLastName() + " as " + req.title());
+        return new HireResultDTO(saved.getEmployeeId(), applicant.getEmail(), true);
     }
-
-    return new HireResultDTO(savedEmployee.getEmployeeId(), applicant.getEmail(), true);
-}
-
-    
-    
-    public EmployeeDTO getEmployeeById(Long id) {
-    return employeeRepository.findById(id)
-            .map(EmployeeDTO::fromEntity)
-            .orElseThrow(() -> new ResourceNotFoundException("Aucun employé trouvé avec l'id : " + id));
-}
-public List<ApplicantWithCvStatusDTO> getAllApplicantsWithCvStatus() {
-    var applicants = applicantRepository.findAll();
-
-    var statusByApplicantId = applicantCvRepository.findAllCvStatus().stream()
-            .collect(Collectors.toMap(
-                    ApplicantCvStatusView::applicantId,
-                    java.util.function.Function.identity()
-            ));
-
-    return applicants.stream()
-            .map(a -> {
-                var status = statusByApplicantId.get(a.getApplicantId());
-                boolean hasCv = status != null && status.hasCv();
-                boolean isProcessed = status != null && status.isProcessed();
-                return new ApplicantWithCvStatusDTO(
-                        a.getApplicantId(), a.getFirstName(), a.getLastName(), a.getEmail(),
-                        a.getEducationLevel(), a.getYearsOfExperience(), hasCv, isProcessed,
-                        a.getCreatedAt()
-                );
-            })
-            .collect(Collectors.toList());
-}
 }

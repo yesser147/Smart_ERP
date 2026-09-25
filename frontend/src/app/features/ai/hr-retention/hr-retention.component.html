@@ -1,0 +1,113 @@
+<div class="erp-page print-area">
+  <app-page-header title="Retention strategy" icon="shield-check"
+                   subtitle="Who may leave, why, and what the organisation can do about it">
+    <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="print()" [disabled]="loading || !data">
+      <app-icon name="printer" class="h-4 w-4" /> Print / PDF
+    </button>
+  </app-page-header>
+  <p class="hidden print:block text-xs">Generated on {{ generatedAt | date:'d MMMM y, HH:mm' }} · Nexus ERP</p>
+
+  @if (loading) {
+    <div class="space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">@for (i of [1, 2, 3]; track i) { <div class="erp-skeleton h-28"></div> }</div>
+      <div class="erp-skeleton h-48"></div>
+      <p class="text-xs text-slate-500 text-center">The AI is analysing the employees at risk; this can take up to a minute the first time.</p>
+    </div>
+  } @else if (error) {
+    <div class="erp-alert-error items-center justify-between">
+      <span>{{ error }}</span>
+      <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="load()">Retry</button>
+    </div>
+  } @else if (data) {
+    @if (quality !== 'acceptable') {
+      <div [class]="quality === 'low' ? 'erp-alert-warning' : 'erp-alert-error'">
+        <app-icon name="warning" class="h-5 w-5 shrink-0" />
+        <div>
+          <p class="font-medium">{{ quality === 'low' ? 'These risk scores are rough estimates' : quality === 'insufficient' ? 'These risk scores cannot be trusted' : 'The model quality has not been measured' }}</p>
+          @if (data.model_quality?.cv_auc != null) {
+            <button type="button" class="text-[11px] underline mt-1 opacity-80 no-print" (click)="showQualityDetails = !showQualityDetails">{{ showQualityDetails ? 'Hide' : 'Show' }} details</button>
+            @if (showQualityDetails) {
+              <p class="text-[11px] mt-1 opacity-80">Cross-validated AUC {{ data.model_quality.cv_auc | number:'1.2-2' }} (0.50 = chance, 1.00 = perfect).</p>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <app-stat-card label="Active employees analysed" icon="users" color="sky" [value]="data.macro_metrics?.total_active_employees ?? 0" />
+      <app-stat-card label="High flight risk" icon="warning" color="rose" [value]="data.macro_metrics?.high_risk_count ?? 0"
+                     [meta]="'Risk score of ' + thresholdPct + '% or more'" />
+      <app-stat-card label="Share at risk" icon="chart-pie" color="amber" [value]="(data.macro_metrics?.high_risk_percentage ?? 0) + '%'"
+                     meta="Of the active workforce" />
+    </div>
+
+    <div class="erp-card">
+      <div class="erp-card-header"><div class="flex items-center gap-2"><app-icon name="sparkles" class="h-4 w-4 text-accent" /><h2 class="erp-section-title">Executive summary</h2></div></div>
+      <div class="p-5 text-sm text-slate-300 leading-relaxed erp-prose" [innerHTML]="data.executive_summary | markdown"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="erp-card">
+        <div class="erp-card-header"><h2 class="erp-section-title">Root causes</h2></div>
+        <ol class="p-4 space-y-2">
+          @for (cause of data.generalized_root_causes; track i; let i = $index) {
+            <li class="flex gap-3 rounded-lg bg-surface-muted border border-line p-3 text-xs text-slate-300">
+              <span class="font-semibold text-rose-300">{{ i + 1 }}</span><span class="erp-prose" [innerHTML]="cause | markdown"></span>
+            </li>
+          }
+        </ol>
+      </div>
+
+      <div class="erp-card lg:col-span-2 overflow-hidden">
+        <div class="erp-card-header"><h2 class="erp-section-title">Recommended actions</h2></div>
+        <div class="overflow-x-auto">
+          <table class="erp-table">
+            <thead><tr><th>Initiative</th><th>What to do</th><th>Target</th></tr></thead>
+            <tbody>
+              @for (init of data.systemic_interventions; track $index) {
+                <tr>
+                  <td class="font-medium text-white align-top">{{ init.initiative_name }}</td>
+                  <td class="text-xs text-slate-300 erp-prose" [innerHTML]="init.description | markdown"></td>
+                  <td class="align-top"><span class="erp-badge bg-accent-muted text-accent border-accent/20 normal-case tracking-normal">{{ init.target_metric_to_improve }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (atRisk.length) {
+    <div class="erp-card overflow-hidden">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">People to talk to first</h2>
+          <p class="text-xs text-slate-500 mt-0.5">The {{ atRisk.length }} highest risk scores, with what raises them</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead><tr><th>Employee</th><th>Team</th><th class="text-right">Risk</th><th>Main drivers</th></tr></thead>
+          <tbody>
+            @for (e of atRisk; track e.employee_id) {
+              <tr class="cursor-pointer" [routerLink]="['/dashboard/employee', e.employee_id]">
+                <td><span class="font-medium text-white">{{ e.name }}</span><span class="block text-xs text-slate-500">{{ e.title }}</span></td>
+                <td class="text-slate-400">{{ e.department }}<span class="block text-xs text-slate-500">{{ e.team }}</span></td>
+                <td class="text-right">
+                  <span class="font-semibold tabular-nums" [class.text-rose-300]="e.high_risk" [class.text-amber-300]="!e.high_risk">{{ e.risk_score * 100 | number:'1.0-0' }}%</span>
+                </td>
+                <td>
+                  <div class="flex flex-wrap gap-1">
+                    @for (d of e.drivers; track d.feature) { <span class="erp-chip text-[11px]">{{ featureLabel(d.feature) }} · {{ d.impact_pct | number:'1.0-0' }}%</span> }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

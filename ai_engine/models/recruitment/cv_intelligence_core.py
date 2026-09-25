@@ -12,13 +12,12 @@ matcher can judge background and not just a skills list.
 """
 
 import json
-import time
-import requests
+import logging
 from sqlalchemy import text
 from embeddings import embed_text
+from models.recruitment.llm_client import generate_json
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1"
+log = logging.getLogger(__name__)
 
 EDUCATION_KEYWORDS = {
     "high school": "High School",
@@ -53,10 +52,10 @@ def _clean_profile(raw) -> "str | None":
     return str(raw).strip()[:400] or None
 
 
-def structure_with_llm(resume_text: str, retries: int = 5) -> dict:
-    """Extracts structured info from resume text using a local Ollama model.
-    Retries on connection issues or malformed JSON; returns an empty
-    structure after exhausting retries so callers never crash."""
+def structure_with_llm(resume_text: str) -> dict:
+    """Extracts structured info from resume text with the configured LLM
+    (see llm_client). Raises when the LLM is unreachable or keeps returning
+    invalid JSON, so a CV is never marked as processed with empty data."""
     prompt = f"""Extract structured information from this resume.
 
 Resume:
@@ -76,35 +75,7 @@ job dates in the resume, as a number. experience_profile lists the candidate's r
 past job titles (at most 4, newest first), each with its industry in parentheses.
 Never invent job titles that are not in the resume."""
 
-    for attempt in range(retries):
-        try:
-            response = requests.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json",
-                    "options": {"temperature": 0.1},
-                },
-                timeout=120,
-            )
-            response.raise_for_status()
-            return json.loads(response.json()["response"])
-
-        except requests.exceptions.ConnectionError:
-            print(f" 🔌 Can't reach Ollama at {OLLAMA_URL} -- is `ollama serve` running? Retrying in 5 seconds...")
-            time.sleep(5)
-        except json.JSONDecodeError as e:
-            print(f" ⚠️  Model returned invalid JSON on attempt {attempt + 1}: {e}. Retrying...")
-            time.sleep(2)
-        except Exception as e:
-            print(f" 🔌 Error: {e}. Retrying in 5 seconds...")
-            time.sleep(5)
-
-    print(" ❌ Failed after retries. Returning empty data.")
-    return {"skills": [], "years_of_experience": None, "education_level": None,
-            "summary": "", "experience_profile": None}
+    return generate_json(prompt, temperature=0.1, retries=2, timeout=120)
 
 
 def build_cv_embedding_text(resume_text, skills, years=None, education=None,
@@ -174,6 +145,10 @@ def write_results(conn, applicant_id: int, result: dict):
         "cv_years": result["years_of_experience"],
         "applicant_id": applicant_id,
     })
+
+    # Candidate chats were grounded in the previous version of this CV
+    conn.execute(text("DELETE FROM ai_chat_messages WHERE applicant_id = :aid"),
+                 {"aid": applicant_id})
 
     if result["years_of_experience"] is not None:
         conn.execute(text("""

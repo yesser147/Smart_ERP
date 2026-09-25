@@ -1,5 +1,15 @@
+# Local secrets: never commit. Copy the matching .env.example instead.
+.env
 ETL/.env
-ETL/etl_env/
-ETL/sample_data/
-ai_engine/venv/
 ai_engine/.env
+backend/.env
+
+# Python
+ETL/etl_env/
+ai_engine/venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Raw source data (Kaggle downloads)
+ETL/sample_data/

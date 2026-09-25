@@ -1,0 +1,104 @@
+<div class="erp-page max-w-3xl">
+  <app-page-header title="Hire" icon="user-plus"
+                   [subtitle]="applicant() ? 'Create the employee file and account of ' + applicant()!.firstName + ' ' + applicant()!.lastName : ''"
+                   [backLink]="['/dashboard/applicant', applicantId]" backLabel="Applicant" />
+
+  @if (done(); as res) {
+    <div class="erp-card p-8 text-center space-y-3">
+      <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30">
+        <app-icon name="check" class="h-7 w-7" />
+      </span>
+      <h2 class="text-lg font-semibold text-white">Employee #{{ res.employeeId }} created</h2>
+      <p class="text-sm text-slate-400">
+        @if (res.activationEmailSent) { An activation e-mail was sent to {{ res.email }} so they can choose a password. }
+        @else { The account {{ res.email }} was created, but the activation e-mail could not be sent: check the mail settings. }
+      </p>
+      <div class="flex justify-center gap-2 pt-2">
+        @if (jobId !== null) { <a [routerLink]="['/dashboard/jobs', jobId]" class="erp-btn-secondary">Back to the opening</a> }
+        <button type="button" class="erp-btn-primary" (click)="openEmployee()">Open the employee file</button>
+      </div>
+    </div>
+  } @else {
+    @if (applicant(); as a) {
+      <div class="erp-card p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div><p class="erp-kicker">Name</p><p class="text-white mt-1">{{ a.firstName }} {{ a.lastName }}</p></div>
+        <div><p class="erp-kicker">E-mail (login)</p><p class="text-white mt-1 break-all">{{ a.email }}</p></div>
+        <div><p class="erp-kicker">Education</p><p class="text-white mt-1">{{ a.educationLevel || '—' }}</p></div>
+        <div><p class="erp-kicker">Experience</p><p class="text-white mt-1">{{ a.yearsOfExperience ?? '—' }} yrs</p></div>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="erp-card">
+      <div class="erp-card-header">
+        <h2 class="erp-section-title">Position</h2>
+        @if (job(); as j) { <span class="text-xs text-slate-500">Prefilled from opening #{{ j.jobId }}</span> }
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+        <div class="sm:col-span-2">
+          <label class="erp-label" for="team">Team *</label>
+          <select id="team" formControlName="departmentId" class="erp-input">
+            <option [ngValue]="null" disabled>Choose a team</option>
+            @for (t of teams(); track t.departmentId) { <option [ngValue]="t.departmentId">{{ teamLabel(t) }}</option> }
+          </select>
+        </div>
+        <div>
+          <label class="erp-label" for="title">Job title *</label>
+          <input id="title" formControlName="title" class="erp-input" />
+        </div>
+        <div>
+          <label class="erp-label" for="function">Job function *</label>
+          <input id="function" formControlName="jobFunction" class="erp-input" />
+        </div>
+        <div>
+          <label class="erp-label" for="type">Employment type</label>
+          <select id="type" formControlName="employeeType" class="erp-input">
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+          </select>
+        </div>
+        <div>
+          <label class="erp-label" for="class">Classification</label>
+          <select id="class" formControlName="employeeClassificationType" class="erp-input">
+            <option value="Exempt">Exempt</option>
+            <option value="Non-exempt">Non-exempt</option>
+          </select>
+        </div>
+        <div>
+          <label class="erp-label" for="state">State *</label>
+          <input id="state" formControlName="state" class="erp-input" />
+          @if (invalid('state')) { <p class="text-xs text-rose-300 mt-1">Required.</p> }
+        </div>
+        <div>
+          <label class="erp-label" for="location">Location *</label>
+          <input id="location" formControlName="location" class="erp-input" />
+          @if (invalid('location')) { <p class="text-xs text-rose-300 mt-1">Required.</p> }
+        </div>
+        <div>
+          <label class="erp-label" for="start">Start date *</label>
+          <input id="start" type="date" formControlName="startDate" class="erp-input" />
+        </div>
+        <div>
+          <label class="erp-label" for="salary">Annual salary ($) *</label>
+          <input id="salary" type="number" min="1" step="1000" formControlName="salary" class="erp-input" />
+          @if (invalid('salary')) { <p class="text-xs text-rose-300 mt-1">Enter the salary.</p> }
+        </div>
+        <div class="sm:col-span-2">
+          <label class="erp-label" for="role">Access in the ERP</label>
+          <select id="role" formControlName="roleName" class="erp-input">
+            <option value="ROLE_EMPLOYEE">Employee (self-service only)</option>
+            <option value="ROLE_MANAGER">Manager (HR workspace)</option>
+            <option value="ROLE_HR_MANAGER">HR Manager</option>
+          </select>
+        </div>
+      </div>
+      @if (error()) { <div class="px-5 pb-4"><div class="erp-alert-error">{{ error() }}</div></div> }
+      <div class="flex justify-end gap-2 border-t border-line px-5 py-4">
+        <a [routerLink]="['/dashboard/applicant', applicantId]" class="erp-btn-secondary">Cancel</a>
+        <button type="submit" class="erp-btn-primary" [disabled]="submitting()">
+          {{ submitting() ? 'Creating...' : 'Confirm hire' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

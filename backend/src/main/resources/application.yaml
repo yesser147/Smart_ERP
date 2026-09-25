@@ -1,17 +1,22 @@
 server:
   port: 8080
   servlet:
-    context-path: /api/v1 
+    context-path: /api/v1
 
 spring:
   application:
     name: smart-erp-core
 
+  # Secrets live in backend/.env (git-ignored, see backend/.env.example).
+  # Real environment variables override it.
+  config:
+    import: optional:file:.env[.properties]
+
   # Database Connection
   datasource:
-    url: jdbc:postgresql://localhost:5432/smart_erp
-    username: postgres
-    password: postgres  
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:smart_erp}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 8
@@ -21,32 +26,65 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: "1"
+    placeholders:
+      # used by R__create_bi_views.sql to create the chatbot's read-only role
+      ai_readonly_password: ${AI_DB_PASSWORD}
+
+  # CV uploads (the default limit of 1 MB rejected most PDF resumes)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
 
   # Email Configuration
   mail:
     host: smtp.gmail.com
     port: 587
-    username: nexuserp.system@gmail.com
-    password: bfkkisanijbvcfxx
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket: ${MINIO_BUCKET:applicant-cvs}
+
+# API documentation (Swagger UI at /api/v1/swagger-ui.html), off unless API_DOCS=true
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS:false}
+  swagger-ui:
+    enabled: ${API_DOCS:false}
+
+ai:
+  service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+
 application:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  # first administrator, created at startup if it doesn't exist
+  admin:
+    email: ${ADMIN_EMAIL:admin@smarterp.com}
+    password: ${ADMIN_PASSWORD:Admin@123456}
   security:
     jwt:
-      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      # Base64-encoded key; must be the same value as JWT_SECRET in ai_engine/.env
+      secret-key: ${JWT_SECRET}
       expiration-ms: 86400000
-      refresh-token-expiration-ms: 604800000

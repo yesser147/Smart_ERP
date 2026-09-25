@@ -1,0 +1,46 @@
+<div class="space-y-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <app-stat-card label="Open roles" icon="briefcase" color="sky" [value]="openJobs"
+      [meta]="jobPostings.length + ' postings in total'" />
+    <app-stat-card label="Applications" icon="inbox" color="violet" [value]="applicants"
+      [meta]="(summary?.activeApplications ?? 0) + ' still in the pipeline'" />
+    <app-stat-card label="Interviewing" icon="chat" color="amber" [value]="summary?.interviewing ?? 0"
+      [meta]="(summary?.offered ?? 0) + ' offers made'" />
+    <app-stat-card label="Time to hire" icon="clock" color="emerald"
+      [value]="summary?.avgDaysToHire != null ? ((summary!.avgDaysToHire! | number:'1.0-0') + ' days') : '—'"
+      [meta]="'Average over ' + (summary?.hires ?? 0) + ' hires'" />
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">Recruitment funnel</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Cumulative stages; rejections only count as received</p>
+        </div>
+      </div>
+      <div class="p-4">
+        @if (funnelChart) {
+          <apx-chart [series]="funnelChart.series" [chart]="funnelChart.chart" [xaxis]="funnelChart.xaxis"
+                     [plotOptions]="funnelChart.plotOptions" [colors]="funnelChart.colors" [dataLabels]="funnelChart.dataLabels"
+                     [grid]="funnelChart.grid" [legend]="funnelChart.legend" [tooltip]="funnelChart.tooltip" />
+        }
+      </div>
+    </div>
+
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <h2 class="erp-section-title">Open roles by department</h2>
+        <a routerLink="/dashboard/jobs" class="erp-btn-ghost text-xs">All openings <app-icon name="chevron-right" class="h-3.5 w-3.5" /></a>
+      </div>
+      <div class="p-4">
+        @if (jobPostingsChart) {
+          <apx-chart [series]="jobPostingsChart.series" [chart]="jobPostingsChart.chart" [xaxis]="jobPostingsChart.xaxis"
+                     [plotOptions]="jobPostingsChart.plotOptions" [colors]="jobPostingsChart.colors"
+                     [dataLabels]="jobPostingsChart.dataLabels" [grid]="jobPostingsChart.grid"
+                     [legend]="jobPostingsChart.legend" [tooltip]="jobPostingsChart.tooltip" />
+        }
+      </div>
+    </div>
+  </div>
+</div>

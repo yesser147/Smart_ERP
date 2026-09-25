@@ -3,10 +3,10 @@ package com.smarterp.security.config;
 import com.smarterp.shared.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer; // <-- IMPORT THIS
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,8 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final String[] HR = {"ADMIN", "HR_MANAGER", "MANAGER"};
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
@@ -28,15 +29,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults()) // <-- 1. ADD THIS TO ENABLE CORS IN SECURITY
+            .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // 2. ADD '/api/v1' TO YOUR PATHS SO THEY MATCH ANGULAR
-                .requestMatchers("/auth/login", "/auth/set-password", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                .requestMatchers("/analytics/**").permitAll()
-                .requestMatchers("/hr/**").permitAll()
-                .requestMatchers("/auth/register").hasRole("ADMIN") 
+                // paths are relative to the /api/v1 context path
+                .requestMatchers("/auth/login", "/auth/set-password", "/auth/forgot-password").permitAll()
+                // API documentation (only served when API_DOCS=true)
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                // careers site: open job list and applications (rate-limited)
+                .requestMatchers(HttpMethod.GET, "/public/jobs").permitAll()
+                .requestMatchers(HttpMethod.POST, "/public/applications").permitAll()
+                .requestMatchers("/auth/register", "/admin/**").hasRole("ADMIN")
+                // HR data (salaries, personal data, hiring actions) is for HR staff only
+                .requestMatchers("/hr/**", "/analytics/**").hasAnyRole(HR)
+                // own file, notifications: any logged-in user
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

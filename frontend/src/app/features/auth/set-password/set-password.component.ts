@@ -1,107 +1,84 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthLayoutComponent } from '../auth-layout.component';
+import { errorMessage } from '../../../shared/utils/errors';
 
+/** Opened from the activation / reset e-mail: /auth/set-password?token=... */
 @Component({
   selector: 'app-set-password',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, RouterLink, AuthLayoutComponent],
   template: `
-    <div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div class="bg-slate-800 border border-slate-700 p-8 rounded-xl max-w-md w-full shadow-2xl">
-        <h2 class="text-2xl font-bold text-teal-400 mb-2">Nexus ERP</h2>
-        <p class="text-slate-400 mb-6">Définissez votre nouveau mot de passe pour finaliser l'activation de votre compte.</p>
-
-        <form (ngSubmit)="onSubmit()" #f="ngForm">
-          <div class="mb-4">
-            <label class="block text-slate-300 mb-2">Nouveau mot de passe</label>
-            <input type="password" [(ngModel)]="password" name="password" required minlength="6"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-teal-500">
+    <app-auth-layout title="Choose your password" subtitle="To activate your account or replace a forgotten password.">
+      @if (!token) {
+        <div class="erp-alert-error">This link is incomplete. Use the link from the e-mail, or ask for a new one.</div>
+        <a routerLink="/auth/forgot-password" class="erp-btn-secondary w-full mt-4">Ask for a new link</a>
+      } @else if (done()) {
+        <div class="erp-alert-success">Your password is set. Redirecting to the sign-in page...</div>
+      } @else {
+        <form (ngSubmit)="submit()" class="space-y-5">
+          @if (error()) { <div class="erp-alert-error">{{ error() }}</div> }
+          <div>
+            <label class="erp-label" for="pw">New password</label>
+            <input id="pw" type="password" name="pw" [(ngModel)]="password" class="erp-input h-11" autocomplete="new-password" />
+            <ul class="mt-2 space-y-1 text-xs">
+              <li [class.text-emerald-300]="password.length >= 8" [class.text-slate-500]="password.length < 8">• At least 8 characters</li>
+              <li [class.text-emerald-300]="hasLetter" [class.text-slate-500]="!hasLetter">• At least one letter</li>
+              <li [class.text-emerald-300]="hasDigit" [class.text-slate-500]="!hasDigit">• At least one digit</li>
+            </ul>
           </div>
-
-          <div class="mb-6">
-            <label class="block text-slate-300 mb-2">Confirmer le mot de passe</label>
-            <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required
-                   class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-teal-500">
+          <div>
+            <label class="erp-label" for="pw2">Confirm</label>
+            <input id="pw2" type="password" name="pw2" [(ngModel)]="confirm" class="erp-input h-11" autocomplete="new-password" />
+            @if (confirm && confirm !== password) { <p class="mt-1 text-xs text-rose-300">The passwords are different.</p> }
           </div>
-
-          <p *ngIf="errorMessage" class="text-red-400 text-sm mb-4">{{ errorMessage }}</p>
-          <p *ngIf="successMessage" class="text-emerald-400 text-sm mb-4">{{ successMessage }}</p>
-
-          <button type="submit" [disabled]="!f.valid || isLoading"
-                  class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-lg transition-colors">
-            {{ isLoading ? 'Validation...' : 'Valider et continuer' }}
+          <button type="submit" class="erp-btn-primary w-full h-11" [disabled]="loading() || !valid">
+            {{ loading() ? 'Saving...' : 'Save password' }}
           </button>
         </form>
-      </div>
-    </div>
+      }
+    </app-auth-layout>
   `
 })
 export class SetPasswordComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private http = inject(HttpClient);
-  private service= inject(AuthService)
+  private auth = inject(AuthService);
 
-  token: string = '';
-  password: string = '';
-  confirmPassword: string = '';
-  errorMessage: string = '';
-  successMessage: string = '';
-  isLoading: boolean = false;
+  token = '';
+  password = '';
+  confirm = '';
+  loading = signal(false);
+  done = signal(false);
+  error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      this.token = params['token'] || '';
-      console.log('>>> Captured Token from URL:', this.token);
-    });
-  
-    if (!this.token) {
-      this.errorMessage = 'Jeton d\'activation manquant.';
-    }
+    this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
   }
 
-  onSubmit(): void {
-    if (this.password !== this.confirmPassword) {
-      this.errorMessage = 'Les mots de passe ne correspondent pas.';
-      return;
-    }
+  get hasLetter(): boolean { return /[A-Za-z]/.test(this.password); }
+  get hasDigit(): boolean { return /[0-9]/.test(this.password); }
 
-    this.isLoading = true;
-    this.errorMessage = '';
-    
+  /** Same rule as the backend (SetPasswordRequest). */
+  get valid(): boolean {
+    return this.password.length >= 8 && this.hasLetter && this.hasDigit && this.password === this.confirm;
+  }
 
-    this.service.setpassword({
-    token: this.token,
-    newPassword: this.password
-  }).subscribe({
-    next: (response: string) => {
-      this.isLoading = false;
-      this.successMessage = 'Mot de passe configuré avec succès ! Redirection vers la page de connexion...';
-      
-      // Redirect user to login after 2 seconds
-      setTimeout(() => {
-        this.router.navigate(['/auth/login']);
-      }, 2000);
-    },
-    error: (err) => {
-      this.isLoading = false;
-      
-      // Handle error payload from GlobalExceptionHandler
-      if (err.error) {
-        try {
-          const parsed = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
-          this.errorMessage = parsed.message || 'Impossible de configurer le mot de passe.';
-        } catch (e) {
-          this.errorMessage = typeof err.error === 'string' ? err.error : 'Une erreur est survenue.';
-        }
-      } else {
-        this.errorMessage = 'Impossible de contacter le serveur backend.';
+  submit(): void {
+    if (!this.valid) return;
+    this.loading.set(true);
+    this.error.set(null);
+    this.auth.setPassword({ token: this.token, newPassword: this.password }).subscribe({
+      next: () => {
+        this.done.set(true);
+        setTimeout(() => this.router.navigate(['/auth/login']), 2000);
+      },
+      error: err => {
+        this.loading.set(false);
+        this.error.set(errorMessage(err, 'The password could not be saved. The link may have expired.'));
       }
-    }
-  });
+    });
   }
 }

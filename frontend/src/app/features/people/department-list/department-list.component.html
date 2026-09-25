@@ -1,0 +1,44 @@
+<div class="erp-page">
+  <app-page-header title="Departments" icon="building"
+                   [subtitle]="rows.length + ' departments · ' + totalHeadcount + ' active employees'" />
+
+  @if (loading) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">@for (i of [1, 2, 3]; track i) { <div class="erp-skeleton h-40"></div> }</div>
+  } @else if (error) {
+    <div class="erp-alert-error">The departments could not be loaded.</div>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (r of rows; track r.departmentType) {
+        <a [routerLink]="['/dashboard/department-type', r.departmentType]"
+           class="erp-card p-5 group hover:border-line-strong transition-colors">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-muted text-accent ring-1 ring-accent/20">
+                <app-icon name="building" class="h-5 w-5" />
+              </span>
+              <div>
+                <h2 class="font-semibold text-white group-hover:text-accent transition-colors">{{ r.departmentType }}</h2>
+                <p class="text-xs text-slate-500">{{ r.teams }} team{{ r.teams === 1 ? '' : 's' }}</p>
+              </div>
+            </div>
+            <span class="erp-badge" [ngClass]="turnoverTone(r.turnoverPct)">{{ r.turnoverPct | number:'1.0-0' }}% turnover</span>
+          </div>
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <div>
+              <p class="text-[11px] text-slate-500">Active employees</p>
+              <p class="text-xl font-semibold text-white tabular-nums">{{ r.headcount }}</p>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-500">Average salary</p>
+              <p class="text-xl font-semibold text-white tabular-nums">{{ r.avgSalary !== null ? '$' + (r.avgSalary | number:'1.0-0') : '—' }}</p>
+            </div>
+          </div>
+          <div class="mt-4 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-brand-from to-brand-to" [style.width.%]="totalHeadcount ? (r.headcount / totalHeadcount) * 100 : 0"></div>
+          </div>
+          <p class="mt-1 text-[11px] text-slate-500">{{ totalHeadcount ? (r.headcount / totalHeadcount * 100 | number:'1.0-0') : 0 }}% of the workforce</p>
+        </a>
+      }
+    </div>
+  }
+</div>

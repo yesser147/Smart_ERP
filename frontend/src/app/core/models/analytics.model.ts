@@ -5,7 +5,6 @@ export interface KpiSummaryDTO {
   openJobPostings: number;
   avgEngagement: number;
   companyTurnoverRate: number;
-  highRiskCount: number;
 }
 export interface DepartmentSummaryDTO {
   departmentId: number;
@@ -13,7 +12,7 @@ export interface DepartmentSummaryDTO {
   departmentType: string;
   divisionDescription: string;
   headcount: number;
-  totalEverEmployed: number; // NEW
+  totalEverEmployed: number;
   avgSalary: number | null;
   turnoverRatePct: number;
   activeCount: number;
@@ -26,30 +25,7 @@ export interface DepartmentSalarySummaryDTO {
   avgSalary: number;
 }
 
-export interface AttritionRiskIndicatorsDTO {
-  employeeId: number;
-  departmentId: number;
-  jobFunction: string;
-  title: string;
-  performanceScore: string;
-  salary: number;
-  startDate: string; 
-  recentEngagement: number;
-  recentSatisfaction: number;
-  recentWlb: number;
-  heuristicRiskLevel: string;
-}
 
-export interface DepartmentTurnoverDTO {
-  departmentId?: number;
-  businessUnit?: string;
-  departmentType?: string;
-  divisionDescription?: string;
-  totalEmployees?: number;
-  activeCount?: number;
-  terminatedCount?: number; // FIXED: was "terminationsCount", didn't match backend JSON key
-  turnoverRatePct?: number;
-}
 export interface EmployeePerformanceEngagementDTO {
   employeeId: number;
   departmentId: number;
@@ -78,17 +54,6 @@ export interface RecruitmentFunnelAtsDTO {
   avgAiMatchScore: number;
 }
 
-export interface SalaryDistributionDTO {
-  departmentId: number;
-  businessUnit: string;
-  divisionDescription: string;
-  jobFunction: string;
-  employeeCount: number;
-  avgSalary: number;
-  minSalary: number;
-  maxSalary: number;
-  totalPayrollBurden: number;
-}
 
 export interface TopPerformerBenchmarksDTO {
   employeeId: number;
@@ -132,4 +97,12 @@ export interface TimeToHireDTO {
   departmentId: number;
   avgDaysToHire: number;
   hiredCount: number;
+}
+/** Computed on the frontend from the funnel + time-to-hire views. */
+export interface RecruitmentSummary {
+  activeApplications: number;
+  interviewing: number;
+  offered: number;
+  avgDaysToHire: number | null;
+  hires: number;
 }

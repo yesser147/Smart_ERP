@@ -1,0 +1,63 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="erp-label" for="af-first">First name *</label>
+      <input id="af-first" formControlName="firstName" class="erp-input" autocomplete="given-name" />
+      @if (invalid('firstName')) { <p class="text-xs text-rose-300 mt-1">Required.</p> }
+    </div>
+    <div>
+      <label class="erp-label" for="af-last">Last name *</label>
+      <input id="af-last" formControlName="lastName" class="erp-input" autocomplete="family-name" />
+      @if (invalid('lastName')) { <p class="text-xs text-rose-300 mt-1">Required.</p> }
+    </div>
+    <div>
+      <label class="erp-label" for="af-email">E-mail *</label>
+      <input id="af-email" type="email" formControlName="email" class="erp-input" autocomplete="email" />
+      @if (invalid('email')) { <p class="text-xs text-rose-300 mt-1">Enter a valid e-mail address.</p> }
+    </div>
+    <div>
+      <label class="erp-label" for="af-phone">Phone</label>
+      <input id="af-phone" formControlName="phoneNumber" class="erp-input" autocomplete="tel" />
+    </div>
+    <div>
+      <label class="erp-label" for="af-edu">Highest degree</label>
+      <select id="af-edu" formControlName="educationLevel" class="erp-input">
+        <option value="">Not specified</option>
+        @for (e of educationLevels; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+    <div>
+      <label class="erp-label" for="af-salary">Desired salary ($ / year)</label>
+      <input id="af-salary" type="number" min="0" step="1000" formControlName="desiredSalary" class="erp-input" />
+    </div>
+    @if (!lockJob) {
+      <div class="sm:col-span-2">
+        <label class="erp-label" for="af-job">Position *</label>
+        <select id="af-job" formControlName="jobId" class="erp-input">
+          <option [ngValue]="null" disabled>Choose a position</option>
+          @for (j of jobs; track j.jobId) {
+            <option [ngValue]="j.jobId">{{ j.title }}{{ j.department ? ' · ' + j.department : '' }}</option>
+          }
+        </select>
+        @if (invalid('jobId')) { <p class="text-xs text-rose-300 mt-1">Choose the position.</p> }
+      </div>
+    }
+  </div>
+
+  <div>
+    <span class="erp-label">CV (PDF, max 10 MB) *</span>
+    <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-line-strong bg-surface-muted px-4 py-4 hover:border-accent/50 transition-colors">
+      <app-icon name="upload" class="h-5 w-5 text-accent" />
+      <span class="text-sm" [class.text-white]="file" [class.text-slate-400]="!file">{{ file ? file.name : 'Choose a PDF file...' }}</span>
+      <input type="file" accept="application/pdf,.pdf" class="sr-only" (change)="onFile($event)" />
+    </label>
+    @if (fileError) { <p class="text-xs text-rose-300 mt-1">{{ fileError }}</p> }
+  </div>
+
+  @if (error) { <div class="erp-alert-error">{{ error }}</div> }
+
+  <button type="submit" class="erp-btn-primary w-full py-2.5" [disabled]="submitting">
+    {{ submitting ? 'Sending...' : 'Send application' }}
+  </button>
+  <p class="text-[11px] text-slate-500 text-center">Your CV is read by our AI to match it with the role; a recruiter makes every decision.</p>
+</form>

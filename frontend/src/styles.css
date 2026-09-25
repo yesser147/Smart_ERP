@@ -2,59 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --erp-bg: #0f172a;
-  --erp-surface: #1e293b;
-  --erp-surface-muted: #162033;
-  --erp-border: #334155;
-  --erp-accent: #38bdf8;
-  --erp-accent-hover: #7dd3fc;
-  --erp-text: #f1f5f9;
-  --erp-muted: #94a3b8;
-  --erp-radius: 0.75rem;
-  --erp-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 24px rgba(2, 6, 23, 0.28);
-}
-
 @layer base {
-  html,
-  body {
-    @apply min-h-full bg-canvas text-slate-100 font-sans antialiased;
-    background-color: var(--erp-bg);
-    color: var(--erp-text);
+  html {
+    color-scheme: dark; /* dark native controls: selects, checkboxes, date pickers */
   }
 
+  html,
   body {
-    @apply text-sm;
+    @apply min-h-full bg-canvas text-slate-100 font-sans antialiased text-sm;
   }
 
   ::selection {
     background: rgba(56, 189, 248, 0.28);
   }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2e3e59 transparent;
+  }
 }
 
 @layer components {
+  /* ---- layout ---- */
   .erp-page {
-    @apply min-h-screen bg-canvas text-slate-100;
+    @apply mx-auto w-full max-w-7xl space-y-6 animate-fade-in;
   }
 
   .erp-card {
     @apply bg-surface border border-line rounded-card shadow-card;
   }
 
+  .erp-card-header {
+    @apply flex items-center justify-between gap-3 px-5 py-4 border-b border-line;
+  }
+
   .erp-page-title {
-    @apply text-2xl sm:text-3xl font-semibold tracking-tight text-white;
+    @apply text-2xl font-semibold tracking-tight text-white;
   }
 
   .erp-section-title {
-    @apply text-base font-semibold text-white tracking-tight;
+    @apply text-[15px] font-semibold text-white tracking-tight;
   }
 
   .erp-kicker {
     @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400;
   }
 
+  .erp-muted {
+    @apply text-slate-400;
+  }
+
+  /* ---- KPIs ---- */
   .erp-kpi {
-    @apply text-3xl sm:text-4xl font-bold tracking-tight text-white leading-none mt-2;
+    @apply text-3xl font-bold tracking-tight text-white leading-none mt-2 tabular-nums;
   }
 
   .erp-kpi-label {
@@ -65,43 +65,68 @@
     @apply text-xs text-slate-400 mt-2;
   }
 
+  /* ---- forms ---- */
+  .erp-label {
+    @apply block text-xs font-medium text-slate-300 mb-1.5;
+  }
+
   .erp-input {
-    @apply w-full bg-canvas border border-line rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500
-      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors;
+    @apply w-full bg-surface-muted border border-line rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500
+      focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors
+      disabled:opacity-60;
+  }
+
+  /* ---- buttons ---- */
+  .erp-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+      disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50;
   }
 
   .erp-btn-primary {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold
-      bg-accent text-slate-950 hover:bg-accent-hover transition-colors
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply erp-btn font-semibold bg-accent text-slate-950 hover:bg-accent-hover;
   }
 
   .erp-btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium
-      bg-canvas border border-line text-slate-200 hover:bg-slate-800 hover:text-white transition-colors
-      disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply erp-btn bg-surface-muted border border-line text-slate-200 hover:bg-surface-hover hover:text-white;
   }
 
   .erp-btn-danger {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium
-      bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 transition-colors
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply erp-btn bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20;
+  }
+
+  .erp-btn-success {
+    @apply erp-btn bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20;
   }
 
   .erp-btn-ghost {
-    @apply inline-flex items-center text-sm text-slate-400 hover:text-white transition-colors;
+    @apply inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors;
   }
 
+  .erp-btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .erp-icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:text-white
+      hover:bg-surface-hover transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50;
+  }
+
+  /* ---- badges ---- */
   .erp-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide border;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide border whitespace-nowrap;
   }
 
+  .erp-chip {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs border border-line bg-surface-muted text-slate-300;
+  }
+
+  /* ---- tables ---- */
   .erp-table {
     @apply w-full text-left text-slate-300 text-sm;
   }
 
   .erp-table thead {
-    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-canvas/60;
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-surface-muted;
   }
 
   .erp-table tbody {
@@ -110,63 +135,66 @@
 
   .erp-table th,
   .erp-table td {
-    @apply p-3;
+    @apply px-4 py-3;
   }
 
-  .erp-nav-item {
-    @apply w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300
-      hover:bg-slate-800/80 hover:text-white transition-colors
-      flex items-center gap-3;
+  .erp-table tbody tr {
+    @apply transition-colors hover:bg-surface-hover/60;
   }
 
-  .erp-nav-icon {
-    @apply h-5 w-5 shrink-0 text-slate-400;
+  /* ---- tabs ---- */
+  .erp-tabs {
+    @apply flex gap-1 border-b border-line overflow-x-auto;
   }
 
-  .erp-nav-active {
-    @apply bg-accent-muted text-accent hover:bg-accent-muted hover:text-accent;
-    box-shadow: inset 3px 0 0 var(--erp-accent);
+  .erp-tab {
+    @apply px-3.5 py-2.5 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent -mb-px whitespace-nowrap transition-colors;
   }
 
-  .erp-nav-active .erp-nav-icon {
-    @apply text-accent;
+  .erp-tab-active {
+    @apply text-white border-accent;
   }
 
-  .erp-nav-label {
-    @apply text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 px-3 mt-4 mb-2;
-  }
-
-  .erp-nav-group {
-    @apply rounded-xl px-1 py-2 mb-3;
-  }
-
-  .erp-nav-group-active {
-    @apply bg-slate-900/55 ring-1 ring-white/5;
-  }
-
-  .erp-page-icon {
-    @apply h-5 w-5 shrink-0 text-accent;
-  }
-
-  .erp-title-row {
-    @apply flex items-center gap-2.5;
-  }
-
+  /* ---- states ---- */
   .erp-skeleton {
-    @apply relative overflow-hidden rounded-lg bg-slate-800;
+    @apply relative overflow-hidden rounded-lg bg-slate-800/70;
   }
 
   .erp-skeleton::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.12), transparent);
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.1), transparent);
     animation: erp-shimmer 1.4s ease-in-out infinite;
   }
 
   .erp-alert-error {
-    @apply bg-rose-500/10 border border-rose-500/20 rounded-card p-4 text-center text-rose-400 text-sm;
+    @apply flex items-start gap-2 bg-rose-500/10 border border-rose-500/20 rounded-card p-4 text-rose-300 text-sm;
   }
+
+  .erp-alert-info {
+    @apply flex items-start gap-2 bg-sky-500/10 border border-sky-500/20 rounded-card p-4 text-sky-200 text-sm;
+  }
+
+  .erp-alert-warning {
+    @apply flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-card p-4 text-amber-200 text-sm;
+  }
+
+  .erp-alert-success {
+    @apply flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-card p-4 text-emerald-200 text-sm;
+  }
+
+  .erp-empty {
+    @apply text-center text-slate-500 text-sm py-10;
+  }
+
+  /* ---- LLM text (markdown converted to HTML) ---- */
+  .erp-prose strong { @apply text-slate-200 font-semibold; }
+  .erp-prose em { @apply text-slate-400 italic; }
+  .erp-prose ul { @apply list-disc pl-5 mt-1 space-y-0.5; }
+  .erp-prose ol { @apply list-decimal pl-5 mt-1 space-y-0.5; }
+  .erp-prose p { @apply mt-1.5 first:mt-0; }
+  .erp-prose h1, .erp-prose h2, .erp-prose h3 { @apply text-white font-semibold mt-3 mb-1; }
 }
 
 @keyframes erp-shimmer {
@@ -174,17 +202,17 @@
   100% { transform: translateX(100%); }
 }
 
-/* ApexCharts Global Dark Tooltip Fix */
+/* ApexCharts: dark tooltips */
 body .apexcharts-tooltip {
-  background: #1e293b !important;
+  background: #131c2e !important;
   color: #f8fafc !important;
-  border: 1px solid #334155 !important;
+  border: 1px solid #2e3e59 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
 body .apexcharts-tooltip-title {
-  background: #0f172a !important;
-  border-bottom: 1px solid #334155 !important;
+  background: #0b1120 !important;
+  border-bottom: 1px solid #2e3e59 !important;
   color: #f8fafc !important;
 }
 
@@ -196,135 +224,18 @@ body .apexcharts-tooltip-text-value {
   color: #f8fafc !important;
 }
 
-@media (min-width: 1024px) {
-  aside.erp-sidebar-collapsed {
-    width: 4.75rem;
-  }
-
-  aside.erp-sidebar-collapsed .erp-nav-text,
-  aside.erp-sidebar-collapsed .erp-nav-label,
-  aside.erp-sidebar-collapsed .erp-brand-copy,
-  aside.erp-sidebar-collapsed .erp-logout-text {
-    display: none;
-  }
-
-  aside.erp-sidebar-collapsed .erp-nav-item {
-    justify-content: center;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-
-  aside.erp-sidebar-collapsed .erp-nav-group {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-  }
-
-  aside.erp-sidebar-collapsed .erp-brand-row {
-    justify-content: center;
-  }
-}
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
-}
-.animate-bounce { animation: bounce 1.2s infinite ease-in-out; }
-.nexus-dashboard-container {
-  /* Base Dark Navy background matching your Nexus ERP theme */
-  background-color: #0b1120;
-  
-  background-image: 
-    /* 1. Subtle cyan ambient AI glow in top right */
-    radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.07) 0%, transparent 45%),
-    
-    /* 2. Secondary soft purple/blue glow in bottom left for depth */
-    radial-gradient(circle at 15% 85%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
-    
-    /* 3. Tech mesh grid lines */
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    
-    /* 4. Semi-translucent data node dots */
-    radial-gradient(rgba(56, 189, 248, 0.18) 1px, transparent 1px);
-
-  background-size: 
-    100% 100%,
-    100% 100%,
-    32px 32px,
-    32px 32px,
-    32px 32px;
-
-  background-position: 
-    0 0,
-    0 0,
-    0 0,
-    0 0,
-    16px 16px;
-    
-  min-height: 100vh;
-}
-.erp-card {
-  background-color: rgb(30 41 59 / 0.75); /* slate-800 at 75% */
-  backdrop-filter: blur(6px);
+body .apexcharts-menu {
+  background: #131c2e !important;
+  border-color: #2e3e59 !important;
 }
 
-/* Dark scrollbars everywhere */
-html {
-  color-scheme: dark; /* also darkens native form controls, e.g. your <select> and checkbox */
-}
-
-* {
-  scrollbar-width: thin;                          /* Firefox + Chrome 121+ */
-  scrollbar-color: #334155 transparent;           /* thumb (slate-700), track */
-}
-
-/* Fallback for older Chrome/Edge/Safari, which ignore scrollbar-color */
-@supports not (scrollbar-color: auto) {
-  *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  *::-webkit-scrollbar-thumb {
-    background-color: #334155;
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-  *::-webkit-scrollbar-thumb:hover {
-    background-color: #475569;                    /* slate-600 */
-  }
-  *::-webkit-scrollbar-button {
-    display: none;                                /* removes the up/down arrows */
-  }
-}
-/* Rendering for LLM-generated markdown converted to HTML via [innerHTML]
-   (budget memo, floating AI assistant, applicant chat) */
-.erp-card strong {
-  color: #e2e8f0; /* slate-200 */
-  font-weight: 600;
-}
-
-.erp-card em {
-  color: #94a3b8; /* slate-400 */
-  font-style: italic;
-}
-
-.erp-card ul {
-  list-style-type: disc;
-  padding-left: 1.1rem;
-  margin-top: 0.25rem;
-}
-
-.erp-card ul li {
-  margin-top: 0.15rem;
-}
-
-.erp-card p {
-  margin-top: 0.25rem;
-}
-
-.erp-card p:first-child {
-  margin-top: 0;
+/* printable pages (retention report) */
+@media print {
+  .no-print { display: none !important; }
+  html, body { background: #fff !important; color: #0f172a !important; }
+  .erp-card { box-shadow: none !important; border-color: #cbd5e1 !important; background: #fff !important; }
+  .print-area, .print-area * { color: #0f172a !important; }
+  /* let the page grow instead of the app's scroll containers */
+  .h-screen { height: auto !important; }
+  .overflow-hidden, .overflow-y-auto { overflow: visible !important; }
 }

@@ -1,0 +1,56 @@
+<div class="erp-page">
+  <app-page-header [title]="header.title" [subtitle]="header.subtitle" [icon]="header.icon">
+    <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="refresh()" [disabled]="loading">
+      <app-icon name="arrow-path" class="h-4 w-4" [class.animate-spin]="loading" /> Refresh
+    </button>
+  </app-page-header>
+
+  @if (loading) {
+    <div class="space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="erp-card p-5 h-32"><div class="erp-skeleton h-full"></div></div>
+        }
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="erp-card p-6 h-72"><div class="erp-skeleton h-full"></div></div>
+        <div class="erp-card p-6 h-72 lg:col-span-2"><div class="erp-skeleton h-full"></div></div>
+      </div>
+    </div>
+  } @else if (loadError) {
+    <div class="erp-alert-error">
+      <app-icon name="warning" class="h-5 w-5 shrink-0" />
+      <span>The analytics could not be loaded. Check that the backend is running, then press Refresh.</span>
+    </div>
+  } @else {
+    @switch (view) {
+      @case ('overview') {
+        <app-hr-overview
+          [kpi]="kpi"
+          [statusDonut]="statusDonut"
+          [topPerformers]="topPerformers"
+          [recruitmentSummary]="recruitmentSummary"
+          [departmentTypeCount]="departmentTypeCount"
+          [highRiskCount]="highRiskCount"
+          [riskIndicative]="riskIndicative" />
+      }
+      @case ('turnover') {
+        <app-hr-turnover [turnoverTypeChart]="turnoverTypeChart" [departmentSummary]="departmentSummary" />
+      }
+      @case ('compensation') {
+        <app-hr-compensation
+          [salaryChart]="salaryChart"
+          [performanceChart]="performanceChart"
+          [trainingChart]="trainingChart"
+          [payGapChart]="payGapChart" />
+      }
+      @case ('recruitment-analytics') {
+        <app-hr-recruitment
+          [funnelChart]="funnelChart"
+          [jobPostingsChart]="jobPostingsChart"
+          [jobPostings]="jobPostings"
+          [summary]="recruitmentSummary" />
+      }
+    }
+  }
+</div>

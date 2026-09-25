@@ -1,0 +1,73 @@
+<div class="erp-page">
+  <app-page-header title="Users & roles" icon="key" [subtitle]="total + ' accounts'">
+    <a routerLink="/dashboard/admin/users/new" class="erp-btn-primary erp-btn-sm"><app-icon name="plus" class="h-4 w-4" /> New account</a>
+  </app-page-header>
+
+  @if (error) { <div class="erp-alert-error">{{ error }}</div> }
+
+  <div class="erp-card overflow-hidden">
+    <div class="flex flex-wrap items-center gap-2 p-4 border-b border-line">
+      <div class="relative flex-1 min-w-[14rem] max-w-md">
+        <app-icon name="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <input [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search e-mail..." class="erp-input py-1.5 pl-8" />
+      </div>
+      <select [(ngModel)]="role" (ngModelChange)="onRoleFilter()" class="erp-input w-48 py-1.5">
+        <option value="">All roles</option>
+        @for (r of roles; track r) { <option [value]="r">{{ labels[r] }}</option> }
+      </select>
+    </div>
+
+    <div class="overflow-x-auto" [class.opacity-60]="loading">
+      <table class="erp-table">
+        <thead><tr><th>Account</th><th>Employee file</th><th>Role</th><th>Status</th><th>Created</th><th class="text-right"></th></tr></thead>
+        <tbody>
+          @for (u of users; track u.id) {
+            <tr>
+              <td>
+                <span class="font-medium text-white">{{ u.email }}</span>
+                @if (u.id === me) { <span class="ml-2 erp-badge bg-accent-muted text-accent border-accent/20">You</span> }
+              </td>
+              <td>
+                @if (u.employeeId) { <a [routerLink]="['/dashboard/employee', u.employeeId]" class="text-accent hover:text-accent-hover">#{{ u.employeeId }}</a> }
+                @else { <span class="text-slate-500">—</span> }
+              </td>
+              <td>
+                @if (u.id === me) {
+                  <span class="erp-badge" [ngClass]="roleTone(u.role)">{{ labels[u.role] || u.role }}</span>
+                } @else {
+                  <select #sel class="erp-input py-1 w-40 text-xs" (change)="changeRole(u, sel)" [disabled]="busy.has(u.id)">
+                    @for (r of roles; track r) { <option [value]="r" [selected]="r === u.role">{{ labels[r] }}</option> }
+                  </select>
+                }
+              </td>
+              <td>
+                <span class="inline-flex items-center gap-1.5 text-xs" [class.text-emerald-300]="u.active" [class.text-slate-500]="!u.active">
+                  <span class="h-1.5 w-1.5 rounded-full" [class.bg-emerald-400]="u.active" [class.bg-slate-600]="!u.active"></span>
+                  {{ u.active ? 'Active' : 'Deactivated' }}
+                </span>
+              </td>
+              <td class="text-slate-400 whitespace-nowrap">{{ u.createdAt | date:'d MMM y' }}</td>
+              <td class="text-right">
+                @if (u.id !== me) {
+                  <button type="button" class="erp-btn-sm" [ngClass]="u.active ? 'erp-btn-danger' : 'erp-btn-success'"
+                          (click)="toggleActive(u)" [disabled]="busy.has(u.id)">
+                    {{ u.active ? 'Deactivate' : 'Reactivate' }}
+                  </button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="erp-empty">{{ loading ? 'Loading...' : 'No account matches.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+      <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+      <div class="flex gap-2">
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page - 1)" [disabled]="page === 0">Previous</button>
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page + 1)" [disabled]="page >= totalPages - 1">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

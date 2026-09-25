@@ -25,18 +25,13 @@ def _parse_skills(raw):
 
 
 def run():
-    # additive: makes sure the columns the matcher writes to exist
-    with engine.begin() as conn:
-        conn.execute(text("""
-            ALTER TABLE job_applications
-              ADD COLUMN IF NOT EXISTS ai_match_reasoning TEXT,
-              ADD COLUMN IF NOT EXISTS ai_embedding_score NUMERIC(5,1)
-        """))
-
+    # (the matcher's columns are created by the backend migration V2__bug_fixes.sql)
     with engine.connect() as conn:
         rows = conn.execute(text("""
             SELECT ac.applicant_id, ac.parsed_text, ac.extracted_skills_json,
-                   a.years_of_experience, a.education_level
+                   ac.experience_profile,
+                   COALESCE(ac.cv_years_of_experience, a.years_of_experience) AS years_of_experience,
+                   a.education_level
             FROM applicant_cvs ac
             JOIN applicants a ON a.applicant_id = ac.applicant_id
             WHERE ac.parsed_text IS NOT NULL
@@ -53,11 +48,13 @@ def run():
     for start in range(0, len(rows), BATCH):
         chunk = rows[start:start + BATCH]
         texts = [
+            # same text format as cv_intelligence_core, past roles included
             build_cv_embedding_text(
                 r.parsed_text,
                 _parse_skills(r.extracted_skills_json),
                 r.years_of_experience,
                 r.education_level,
+                r.experience_profile,
             )
             for r in chunk
         ]

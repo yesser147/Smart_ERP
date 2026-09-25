@@ -1,0 +1,195 @@
+<div class="flex h-screen overflow-hidden bg-canvas text-slate-100">
+
+  <!-- mobile backdrop -->
+  @if (mobileOpen()) {
+    <div class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" (click)="mobileOpen.set(false)"></div>
+  }
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar border-r border-line transition-all duration-200 ease-out
+                lg:static lg:translate-x-0 no-print"
+         [ngClass]="[
+           collapsed() ? 'lg:w-[76px]' : 'lg:w-64',
+           mobileOpen() ? 'translate-x-0 w-64' : '-translate-x-full w-64'
+         ]">
+
+    <!-- brand -->
+    <div class="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-line"
+         [class.lg:justify-center]="collapsed()">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-from to-brand-to shadow-glow">
+        <img src="assets/images/nexus.svg" alt="" class="h-6 w-6" />
+      </div>
+      <div class="min-w-0" [class.lg:hidden]="collapsed()">
+        <p class="text-[15px] font-semibold text-white leading-tight">Nexus ERP</p>
+        <p class="text-[11px] text-slate-500 leading-tight">Smart HR platform</p>
+      </div>
+      <button type="button" class="ml-auto erp-icon-btn lg:hidden" (click)="mobileOpen.set(false)" aria-label="Close menu">
+        <app-icon name="x" class="h-5 w-5" />
+      </button>
+    </div>
+
+    <!-- navigation -->
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5" aria-label="Main">
+      @for (group of nav; track group.label) {
+        <div>
+          <p class="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500"
+             [class.lg:hidden]="collapsed()">{{ group.label }}</p>
+          @if (collapsed()) {
+            <div class="hidden lg:block mx-auto mb-2 h-px w-6 bg-line"></div>
+          }
+          <ul class="space-y-0.5">
+            @for (item of group.items; track item.link) {
+              <li>
+                <a [routerLink]="item.link"
+                   routerLinkActive="!bg-accent-muted !text-white [&_.nav-icon]:!text-accent [&_.nav-bar]:!opacity-100"
+                   [attr.title]="collapsed() ? item.label : null"
+                   class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-slate-400
+                          hover:bg-surface-hover hover:text-white transition-colors"
+                   [class.lg:justify-center]="collapsed()">
+                  <span class="nav-bar absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent opacity-0 transition-opacity"></span>
+                  <app-icon [name]="item.icon" class="nav-icon h-[18px] w-[18px] text-slate-500 group-hover:text-slate-300 transition-colors" />
+                  <span class="truncate" [class.lg:hidden]="collapsed()">{{ item.label }}</span>
+                  @if (badgeOf(item) > 0) {
+                    <span class="ml-auto min-w-[20px] rounded-full bg-amber-500/15 px-1.5 text-center text-[11px] font-semibold text-amber-300 ring-1 ring-amber-500/30"
+                          [ngClass]="collapsed() ? 'lg:absolute lg:-right-0.5 lg:-top-0.5 lg:ml-0' : ''">
+                      {{ badgeOf(item) }}
+                    </span>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </nav>
+
+    <!-- collapse toggle (desktop) -->
+    <div class="hidden lg:block border-t border-line p-3">
+      <button type="button" (click)="toggleCollapsed()"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-slate-500 hover:bg-surface-hover hover:text-white transition-colors"
+              [class.justify-center]="collapsed()"
+              [attr.title]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+        <app-icon [name]="collapsed() ? 'chevrons-right' : 'chevrons-left'" class="h-[18px] w-[18px]" />
+        @if (!collapsed()) { <span>Collapse</span> }
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="flex min-w-0 flex-1 flex-col">
+
+    <!-- top bar -->
+    <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-canvas/80 px-4 backdrop-blur sm:px-6 no-print">
+      <button type="button" class="erp-icon-btn lg:hidden" (click)="mobileOpen.set(true)" aria-label="Open menu">
+        <app-icon name="menu" class="h-5 w-5" />
+      </button>
+
+      <nav class="flex min-w-0 items-center gap-2 text-sm" aria-label="Breadcrumb">
+        @if (crumb().group) {
+          <span class="hidden sm:inline text-slate-500">{{ crumb().group }}</span>
+          <app-icon name="chevron-right" class="hidden sm:inline-block h-3.5 w-3.5 text-slate-600" />
+        }
+        <span class="truncate font-medium text-white">{{ crumb().title }}</span>
+      </nav>
+
+      <div class="ml-auto flex items-center gap-1.5">
+        <span class="hidden xl:inline text-xs text-slate-500 mr-2">{{ today | date:'EEEE d MMMM y' }}</span>
+
+        <!-- notifications -->
+        <div class="relative">
+          <button type="button" class="erp-icon-btn relative" (click)="toggleMenu('notifications', $event)"
+                  aria-label="Notifications" [attr.aria-expanded]="menu() === 'notifications'">
+            <app-icon name="bell" class="h-5 w-5" />
+            @if (notifications.unread() > 0) {
+              <span class="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                {{ notifications.unread() > 9 ? '9+' : notifications.unread() }}
+              </span>
+            }
+          </button>
+
+          @if (menu() === 'notifications') {
+            <div class="absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] rounded-card border border-line bg-surface shadow-pop animate-fade-in"
+                 (click)="$event.stopPropagation()">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-line">
+                <p class="text-sm font-semibold text-white">Notifications</p>
+                @if (notifications.unread() > 0) {
+                  <button type="button" class="text-xs text-accent hover:text-accent-hover" (click)="notifications.markAllRead()">Mark all as read</button>
+                }
+              </div>
+              <ul class="max-h-96 overflow-y-auto divide-y divide-line">
+                @for (n of notifications.items(); track n.id) {
+                  <li>
+                    <button type="button" (click)="openNotification(n)"
+                            class="flex w-full gap-3 px-4 py-3 text-left hover:bg-surface-hover transition-colors">
+                      <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" [ngClass]="n.read ? 'bg-transparent' : 'bg-accent'"></span>
+                      <span class="min-w-0">
+                        <span class="block text-sm" [ngClass]="n.read ? 'text-slate-300' : 'text-white font-medium'">{{ n.title }}</span>
+                        @if (n.message) { <span class="block text-xs text-slate-400 mt-0.5 line-clamp-2">{{ n.message }}</span> }
+                        <span class="block text-[11px] text-slate-500 mt-1">{{ n.createdAt | date:'d MMM, HH:mm' }}</span>
+                      </span>
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="px-4 py-10 text-center text-sm text-slate-500">You're all caught up.</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+
+        <!-- user menu -->
+        <div class="relative">
+          <button type="button" (click)="toggleMenu('user', $event)"
+                  class="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2 hover:bg-surface-hover transition-colors"
+                  [attr.aria-expanded]="menu() === 'user'" aria-label="Account menu">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-from/30 to-brand-to/30 text-xs font-semibold text-white ring-1 ring-white/10">
+              {{ initials() }}
+            </span>
+            <span class="hidden md:block text-left leading-tight">
+              <span class="block text-[13px] font-medium text-white">{{ displayName() }}</span>
+              <span class="block text-[11px] text-slate-500">{{ roleLabel }}</span>
+            </span>
+            <app-icon name="chevron-down" class="hidden md:inline-block h-4 w-4 text-slate-500" />
+          </button>
+
+          @if (menu() === 'user') {
+            <div class="absolute right-0 mt-2 w-64 rounded-card border border-line bg-surface shadow-pop animate-fade-in overflow-hidden"
+                 (click)="$event.stopPropagation()">
+              <div class="px-4 py-3 border-b border-line">
+                <p class="text-sm font-medium text-white truncate">{{ displayName() }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ user?.email }}</p>
+                <span class="erp-badge mt-2 bg-accent-muted text-accent border-accent/20">{{ roleLabel }}</span>
+              </div>
+              <div class="p-1.5">
+                @if (user?.employeeId) {
+                  <a routerLink="/dashboard/me" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-surface-hover hover:text-white">
+                    <app-icon name="user-circle" class="h-4 w-4" /> My space
+                  </a>
+                }
+                <a routerLink="/careers" target="_blank" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-surface-hover hover:text-white">
+                  <app-icon name="globe" class="h-4 w-4" /> Public careers page
+                </a>
+                <button type="button" (click)="logout()"
+                        class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-300 hover:bg-rose-500/10">
+                  <app-icon name="logout" class="h-4 w-4" /> Sign out
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- page -->
+    <main class="relative flex-1 overflow-y-auto">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-accent/[0.04] to-transparent"></div>
+      <div class="relative px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+
+  @if (isHrUser) {
+    <app-ai-assistant class="no-print" />
+  }
+</div>

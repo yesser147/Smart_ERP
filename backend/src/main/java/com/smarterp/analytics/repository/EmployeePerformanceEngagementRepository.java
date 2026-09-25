@@ -1,5 +1,4 @@
 package com.smarterp.analytics.repository;
-import com.smarterp.analytics.domain.DepartmentTurnoverView;
 import com.smarterp.analytics.domain.EmployeePerformanceEngagement;
 
 import org.springframework.data.jpa.repository.JpaRepository;

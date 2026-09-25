@@ -1,13 +1,13 @@
 """
 Run the full ETL pipeline.
 
-    python main.py                    # extract, clean, transform, export CSVs to OUTPUT_DIR
-    python main.py --load-db          # also load straight into Postgres (reads .env / env vars)
-    python main.py --input ./mydata   # point at a different folder of the 4 Kaggle CSVs
+    python main.py                     # extract, clean, transform, export CSVs to output/ (database untouched)
+    python main.py --load-db           # ALSO reset the database, load it, upload the resume PDFs, seed job skills
+    python main.py --load-db --skip-cv-upload   # same without the MinIO upload
 
-Env vars (or a .env file, see .env.example):
-    ETL_INPUT_DIR, ETL_OUTPUT_DIR, ETL_REPORT_DIR
-    DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+Sources (sample_data/): the IBM HR Analytics attrition file and the Kaggle
+Resume dataset (see config.py). Settings: .env / environment variables
+(DB_*, MINIO_*, ETL_*).
 """
 
 import argparse
@@ -15,7 +15,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 import config
 import extract
@@ -27,10 +27,11 @@ from quality_report import DataQualityReport
 
 def parse_args():
     p = argparse.ArgumentParser(description="Smart ERP Core -- HR ETL pipeline")
-    p.add_argument("--input", default=None, help="Folder with the 4 raw Kaggle CSVs")
-    p.add_argument("--output", default=None, help="Where to write cleaned CSVs + report")
-    p.add_argument("--load-db", action="store_true", help="Also load directly into Postgres")
-    p.add_argument("--skip-schema", action="store_true", help="Don't run schema.sql before loading (tables already exist)")
+    p.add_argument("--input", default=None, help="Folder with the source files")
+    p.add_argument("--output", default=None, help="Where to write the cleaned CSVs")
+    p.add_argument("--load-db", action="store_true", help="Reset and load Postgres (erases the HR data!)")
+    p.add_argument("--skip-schema", action="store_true", help="Don't rebuild the schema (tables already exist and are empty)")
+    p.add_argument("--skip-cv-upload", action="store_true", help="Don't upload the resume PDFs to MinIO")
     return p.parse_args()
 
 
@@ -46,37 +47,24 @@ def main():
 
     try:
         raw = extract.extract_all()
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         print(f"\nERROR: {e}")
         sys.exit(1)
 
-    # --- THE DIAGNOSTIC TEST GOES RIGHT HERE ---
-    print("\n--- RAW CSV RATING CHECK ---")
-    print(raw["employees"]["current_employee_rating"].value_counts(dropna=False))
-    print("----------------------------\n")
-    # -------------------------------------------
-    
-
     print("\nCLEAN")
-    cleaned_employees = clean.clean_employees(raw["employees"], report)
-    valid_employee_ids = set(cleaned_employees["employee_id"])
-
     cleaned = {
-        "employees": cleaned_employees,
-        "trainings": clean.clean_trainings(raw["trainings"], valid_employee_ids, report),
-        "recruitment": clean.clean_recruitment(raw["recruitment"], report),
-        "surveys": clean.clean_surveys(raw["surveys"], valid_employee_ids, report),
+        "employees": clean.clean_employees(raw["employees"], report),
+        "resumes": clean.clean_resumes(raw["resumes"], report),
     }
 
     tables = transform.run_transform(cleaned, report)
-    print("\n--- FINAL PYTHON RATING CHECK ---")
-    print(tables["employees"]["current_employee_rating"].value_counts(dropna=False))
-    print("---------------------------------\n")
-
     load.export_csvs(tables)
 
     if args.load_db:
         load.load_to_postgres(tables, apply_schema_first=not args.skip_schema)
+        if not args.skip_cv_upload:
+            load.upload_cv_pdfs(tables["_cv_files"])
+        load.seed_skills(load.build_engine())
 
     report.print_summary()
     report_path = os.path.join(config.REPORT_DIR, "data_quality_report.csv")
@@ -85,8 +73,11 @@ def main():
     print("Pipeline finished.")
     print(f"  clean CSVs -> {config.OUTPUT_DIR}")
     print(f"  quality report -> {report_path}")
-    if not args.load_db:
-        print("  (DB not touched -- rerun with --load-db to load into Postgres)")
+    if args.load_db:
+        print("  NEXT: restart the backend so it recreates the analytics views")
+        print("        (docker compose restart backend, or start it if it isn't running)")
+    else:
+        print("  (database not touched -- rerun with --load-db to load Postgres)")
 
 
 if __name__ == "__main__":

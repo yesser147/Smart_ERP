@@ -1,78 +1,63 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, shareReplay, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { 
-  AttritionRiskIndicatorsDTO, 
-  DepartmentSalarySummaryDTO,
-  DepartmentTurnoverDTO, 
-  DepartmentTypeTurnoverDTO, 
-  EmployeePerformanceEngagementDTO, 
-  KpiSummaryDTO,
-  RecruitmentFunnelAtsDTO, 
-  SalaryDistributionDTO, 
-  TopPerformerBenchmarksDTO, 
-  TrainingAnalyticsDTO ,
-  GenderPayGapDTO,
-  TimeToHireDTO,
-  DepartmentSummaryDTO
+import {
+  DepartmentSalarySummaryDTO, DepartmentSummaryDTO, DepartmentTypeTurnoverDTO,
+  EmployeePerformanceEngagementDTO, GenderPayGapDTO, KpiSummaryDTO, RecruitmentFunnelAtsDTO,
+  TimeToHireDTO, TopPerformerBenchmarksDTO, TrainingAnalyticsDTO
 } from '../models/analytics.model';
+import { JobPostingDTO } from '../models/hr.model';
+import { HrService } from './hr.service';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface DashboardData {
+  kpis: KpiSummaryDTO;
+  turnoverType: DepartmentTypeTurnoverDTO[];
+  salary: DepartmentSalarySummaryDTO[];
+  funnel: RecruitmentFunnelAtsDTO[];
+  training: TrainingAnalyticsDTO[];
+  topPerformers: TopPerformerBenchmarksDTO[];
+  performance: EmployeePerformanceEngagementDTO[];
+  payGap: GenderPayGapDTO[];
+  timeToHire: TimeToHireDTO[];
+  jobPostings: JobPostingDTO[];
+  departmentSummary: DepartmentSummaryDTO[];
+}
+
+@Injectable({ providedIn: 'root' })
 export class AnalyticsService {
   private http = inject(HttpClient);
+  private hr = inject(HrService);
   private apiUrl = `${environment.apiUrl}/analytics`;
 
-  getDashboardKpis(): Observable<KpiSummaryDTO> {
-    return this.http.get<KpiSummaryDTO>(`${this.apiUrl}/kpis`);
+  /** Everything the analytics pages need, loaded once and shared between
+   *  them (moving from Overview to Turnover doesn't reload anything). */
+  private dashboard$?: Observable<DashboardData>;
+
+  dashboard(): Observable<DashboardData> {
+    if (!this.dashboard$) {
+      this.dashboard$ = forkJoin({
+        kpis: this.http.get<KpiSummaryDTO>(`${this.apiUrl}/kpis`),
+        turnoverType: this.http.get<DepartmentTypeTurnoverDTO[]>(`${this.apiUrl}/typeturnover`),
+        salary: this.http.get<DepartmentSalarySummaryDTO[]>(`${this.apiUrl}/salary-summary`),
+        funnel: this.http.get<RecruitmentFunnelAtsDTO[]>(`${this.apiUrl}/recruitment-funnel`),
+        training: this.http.get<TrainingAnalyticsDTO[]>(`${this.apiUrl}/training`),
+        topPerformers: this.http.get<TopPerformerBenchmarksDTO[]>(`${this.apiUrl}/top-performers`),
+        performance: this.http.get<EmployeePerformanceEngagementDTO[]>(`${this.apiUrl}/performance-engagement`),
+        payGap: this.http.get<GenderPayGapDTO[]>(`${this.apiUrl}/pay-gap`),
+        timeToHire: this.http.get<TimeToHireDTO[]>(`${this.apiUrl}/time-to-hire`),
+        jobPostings: this.hr.getAllJobPostings(),
+        departmentSummary: this.http.get<DepartmentSummaryDTO[]>(`${this.apiUrl}/department-summary`),
+      }).pipe(
+        shareReplay(1),
+        catchError(err => { this.dashboard$ = undefined; return throwError(() => err); })
+      );
+    }
+    return this.dashboard$;
   }
 
-  getSalaryDistributionSummary(): Observable<DepartmentSalarySummaryDTO[]> {
-    return this.http.get<DepartmentSalarySummaryDTO[]>(`${this.apiUrl}/salary-summary`);
+  /** Forget the cached data (after a change, or with the Refresh button). */
+  invalidate(): void {
+    this.dashboard$ = undefined;
   }
-
-  getTurnoverStats(): Observable<DepartmentTurnoverDTO[]> {
-    return this.http.get<DepartmentTurnoverDTO[]>(`${this.apiUrl}/turnover`);
-  }
-
-  getTurnoverTypeStats(): Observable<DepartmentTypeTurnoverDTO[]> {
-    return this.http.get<DepartmentTypeTurnoverDTO[]>(`${this.apiUrl}/typeturnover`);
-  }
-
-  getRiskStats(): Observable<AttritionRiskIndicatorsDTO[]> {
-    return this.http.get<AttritionRiskIndicatorsDTO[]>(`${this.apiUrl}/risk`);
-  }
-
-  getPerformanceEngagementStats(): Observable<EmployeePerformanceEngagementDTO[]> {
-    return this.http.get<EmployeePerformanceEngagementDTO[]>(`${this.apiUrl}/performance-engagement`);
-  }
-
-  getSalaryDistributionStats(): Observable<SalaryDistributionDTO[]> {
-    return this.http.get<SalaryDistributionDTO[]>(`${this.apiUrl}/salary-distribution`);
-  }
-
-  getRecruitmentFunnelStats(): Observable<RecruitmentFunnelAtsDTO[]> {
-    return this.http.get<RecruitmentFunnelAtsDTO[]>(`${this.apiUrl}/recruitment-funnel`);
-  }
-
-  getTrainingAnalyticsStats(): Observable<TrainingAnalyticsDTO[]> {
-    return this.http.get<TrainingAnalyticsDTO[]>(`${this.apiUrl}/training`);
-  }
-
-  getTopPerformerBenchmarksStats(): Observable<TopPerformerBenchmarksDTO[]> {
-    return this.http.get<TopPerformerBenchmarksDTO[]>(`${this.apiUrl}/top-performers`);
-  }
-  getGenderPayGap(): Observable<GenderPayGapDTO[]> {
-  return this.http.get<GenderPayGapDTO[]>(`${this.apiUrl}/pay-gap`);
 }
-
-getTimeToHire(): Observable<TimeToHireDTO[]> {
-  return this.http.get<TimeToHireDTO[]>(`${this.apiUrl}/time-to-hire`);
-}
-getDepartmentSummary(): Observable<DepartmentSummaryDTO[]> {
-  return this.http.get<DepartmentSummaryDTO[]>(`${this.apiUrl}/department-summary`);
-}
-}
-

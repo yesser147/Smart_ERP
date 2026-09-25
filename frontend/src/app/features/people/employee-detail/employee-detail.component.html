@@ -1,0 +1,107 @@
+<div class="erp-page">
+  <app-page-header [title]="employee ? 'Employee file' : (notFound ? 'Employee not found' : 'Loading...')"
+                   icon="user-circle" backLink="/dashboard/employees" backLabel="Employees">
+    @if (employee) {
+      <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="openReviewForm()">
+        <app-icon name="star" class="h-4 w-4" /> Add a review
+      </button>
+    }
+  </app-page-header>
+
+  @if (loading) {
+    <div class="space-y-4">
+      <div class="erp-card h-48"><div class="erp-skeleton h-full"></div></div>
+      <div class="erp-card h-72"><div class="erp-skeleton h-full"></div></div>
+    </div>
+  } @else if (notFound) {
+    <div class="erp-alert-error">There is no employee #{{ id }}.</div>
+  } @else if (employee) {
+    <app-employee-file [employee]="employee" [salaryHistory]="salaryHistory" [trainings]="trainings"
+                       [surveys]="surveys" [reviews]="reviews">
+
+      <!-- review form (Performance tab) -->
+      <div review-form>
+        @if (showReviewForm) {
+          <div class="mb-6 rounded-xl border border-accent/30 bg-accent/[0.04] p-4 space-y-3">
+            <p class="text-sm font-medium text-white">New performance review</p>
+            <div>
+              <span class="erp-label">Rating</span>
+              <div class="flex gap-1">
+                @for (n of [1, 2, 3, 4, 5]; track n) {
+                  <button type="button" (click)="reviewRating = n" [attr.aria-label]="n + ' out of 5'"
+                          class="h-9 w-9 rounded-lg border text-sm font-semibold transition-colors"
+                          [ngClass]="n <= reviewRating ? 'border-amber-400/50 bg-amber-400/15 text-amber-300' : 'border-line text-slate-500 hover:text-white'">
+                    {{ n }}
+                  </button>
+                }
+                <span class="ml-2 self-center text-xs text-slate-400">
+                  {{ ['', 'Unsatisfactory', 'Needs improvement', 'Meets expectations', 'Exceeds expectations', 'Outstanding'][reviewRating] }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="erp-label" for="comments">Comments</label>
+              <textarea id="comments" rows="4" [(ngModel)]="reviewComments" maxlength="2000" class="erp-input"
+                        placeholder="Achievements, strengths, what to improve, objectives..."></textarea>
+            </div>
+            @if (reviewError) { <p class="text-xs text-rose-300">{{ reviewError }}</p> }
+            <div class="flex justify-end gap-2">
+              <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="showReviewForm = false">Cancel</button>
+              <button type="button" class="erp-btn-primary erp-btn-sm" (click)="saveReview()" [disabled]="savingReview">
+                {{ savingReview ? 'Saving...' : 'Save review' }}
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500">The employee is notified and sees the review in their space.</p>
+          </div>
+        }
+      </div>
+
+      <!-- AI risk card -->
+      <div aside>
+        <div class="erp-card">
+          <div class="erp-card-header">
+            <div class="flex items-center gap-2">
+              <app-icon name="shield-check" class="h-4 w-4 text-accent" />
+              <h2 class="erp-section-title">Flight risk (AI)</h2>
+            </div>
+          </div>
+          <div class="p-5">
+            @switch (riskState) {
+              @case ('loading') { <div class="erp-skeleton h-32"></div> }
+              @case ('ready') {
+                <div class="flex items-end justify-between">
+                  <p class="text-4xl font-bold tabular-nums" [ngClass]="riskTone">{{ riskPct }}%</p>
+                  <p class="text-xs text-slate-400 text-right">rank {{ risk!.rank }} of {{ risk!.total_active }}<br />active employees</p>
+                </div>
+                <div class="relative mt-3 h-2 rounded-full bg-slate-800">
+                  <div class="h-full rounded-full" [ngClass]="riskBar" [style.width.%]="riskPct"></div>
+                  <div class="absolute -top-1 h-4 w-0.5 bg-white/70" [style.left.%]="risk!.threshold * 100" title="Alert threshold"></div>
+                </div>
+                <p class="mt-2 text-xs" [ngClass]="risk!.high_risk ? 'text-rose-300' : 'text-slate-400'">
+                  {{ risk!.high_risk ? 'Above the alert threshold (' + (risk!.threshold * 100 | number:'1.0-0') + '%)' : 'Below the alert threshold (' + (risk!.threshold * 100 | number:'1.0-0') + '%)' }}
+                </p>
+
+                @if (risk!.drivers.length) {
+                  <p class="erp-kicker mt-5 mb-2">What raises the risk</p>
+                  <ul class="space-y-2">
+                    @for (d of risk!.drivers; track d.feature) {
+                      <li>
+                        <div class="flex justify-between text-xs"><span class="text-slate-300">{{ featureLabel(d.feature) }}</span><span class="text-slate-500 tabular-nums">{{ d.impact_pct }}%</span></div>
+                        <div class="mt-1 h-1 rounded-full bg-slate-800"><div class="h-full rounded-full bg-rose-400/70" [style.width.%]="d.impact_pct"></div></div>
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (risk!.model_quality.level !== 'acceptable') {
+                  <p class="mt-4 text-[11px] text-amber-300/80">Indicative only: the model's reliability is {{ risk!.model_quality.level }}.</p>
+                }
+                <p class="mt-4 text-[11px] text-slate-500">A probability from an XGBoost model trained on past departures; use it to start a conversation, not to decide.</p>
+              }
+              @default { <p class="text-sm text-slate-400">{{ riskMessage }}</p> }
+            }
+          </div>
+        </div>
+      </div>
+    </app-employee-file>
+  }
+</div>

@@ -1,25 +1,8 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
-DROP TABLE IF EXISTS applicant_cvs CASCADE;
-DROP TABLE IF EXISTS job_applications CASCADE;
-DROP TABLE IF EXISTS job_postings CASCADE;
-DROP TABLE IF EXISTS applicants CASCADE;
-DROP TABLE IF EXISTS engagement_surveys CASCADE;
-DROP TABLE IF EXISTS employee_trainings CASCADE;
-DROP TABLE IF EXISTS training_courses CASCADE;
-DROP TABLE IF EXISTS salary_history CASCADE;
-DROP TABLE IF EXISTS user_tokens CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS employees CASCADE;
-DROP TABLE IF EXISTS departments CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
-DROP TABLE IF EXISTS flyway_schema_history CASCADE;
--- NOTE: department_budget_allocations is NOT in this DROP list on purpose.
--- It holds live data written by the Spring Boot app (confirmed budget
--- allocations), not data sourced from the Kaggle CSVs. Dropping departments
--- CASCADE below will still take it down if it already exists, because it
--- has a FK to departments -- see load.py's backup_budget_allocations() /
--- restore_budget_allocations() for how reruns preserve it anyway.
+-- Creates the base schema on an empty database. It never drops anything:
+-- resetting the database is the ETL's job (ETL/schema.sql), which then
+-- replays these migration files so both always build the same schema.
 
 -- 1. Security & Governance
 CREATE TABLE IF NOT EXISTS roles (
@@ -172,7 +155,7 @@ CREATE TABLE IF NOT EXISTS job_applications (
     desired_salary NUMERIC(12, 2),
     status VARCHAR(50) DEFAULT 'APPLIED',
     ai_match_score INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ai_match_reasoning TEXT,
     ai_embedding_score NUMERIC(5,1)
 );

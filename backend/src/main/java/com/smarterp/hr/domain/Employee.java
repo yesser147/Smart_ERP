@@ -47,6 +47,25 @@ public class Employee {
     private BigDecimal salary;
     private String currency = "USD";
     private Boolean needsReview = false;
+
+    // Detailed attributes from the IBM HR data set (migration V3); null for
+    // people hired through the app until HR fills them in.
+    private Integer jobLevel;
+    private Boolean overtime;
+    private String businessTravel;
+    private Integer distanceFromHome;
+    private String educationLevel;
+    private String educationField;
+    private Integer totalWorkingYears;
+    private Integer numCompaniesWorked;
+    private Integer yearsInCurrentRole;
+    private Integer yearsSinceLastPromotion;
+    private Integer yearsWithCurrManager;
+    private Integer stockOptionLevel;
+    private Integer percentSalaryHike;
+    private Integer environmentSatisfaction;
+    private Integer relationshipSatisfaction;
+    private Integer trainingTimesLastYear;
     private Boolean isDeleted = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();

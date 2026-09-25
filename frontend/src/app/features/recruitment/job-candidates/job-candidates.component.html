@@ -1,0 +1,233 @@
+<div class="erp-page">
+  @if (jobState === 'missing') {
+    <app-page-header title="Job opening not found" icon="briefcase" backLink="/dashboard/jobs" backLabel="Job openings" />
+    <div class="erp-alert-error">There is no job opening #{{ jobId }}.</div>
+  } @else {
+    <app-page-header [title]="job?.title ?? 'Loading...'" icon="briefcase" backLink="/dashboard/jobs" backLabel="Job openings"
+                     [subtitle]="job ? (job.departmentType + ' · ' + job.divisionDescription + ' · #' + job.jobId) : ''">
+      @if (job) {
+        @if (job.status === 'OPEN') {
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="setStatus('CLOSED')" [disabled]="statusBusy">Close opening</button>
+        } @else {
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="setStatus('OPEN')" [disabled]="statusBusy">Reopen</button>
+        }
+      }
+    </app-page-header>
+
+    <!-- ============ posting ============ -->
+    <div class="erp-card">
+      @if (!job) {
+        <div class="p-5"><div class="erp-skeleton h-16"></div></div>
+      } @else {
+        <div class="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-line">
+          <div class="p-4">
+            <p class="erp-kicker">Status</p>
+            <div class="mt-1.5"><app-status-badge [status]="job.status" /></div>
+          </div>
+          <div class="p-4">
+            <p class="erp-kicker">Applicants</p>
+            <p class="mt-1 text-lg font-semibold text-white tabular-nums">{{ job.applicantCount }}</p>
+          </div>
+          <div class="p-4">
+            <p class="erp-kicker">Experience</p>
+            <p class="mt-1 text-lg font-semibold text-white">{{ job.requiredExperienceYears != null ? job.requiredExperienceYears + ' yrs' : '—' }}</p>
+          </div>
+          <div class="p-4">
+            <p class="erp-kicker">Salary</p>
+            <p class="mt-1 text-sm font-medium text-white">{{ salaryRange }}</p>
+          </div>
+          <div class="p-4">
+            <p class="erp-kicker">Location · posted</p>
+            <p class="mt-1 text-sm text-white">{{ job.location || '—' }}</p>
+            <p class="text-xs text-slate-500">{{ job.createdAt | date:'d MMM y' }}</p>
+          </div>
+        </div>
+
+        @if (requiredSkills.length || job.description) {
+          <div class="border-t border-line p-4 space-y-3">
+            @if (requiredSkills.length) {
+              <div>
+                <p class="erp-kicker mb-2">Skills the AI looks for</p>
+                <div class="flex flex-wrap gap-1.5">
+                  @for (s of requiredSkills; track s) { <span class="erp-chip">{{ s }}</span> }
+                </div>
+              </div>
+            }
+            @if (job.description) {
+              <button type="button" class="erp-btn-ghost text-xs" (click)="showDescription = !showDescription">
+                <app-icon [name]="showDescription ? 'chevron-down' : 'chevron-right'" class="h-3.5 w-3.5" />
+                {{ showDescription ? 'Hide' : 'Show' }} job description
+              </button>
+              @if (showDescription) {
+                <p class="whitespace-pre-line text-sm text-slate-300 leading-relaxed">{{ job.description }}</p>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+
+    @if (actionError) {
+      <div class="erp-alert-error"><app-icon name="warning" class="h-5 w-5 shrink-0" /> {{ actionError }}</div>
+    }
+
+    <!-- ============ CV processing banner ============ -->
+    @if (match && match.n_applicants > match.n_processed) {
+      <div class="erp-card p-4 border-amber-500/30 bg-amber-500/[0.06]">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-start gap-3">
+            <app-icon name="info" class="h-5 w-5 text-amber-300 shrink-0 mt-0.5" />
+            <div>
+              <p class="text-sm font-medium text-amber-100">
+                {{ match.n_processed }} of {{ match.n_applicants }} CVs analysed
+              </p>
+              <p class="text-xs text-amber-200/70 mt-0.5">
+                The AI can only rank candidates whose CV has been read. {{ match.n_applicants - match.n_processed }} applicant(s) are waiting.
+              </p>
+            </div>
+          </div>
+          @if (!processing) {
+            <button type="button" class="erp-btn-primary erp-btn-sm shrink-0" (click)="processRemaining()">
+              <app-icon name="sparkles" class="h-4 w-4" /> Analyse {{ match.unprocessed_applicant_ids.length }} CV(s)
+            </button>
+          } @else {
+            <button type="button" class="erp-btn-secondary erp-btn-sm shrink-0" (click)="stopProcessing()">Stop</button>
+          }
+        </div>
+        @if (processing) {
+          <div class="mt-3">
+            <div class="flex justify-between text-xs text-amber-200/80 mb-1">
+              <span>Analysing CV {{ processed + 1 > processTotal ? processTotal : processed + 1 }} of {{ processTotal }}...</span>
+              <span class="tabular-nums">{{ processPct }}%</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-amber-950/60 overflow-hidden">
+              <div class="h-full rounded-full bg-amber-400 transition-all" [style.width.%]="processPct"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (processFailures.length) {
+      <div class="erp-alert-warning flex-col">
+        <p class="font-medium">{{ processFailures.length }} CV(s) could not be analysed:</p>
+        <ul class="text-xs list-disc pl-5">
+          @for (f of processFailures; track f.applicantId) { <li>{{ f.name }}: {{ f.reason }}</li> }
+        </ul>
+      </div>
+    }
+
+    <!-- ============ ranking ============ -->
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">AI ranking</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Experience, education and skills fit, then an LLM review of the best profiles</p>
+        </div>
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="runMatch(true)" [disabled]="matchLoading || processing">
+          <app-icon name="arrow-path" class="h-4 w-4" [class.animate-spin]="matchLoading" /> Recalculate
+        </button>
+      </div>
+
+      <div class="p-4">
+        @if (matchLoading && !match) {
+          <div class="space-y-3">
+            <div class="erp-skeleton h-24"></div><div class="erp-skeleton h-24"></div><div class="erp-skeleton h-24"></div>
+          </div>
+          <p class="text-xs text-slate-500 mt-3 text-center">The first ranking of an opening can take a minute: the AI reads the best profiles.</p>
+        } @else if (matchError) {
+          <div class="erp-alert-error items-center justify-between">
+            <span class="flex items-center gap-2"><app-icon name="warning" class="h-5 w-5 shrink-0" /> Candidate ranking unavailable: {{ matchError }}</span>
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="runMatch()">Retry</button>
+          </div>
+        } @else {
+          <div class="space-y-3" [class.opacity-60]="matchLoading">
+            @for (c of candidates; track c.applicant_id; let i = $index) {
+              <div class="rounded-xl border border-line bg-surface-muted/60 p-4 hover:border-line-strong transition-colors">
+                <div class="flex items-start gap-4">
+                  <div class="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl ring-1" [ngClass]="scoreRing(c.match_score)">
+                    <span class="text-lg font-bold leading-none tabular-nums">{{ c.match_score }}</span>
+                    <span class="text-[9px] uppercase tracking-wider opacity-70 mt-0.5">match</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-xs text-slate-500">#{{ i + 1 }}</span>
+                      <a [routerLink]="['/dashboard/applicant', c.applicant_id]" [queryParams]="{ jobId: jobId }"
+                         class="font-medium text-white hover:text-accent">{{ c.name }}</a>
+                      @if (applicationFor(c.applicant_id); as app) { <app-status-badge [status]="app.status" /> }
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      {{ c.education_level || 'Education unknown' }} · {{ c.years_of_experience ?? 0 }} years of experience
+                      @if (c.embedding_score != null) {
+                        <span class="text-slate-500" title="How close the CV text is to the job text (10% of the score)"> · text similarity {{ c.embedding_score }}%</span>
+                      }
+                    </p>
+                    @if (parseSkills(c.skills).length) {
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        @for (s of parseSkills(c.skills).slice(0, 10); track s) { <span class="erp-chip text-[11px]">{{ s }}</span> }
+                      </div>
+                    }
+                    @if (c.ai_reasoning) {
+                      <p class="mt-2 flex gap-1.5 text-xs text-sky-200/80">
+                        <app-icon name="sparkles" class="h-3.5 w-3.5 shrink-0 mt-0.5 text-accent" /> {{ c.ai_reasoning }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                @if (applicationFor(c.applicant_id); as app) {
+                  <div class="mt-3 pt-3 border-t border-line flex flex-wrap justify-end gap-2">
+                    @if (can('interview', app)) {
+                      <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="act('interview', app)" [disabled]="actionBusy === app.applicantId">Interview</button>
+                    }
+                    @if (can('offer', app)) {
+                      <button type="button" class="erp-btn-success erp-btn-sm" (click)="act('offer', app)" [disabled]="actionBusy === app.applicantId">Make offer</button>
+                    }
+                    @if (can('hire', app)) {
+                      <button type="button" class="erp-btn-primary erp-btn-sm" (click)="hire(app)">Hire</button>
+                    }
+                    @if (can('reject', app)) {
+                      <button type="button" class="erp-btn-danger erp-btn-sm" (click)="act('reject', app)" [disabled]="actionBusy === app.applicantId">Reject</button>
+                    }
+                  </div>
+                }
+              </div>
+            } @empty {
+              <p class="erp-empty">
+                @if (match?.n_applicants) { No CV has been analysed yet for this opening: use "Analyse CVs" above. }
+                @else { Nobody has applied yet. }
+              </p>
+            }
+
+            @if (canShowMore) {
+              <div class="text-center pt-1">
+                <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="showMore()">Show more candidates</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ============ not ranked yet ============ -->
+    @if (waiting.length) {
+      <div class="erp-card overflow-hidden">
+        <div class="erp-card-header">
+          <h2 class="erp-section-title">Waiting for CV analysis</h2>
+          <span class="text-xs text-slate-500">{{ waiting.length }} applicant(s)</span>
+        </div>
+        <table class="erp-table">
+          <thead><tr><th>Applicant</th><th>Applied</th><th>Status</th></tr></thead>
+          <tbody>
+            @for (a of waiting; track a.applicationId) {
+              <tr>
+                <td><a [routerLink]="['/dashboard/applicant', a.applicantId]" [queryParams]="{ jobId: jobId }" class="text-white hover:text-accent">{{ a.applicantName }}</a></td>
+                <td class="text-slate-400">{{ a.applicationDate | date:'d MMM y' }}</td>
+                <td><app-status-badge [status]="a.status" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

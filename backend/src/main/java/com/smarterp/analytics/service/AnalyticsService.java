@@ -1,9 +1,7 @@
 package com.smarterp.analytics.service;
 
-import com.smarterp.analytics.dto.AttritionRiskIndicatorsDTO;
 import com.smarterp.analytics.dto.DepartmentSalarySummaryDTO;
 import com.smarterp.analytics.dto.DepartmentSummaryDTO;
-import com.smarterp.analytics.dto.DepartmentTurnoverDTO;
 import com.smarterp.analytics.dto.DepartmentTypeTurnoverDTO;
 import com.smarterp.analytics.dto.EmployeePerformanceEngagementDTO;
 import com.smarterp.analytics.dto.GenderPayGapDTO;
@@ -14,7 +12,6 @@ import com.smarterp.analytics.dto.TopPerformerBenchmarksDTO;
 import com.smarterp.analytics.dto.TrainingAnalyticsDTO;
 import com.smarterp.analytics.repository.AttritionRiskIndicatorsRepository;
 import com.smarterp.analytics.repository.DepartmentSummaryRepository;
-import com.smarterp.analytics.repository.DepartmentTurnoverRepository;
 import com.smarterp.analytics.repository.DepartmentTypeTurnoverRepository;
 import com.smarterp.analytics.repository.EmployeePerformanceEngagementRepository;
 import com.smarterp.analytics.repository.GenderPayGapRepository;
@@ -27,25 +24,17 @@ import com.smarterp.hr.repository.DepartmentRepository;
 import com.smarterp.hr.repository.EmployeeRepository;
 import com.smarterp.hr.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
+/** Read-only analytics served from the BI views (R__create_bi_views.sql). */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AnalyticsService {
 
-    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
-
-    private final DepartmentTurnoverRepository turnoverRepository;
     private final DepartmentTypeTurnoverRepository departmentTypeTurnoverRepository;
     private final EmployeePerformanceEngagementRepository employeePerformanceEngagementRepository;
     private final SalaryDistributionRepository salaryDistributionRepository;
@@ -55,153 +44,68 @@ public class AnalyticsService {
     private final TopPerformerBenchmarksRepository topPerformerBenchmarksRepository;
     private final GenderPayGapRepository genderPayGapRepository;
     private final TimeToHireRepository timeToHireRepository;
+    private final DepartmentSummaryRepository departmentSummaryRepository;
     private final JobPostingRepository jobPostingRepository;
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
 
-    // Points at the FastAPI AI microservice. Set ai.service.base-url in
-    // application.properties (e.g. ai.service.base-url=http://localhost:8000).
-    @Value("${ai.service.base-url:http://localhost:8000}")
-    private String aiServiceBaseUrl;
-
-    private RestClient restClient() {
-        return RestClient.create(aiServiceBaseUrl);
-    }
-
-    @Transactional(readOnly = true)
+    /** The flight-risk count is not here: the dashboard asks the AI engine (ML model) directly. */
     public KpiSummaryDTO getDashboardKpis() {
         long totalEmployees = employeeRepository.countByIsDeletedFalse();
-
-        long totalActive = employeeRepository.countByIsDeletedFalseAndEmployeeStatusIn(
-            List.of("Active", "On Leave")
-        );
-
+        long totalActive = employeeRepository.countByIsDeletedFalseAndEmployeeStatusIn(List.of("Active", "On Leave"));
         long totalTerminated = employeeRepository.countByIsDeletedFalseAndEmployeeStatusIn(
-            List.of("Terminated", "Terminated For Cause", "Voluntarily Terminated")
-        );
+                List.of("Terminated", "Terminated For Cause", "Voluntarily Terminated"));
 
-        double denominator = (double) (totalActive + totalTerminated);
-        double companyTurnover = (denominator > 0)
-                ? ((double) totalTerminated / denominator) * 100.0
-                : 0.0;
+        double denominator = totalActive + totalTerminated;
+        double companyTurnover = denominator > 0 ? totalTerminated / denominator * 100.0 : 0.0;
 
-        var riskList = attritionRiskIndicatorsRepository.findAll();
-
-        double avgEngagement = riskList.stream()
+        double avgEngagement = attritionRiskIndicatorsRepository.findAll().stream()
                 .mapToDouble(r -> r.getRecentEngagement() != null ? r.getRecentEngagement().doubleValue() : 0.0)
                 .average()
                 .orElse(0.0);
 
-        long highRiskCount = fetchMlHighRiskCount()
-                .orElseGet(() -> {
-                
-                    log.warn("AI service unreachable -- falling back to SQL heuristic for highRiskCount");
-                    return riskList.stream()
-                            .filter(r -> "HIGH".equalsIgnoreCase(r.getHeuristicRiskLevel()))
-                            .count();
-                });
-
-        long openJobs = jobPostingRepository.countByStatusIgnoreCase("OPEN");
-        long departmentCount = departmentRepository.count();
-
         return KpiSummaryDTO.builder()
                 .totalEmployees(totalEmployees)
                 .activeEmployees(totalActive)
-                .departmentCount(departmentCount)
-                .openJobPostings(openJobs)
+                .departmentCount(departmentRepository.count())
+                .openJobPostings(jobPostingRepository.countByStatusIgnoreCase("OPEN"))
                 .avgEngagement(Math.round(avgEngagement * 10.0) / 10.0)
                 .companyTurnoverRate(Math.round(companyTurnover * 10.0) / 10.0)
-                .highRiskCount(highRiskCount)
                 .build();
     }
 
-    /**
-     * Calls the real XGBoost model's risk scores (no LLM call, cheap) instead
-     * of the SQL threshold heuristic in v_attrition_risk_indicators. Returns
-     * empty on any failure so the caller can fall back gracefully.
-     */
-    private java.util.Optional<Long> fetchMlHighRiskCount() {
-        try {
-            Map<String, Object> response = restClient()
-                    .get()
-                    .uri("/api/ai/retention-risk-scores")
-                    .retrieve()
-                    .body(Map.class);
-
-            if (response != null && response.get("high_risk_count") != null) {
-                return java.util.Optional.of(((Number) response.get("high_risk_count")).longValue());
-            }
-            return java.util.Optional.empty();
-        } catch (Exception e) {
-            log.warn("Failed to fetch ML risk scores from AI service: {}", e.getMessage());
-            return java.util.Optional.empty();
-        }
+    public List<DepartmentSalarySummaryDTO> getSalaryDistributionSummary() {
+        return salaryDistributionRepository.findSalarySummaryByDivision();
     }
-
-    public List<DepartmentTurnoverDTO> getTopTurnoverStats() {
-        return turnoverRepository.findTop10ByTurnoverRate()
-                .stream()
-                .map(DepartmentTurnoverDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
-public List<DepartmentSalarySummaryDTO> getSalaryDistributionSummary() {
-    return salaryDistributionRepository.findSalarySummaryByDivision();
-}
 
     public List<DepartmentTypeTurnoverDTO> getDepartmentTypeTurnoverStats() {
-        return departmentTypeTurnoverRepository.findAll()
-                .stream()
-                .map(DepartmentTypeTurnoverDTO::fromEntity)
-                .collect(Collectors.toList());
+        return departmentTypeTurnoverRepository.findAll().stream().map(DepartmentTypeTurnoverDTO::fromEntity).toList();
     }
 
     public List<EmployeePerformanceEngagementDTO> getEmployeePerformanceEngagementStats() {
-        return employeePerformanceEngagementRepository.findAll()
-                .stream()
-                .map(EmployeePerformanceEngagementDTO::fromEntity)
-                .collect(Collectors.toList());
+        return employeePerformanceEngagementRepository.findAll().stream().map(EmployeePerformanceEngagementDTO::fromEntity).toList();
     }
 
     public List<RecruitmentFunnelAtsDTO> getRecruitmentFunnelAtsStats() {
-        return recruitmentFunnelAtsRepository.findAll()
-                .stream()
-                .map(RecruitmentFunnelAtsDTO::fromEntity)
-                .collect(Collectors.toList());
+        return recruitmentFunnelAtsRepository.findAll().stream().map(RecruitmentFunnelAtsDTO::fromEntity).toList();
     }
 
     public List<TrainingAnalyticsDTO> getTrainingAnalyticsStats() {
-        return trainingAnalyticsRepository.findAll()
-                .stream()
-                .map(TrainingAnalyticsDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    public List<AttritionRiskIndicatorsDTO> getAttritionRiskIndicatorsStats() {
-        return attritionRiskIndicatorsRepository.findAll()
-                .stream()
-                .map(AttritionRiskIndicatorsDTO::fromEntity)
-                .collect(Collectors.toList());
+        return trainingAnalyticsRepository.findAll().stream().map(TrainingAnalyticsDTO::fromEntity).toList();
     }
 
     public List<TopPerformerBenchmarksDTO> getTopPerformerBenchmarksStats() {
-        return topPerformerBenchmarksRepository.findAll()
-                .stream()
-                .map(TopPerformerBenchmarksDTO::fromEntity)
-                .collect(Collectors.toList());
+        return topPerformerBenchmarksRepository.findAll().stream().map(TopPerformerBenchmarksDTO::fromEntity).toList();
     }
 
-    // NEW
-public List<GenderPayGapDTO> getGenderPayGapStats() {
-    return genderPayGapRepository.findSalaryByDepartmentTypeDivisionAndGender();
-}
-    // NEW
+    public List<GenderPayGapDTO> getGenderPayGapStats() {
+        return genderPayGapRepository.findSalaryByDepartmentTypeDivisionAndGender();
+    }
+
     public List<TimeToHireDTO> getTimeToHireStats() {
         return timeToHireRepository.findAvgTimeToHirePerJob();
     }
-    // add to constructor-injected fields:
-    private final DepartmentSummaryRepository departmentSummaryRepository;
 
-    // add method:
     public List<DepartmentSummaryDTO> getDepartmentSummary() {
         return departmentSummaryRepository.findAll();
     }

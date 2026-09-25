@@ -4,6 +4,7 @@ import joblib
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import RepeatedKFold, cross_val_score
+import config
 from database import engine
 
 FEATURES = ['training_budget', 'headcount', 'avg_engagement', 'department_turnover_rate']
@@ -11,8 +12,8 @@ TARGET = 'avg_performance'
 MIN_HEADCOUNT = 3   # smaller departments: an average over 1-2 people is noise
 MIN_ROWS = 20
 
-MODEL_PATH = 'models/budget/saved_models/budget_xgboost.pkl'
-METRICS_PATH = 'models/budget/saved_models/budget_metrics.json'
+MODEL_PATH = config.BUDGET_MODEL_PATH
+METRICS_PATH = config.BUDGET_METRICS_PATH
 
 
 def train_budget_model():
@@ -54,7 +55,7 @@ def train_budget_model():
     print("Training final model on all usable data...")
     model.fit(X, y)
 
-    os.makedirs('models/budget/saved_models', exist_ok=True)
+    os.makedirs(config.BUDGET_MODEL_DIR, exist_ok=True)
     joblib.dump(model, MODEL_PATH)
 
     metrics = {

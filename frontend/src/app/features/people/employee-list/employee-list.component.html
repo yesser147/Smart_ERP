@@ -1,0 +1,72 @@
+<div class="erp-page">
+  <app-page-header title="Employees" icon="users" [subtitle]="totalElements + ' people, current and former'">
+    <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="exportCsv()" [disabled]="!!exporting || loading">
+      <app-icon name="download" class="h-4 w-4" /> {{ exporting === 'csv' ? 'Exporting...' : 'Export CSV' }}
+    </button>
+    <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="exportPayroll()" [disabled]="!!exporting"
+            title="Active employees with their current salary">
+      <app-icon name="banknotes" class="h-4 w-4" /> {{ exporting === 'payroll' ? 'Exporting...' : 'Payroll export' }}
+    </button>
+  </app-page-header>
+
+  <div class="erp-card overflow-hidden">
+    <div class="flex items-center gap-3 p-4 border-b border-line">
+      <div class="relative flex-1 max-w-md">
+        <app-icon name="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <input [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Search by name or title..." class="erp-input py-1.5 pl-8" />
+      </div>
+      @if (refreshing) { <app-icon name="arrow-path" class="h-4 w-4 text-slate-500 animate-spin" /> }
+    </div>
+
+    @if (loading) {
+      <div class="p-4 space-y-3">@for (i of [1, 2, 3, 4, 5, 6]; track i) { <div class="erp-skeleton h-10"></div> }</div>
+    } @else if (error) {
+      <div class="p-4"><div class="erp-alert-error">The employees could not be loaded.</div></div>
+    } @else {
+      <div class="overflow-x-auto transition-opacity" [class.opacity-60]="refreshing">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              @for (c of columns; track c.key) {
+                <th [class.text-right]="c.right">
+                  <button type="button" class="inline-flex items-center gap-1 uppercase hover:text-white" (click)="sort(c.key)">
+                    {{ c.label }}
+                    @if (sortColumn === c.key) { <span class="text-accent">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span> }
+                  </button>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of employees; track e.employeeId) {
+              <tr class="cursor-pointer" (click)="open(e)">
+                <td>
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold text-slate-300">
+                      {{ e.firstName[0] }}{{ e.lastName[0] }}
+                    </span>
+                    <span class="font-medium text-white">{{ e.firstName }} {{ e.lastName }}</span>
+                  </div>
+                </td>
+                <td class="text-slate-400">{{ e.title || '—' }}</td>
+                <td class="text-slate-400 max-w-[16rem] truncate">{{ e.departmentName || '—' }}</td>
+                <td><app-status-badge [status]="e.employeeStatus" /></td>
+                <td class="text-right tabular-nums text-slate-300">${{ e.salary | number:'1.0-0' }}</td>
+                <td class="text-slate-400 whitespace-nowrap">{{ e.startDate | date:'d MMM y' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="erp-empty">No employee matches.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+        <span>{{ totalElements }} employees · page {{ currentPage + 1 }} of {{ totalPages }}</span>
+        <div class="flex gap-2">
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(currentPage - 1)" [disabled]="currentPage === 0">Previous</button>
+          <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(currentPage + 1)" [disabled]="currentPage >= totalPages - 1">Next</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

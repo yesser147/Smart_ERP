@@ -1,10 +1,16 @@
 import json
+import logging
 import re
+import time
+from collections import OrderedDict
+
 import pandas as pd
 from sqlalchemy import text
+
 from database import ai_engine  # Restricted read-only engine
-from groq import Groq
-import config
+from models.recruitment.llm_client import chat
+
+log = logging.getLogger(__name__)
 
 ALLOWED_VIEWS = [
     "v_department_turnover",
@@ -18,72 +24,136 @@ ALLOWED_VIEWS = [
     "v_ai_exit_reason_frequencies",
     "v_ai_retention_features"
 ]
+_ALLOWED_LOWER = {v.lower() for v in ALLOWED_VIEWS}
+
+FORBIDDEN_KEYWORDS = [
+    "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "GRANT",
+    "REVOKE", "EXEC", "EXECUTE", "COPY", "CALL", "DO", "LISTEN", "NOTIFY", "VACUUM",
+    "SET", "RESET", "LOCK", "PREPARE", "DEALLOCATE", "INTO",
+]
+# System / file / network functions a read query never needs
+FORBIDDEN_FUNCTION = re.compile(
+    r"\b(pg_\w+|dblink\w*|lo_\w+|set_config|current_setting|query_to_xml\w*|"
+    r"table_to_xml\w*|database_to_xml\w*|txid_\w+)\s*\(",
+    re.IGNORECASE,
+)
+# Functions whose syntax contains the word FROM without reading a table
+FROM_KEYWORD_FUNCTIONS = re.compile(
+    r"\b(EXTRACT|SUBSTRING|TRIM|OVERLAY|POSITION)\s*\([^()]*\)", re.IGNORECASE
+)
+CLAUSE_END = r"(?=\bWHERE\b|\bGROUP\b|\bORDER\b|\bLIMIT\b|\bHAVING\b|\bUNION\b|\bEXCEPT\b|" \
+             r"\bINTERSECT\b|\bWINDOW\b|\bOFFSET\b|\bFETCH\b|\bJOIN\b|\bON\b|\bLEFT\b|\bRIGHT\b|" \
+             r"\bINNER\b|\bFULL\b|\bCROSS\b|\)|$)"
+
+MAX_CONVERSATIONS = 200
+HISTORY_MESSAGES = 6
+SCHEMA_CACHE_SECONDS = 600
+
+
+def _strip_literals_and_comments(sql: str) -> str:
+    sql = re.sub(r"--[^\n]*", " ", sql)
+    sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
+    sql = re.sub(r"'(?:[^']|'')*'", "''", sql)
+    return sql
+
+
+def referenced_tables(sql: str) -> list[str]:
+    """Every relation read after FROM / JOIN, including comma-separated
+    FROM lists. CTE names and FROM inside EXTRACT(... FROM ...) etc. are
+    handled by the caller / removed here."""
+    sql = FROM_KEYWORD_FUNCTIONS.sub("0", sql)
+    tables = re.findall(r'\bJOIN\s+(?:LATERAL\s+)?"?([a-zA-Z_][\w$]*)"?', sql, re.IGNORECASE)
+    # the lookahead finds every FROM, including the ones nested in sub-queries
+    for segment in re.findall(r"(?=\bFROM\s+(.*?)" + CLAUSE_END + ")", sql, re.IGNORECASE | re.DOTALL):
+        for item in segment.split(","):
+            item = item.strip()
+            if not item or item.startswith("("):
+                continue   # sub-query: its own FROM is found by the regex
+            m = re.match(r'(?:LATERAL\s+)?"?([a-zA-Z_][\w$]*)"?', item, re.IGNORECASE)
+            if m:
+                tables.append(m.group(1))
+    return tables
+
+
+def validate_sql(sql_query: str) -> bool:
+    """First safety layer (the second is the read-only database role, which
+    only has SELECT on the analytics views and a statement timeout):
+    one read-only statement that reads ONLY the allowed views."""
+    if not sql_query or not sql_query.strip():
+        return False
+    clean = _strip_literals_and_comments(sql_query).strip().rstrip(";").strip()
+
+    if ";" in clean:
+        return False
+
+    upper = clean.upper()
+    if not (upper.startswith("SELECT") or upper.startswith("WITH")):
+        return False
+    if any(re.search(rf"\b{kw}\b", upper) for kw in FORBIDDEN_KEYWORDS):
+        return False
+    if FORBIDDEN_FUNCTION.search(clean):
+        return False
+
+    # CTE names ("WITH top AS (...)") are allowed as sources
+    cte_names = {n.lower() for n in re.findall(r"(?:\bWITH\b|,)\s*(?:RECURSIVE\s+)?([a-zA-Z_]\w*)\s+AS\s*\(",
+                                              clean, re.IGNORECASE)}
+
+    tables = referenced_tables(clean)
+    if not tables:
+        return False
+    return all(t.lower() in _ALLOWED_LOWER or t.lower() in cte_names for t in tables)
+
 
 class HRQueryAssistant:
     def __init__(self):
-        self.client = Groq(api_key=config.GROQ_API_KEY)
-        self.model = config.GROQ_MODEL
-        self.chat_history = []
+        # one short history per conversation, so users never share context
+        self._histories: "OrderedDict[str, list[dict]]" = OrderedDict()
+        self._schema_context = None
+        self._schema_loaded_at = 0.0
+
+    # ------------------------------------------------------------- helpers
 
     def _get_schema_context(self) -> str:
-        """Fetches column details for allowed views to ground the LLM."""
+        """Column details for the allowed views (cached: they only change with a migration)."""
+        if self._schema_context and time.time() - self._schema_loaded_at < SCHEMA_CACHE_SECONDS:
+            return self._schema_context
+
         schema_info = []
         with ai_engine.connect() as conn:
-            for view in ALLOWED_VIEWS:
-                query = text(f"""
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
-                    WHERE table_name = '{view}';
-                """)
-                columns = conn.execute(query).fetchall()
-                if columns:
-                    col_fmt = ", ".join([f"{c[0]} ({c[1]})" for c in columns])
-                    schema_info.append(f"VIEW {view}:\n  Columns: {col_fmt}")
-        return "\n\n".join(schema_info)
+            rows = conn.execute(text("""
+                SELECT table_name, column_name, data_type
+                FROM information_schema.columns
+                WHERE table_name = ANY(:views)
+                ORDER BY table_name, ordinal_position
+            """), {"views": ALLOWED_VIEWS}).fetchall()
+        by_view = {}
+        for view, column, dtype in rows:
+            by_view.setdefault(view, []).append(f"{column} ({dtype})")
+        for view in ALLOWED_VIEWS:
+            if view in by_view:
+                schema_info.append(f"VIEW {view}:\n  Columns: {', '.join(by_view[view])}")
 
+        self._schema_context = "\n\n".join(schema_info)
+        self._schema_loaded_at = time.time()
+        return self._schema_context
+
+    def _history(self, conversation_id: str) -> list[dict]:
+        history = self._histories.pop(conversation_id, [])
+        self._histories[conversation_id] = history          # most recent last
+        while len(self._histories) > MAX_CONVERSATIONS:
+            self._histories.popitem(last=False)
+        return history
+
+    # kept for backwards compatibility with older callers
     def _validate_sql_safety(self, sql_query: str) -> bool:
-        """Enforces strict read-only constraints, blocks query chaining, AND
-        verifies every referenced table is one of the actual allowed views --
-        not just that no destructive keyword appears. Without this last
-        check, a hallucinated table name (the model inventing "v_employees"
-        when no such view exists) reaches Postgres as a live query instead
-        of being rejected here."""
-        clean_query = sql_query.strip().rstrip(';')
+        return validate_sql(sql_query)
 
-        if ';' in clean_query:
-            return False
+    # ------------------------------------------------------------- LLM steps
 
-        clean_upper = clean_query.upper()
-        forbidden_keywords = [
-            "INSERT", "UPDATE", "DELETE", "DROP", "ALTER",
-            "TRUNCATE", "CREATE", "GRANT", "REVOKE", "EXEC", "EXECUTE"
-        ]
-
-        if any(re.search(rf"\b{kw}\b", clean_upper) for kw in forbidden_keywords):
-            return False
-
-        if not (clean_upper.startswith("SELECT") or clean_upper.startswith("WITH")):
-            return False
-
-        # NEW: extract every table/view name following FROM or JOIN and
-        # reject the query unless ALL of them are in ALLOWED_VIEWS. This is
-        # the actual security boundary against hallucinated or arbitrary
-        # table names -- the keyword checks above only stop destructive
-        # statements, not reads from the wrong (or nonexistent) table.
-        referenced_tables = re.findall(r'\b(?:FROM|JOIN)\s+"?([a-zA-Z_][a-zA-Z0-9_]*)"?', sql_query, re.IGNORECASE)
-        if not referenced_tables:
-            return False
-
-        allowed_lower = {v.lower() for v in ALLOWED_VIEWS}
-        if any(t.lower() not in allowed_lower for t in referenced_tables):
-            return False
-
-        return True
-
-    def generate_sql(self, user_question: str) -> str:
+    def generate_sql(self, user_question: str, history: list[dict]) -> str:
         """Generates SQL using view schema context, domain value mappings, and chat memory."""
         schema_context = self._get_schema_context()
-        
+
         system_prompt = f"""You are a PostgreSQL SQL Expert for a Smart ERP system.
 Convert the user's natural language question into a single, valid SQL SELECT query.
 
@@ -114,31 +184,24 @@ RULES:
 }}"""
 
         messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(self.chat_history)
+        messages.extend(history)
         messages.append({
-            "role": "user", 
+            "role": "user",
             "content": f'Question: "{user_question}"\nRemember to return ONLY JSON.'
         })
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0.0,
-            response_format={"type": "json_object"}
-        )
-        
-        payload = json.loads(response.choices[0].message.content)
-        return payload.get("sql_query", "").strip()
+        payload = json.loads(chat(messages, json_mode=True, temperature=0.0))
+        return str(payload.get("sql_query", "")).strip()
 
-    def synthesize_answer(self, user_question: str, df: pd.DataFrame) -> str:
+    def synthesize_answer(self, user_question: str, df: pd.DataFrame, history: list[dict]) -> str:
         """Generates a concise executive response based on returned data and history."""
         if df.empty:
             return "No matching records were found in the database for your query."
 
-        data_preview = df.to_dict(orient="records")
+        data_preview = df.head(50).to_dict(orient="records")
 
         system_prompt = f"""You are an Executive AI HR Advisor.
-Analyze the SQL query result and summarize the key business takeaway in 2-3 direct sentences. 
+Analyze the SQL query result and summarize the key business takeaway in 2-3 direct sentences.
 Use the conversation history to make your answer contextual.
 
 QUERY RESULT DATA:
@@ -147,48 +210,38 @@ QUERY RESULT DATA:
 Respond directly. Do not repeat raw JSON. Do not explain the SQL."""
 
         messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(self.chat_history)
+        messages.extend(history)
         messages.append({"role": "user", "content": user_question})
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0.2,
-            max_tokens=250
-        )
-        return response.choices[0].message.content.strip()
+        return chat(messages, temperature=0.2, max_tokens=250)
 
-    def ask(self, user_question: str) -> dict:
+    # ------------------------------------------------------------- entry point
+
+    def ask(self, user_question: str, conversation_id: str = "default") -> dict:
+        history = self._history(conversation_id)
         try:
-            sql_query = self.generate_sql(user_question)
-            
-            if not self._validate_sql_safety(sql_query):
-                return {"error": "Query blocked: Only read-only SELECT operations are allowed."}
+            sql_query = self.generate_sql(user_question, history)
+
+            if not validate_sql(sql_query):
+                log.warning("Blocked generated SQL: %s", sql_query)
+                return {"error": "Query blocked: only read-only SELECT queries on the HR analytics views are allowed."}
 
             with ai_engine.connect() as conn:
                 df = pd.read_sql_query(text(sql_query), conn)
-                
-            summary = self.synthesize_answer(user_question, df)
 
-            self.chat_history.append({"role": "user", "content": user_question})
-            self.chat_history.append({"role": "assistant", "content": summary})
+            summary = self.synthesize_answer(user_question, df, history)
 
-            if len(self.chat_history) > 6:
-                self.chat_history = self.chat_history[-6:]
+            history.append({"role": "user", "content": user_question})
+            history.append({"role": "assistant", "content": summary})
+            del history[:-HISTORY_MESSAGES]
 
             return {
                 "question": user_question,
                 "sql_query": sql_query,
-                "tabular_data": df.to_dict(orient="records"),
+                "tabular_data": json.loads(df.to_json(orient="records", date_format="iso")),
                 "summary": summary
             }
 
         except Exception as e:
-            # THIS WILL PRINT THE EXACT REASON TO YOUR TERMINAL
-            import traceback
-            print("\n" + "="*30)
-            print("🚨 CRASH DETECTED IN AI CHAT:")
-            traceback.print_exc()
-            print("="*30 + "\n")
-            
+            log.exception("AI chat pipeline failed")
             return {"error": f"Pipeline execution error: {str(e)}"}

@@ -1,23 +1,36 @@
 package com.smarterp.hr.web;
 
 import com.smarterp.hr.dto.JobApplicationSubmissionDTO;
+import com.smarterp.hr.dto.PublicJobDTO;
 import com.smarterp.hr.service.PublicApplicationService;
-import org.springframework.http.ResponseEntity;
+import com.smarterp.shared.security.PublicRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
+/** Careers site: open to everyone (no login), applications rate-limited per IP. */
 @RestController
-@RequestMapping("/public/applications")
+@RequestMapping("/public")
 public class PublicApplicationController {
 
     private final PublicApplicationService service;
+    private final PublicRateLimiter rateLimiter;
 
-    public PublicApplicationController(PublicApplicationService service) {
+    public PublicApplicationController(PublicApplicationService service, PublicRateLimiter rateLimiter) {
         this.service = service;
+        this.rateLimiter = rateLimiter;
     }
 
-    @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<JobApplicationSubmissionDTO> submit(
+    @GetMapping("/jobs")
+    public List<PublicJobDTO> openJobs() {
+        return service.openJobs();
+    }
+
+    @PostMapping(value = "/applications", consumes = "multipart/form-data")
+    public JobApplicationSubmissionDTO submit(
+            HttpServletRequest request,
             @RequestParam String firstName,
             @RequestParam String lastName,
             @RequestParam String email,
@@ -27,9 +40,8 @@ public class PublicApplicationController {
             @RequestParam(required = false) Double desiredSalary,
             @RequestParam MultipartFile cv
     ) {
-        return ResponseEntity.ok(service.submitApplication(
-                firstName, lastName, email, phoneNumber, educationLevel,
-                jobId, desiredSalary, cv
-        ));
+        rateLimiter.check(request.getRemoteAddr());
+        return service.submitApplication(firstName, lastName, email, phoneNumber, educationLevel,
+                jobId, desiredSalary, cv);
     }
 }

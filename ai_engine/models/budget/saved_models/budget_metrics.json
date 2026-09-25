@@ -1,11 +1,11 @@
 {
-  "n_rows": 170,
-  "n_rows_total": 620,
+  "n_rows": 98,
+  "n_rows_total": 98,
   "min_headcount": 3,
-  "budget_min": 0.0,
-  "budget_max": 10275.95,
-  "target_std": 0.464,
-  "cv_r2": -0.226,
-  "cv_r2_std": 0.158,
-  "cv_mae": 0.378
+  "budget_min": 10444.59,
+  "budget_max": 29821.48,
+  "target_std": 0.093,
+  "cv_r2": -0.257,
+  "cv_r2_std": 0.164,
+  "cv_mae": 0.077
 }

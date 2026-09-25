@@ -1,8 +1,11 @@
 """
-Load stage: Exports clean CSVs and loads all 13 normalized tables into PostgreSQL.
+Load stage: exports the clean tables as CSV, loads the tables into
+PostgreSQL, uploads the resume PDFs to MinIO and seeds the required skills
+per job title.
 """
 
 import os
+import re
 import pandas as pd
 import config
 
@@ -16,6 +19,8 @@ LOAD_ORDER = [
     "training_courses",
     "employee_trainings",
     "surveys",
+    "performance_reviews",
+    "leave_requests",
     "applicants",
     "job_postings",
     "job_applications",
@@ -32,6 +37,8 @@ CSV_FILENAMES = {
     "training_courses": "pg_training_courses.csv",
     "employee_trainings": "pg_employee_trainings.csv",
     "surveys": "pg_surveys.csv",
+    "performance_reviews": "pg_performance_reviews.csv",
+    "leave_requests": "pg_leave_requests.csv",
     "applicants": "pg_applicants.csv",
     "job_postings": "pg_job_postings.csv",
     "job_applications": "pg_job_applications.csv",
@@ -48,6 +55,8 @@ SQL_TABLE_NAMES = {
     "training_courses": "training_courses",
     "employee_trainings": "employee_trainings",
     "surveys": "engagement_surveys",
+    "performance_reviews": "performance_reviews",
+    "leave_requests": "leave_requests",
     "applicants": "applicants",
     "job_postings": "job_postings",
     "job_applications": "job_applications",
@@ -90,7 +99,12 @@ def backup_budget_allocations(engine):
     from sqlalchemy import text
     try:
         with engine.connect() as conn:
-            df = pd.read_sql(text("SELECT * FROM department_budget_allocations;"), conn)
+            # remember the team code: department ids may point to other teams after a reload
+            df = pd.read_sql(text("""
+                SELECT a.*, d.business_unit AS _business_unit
+                FROM department_budget_allocations a
+                LEFT JOIN departments d ON d.department_id = a.department_id
+            """), conn)
         print(f"  backed up {len(df)} existing budget allocation(s) before schema rebuild")
         return df
     except Exception:
@@ -109,18 +123,22 @@ def restore_budget_allocations(engine, backup_df):
 
     from sqlalchemy import text
     with engine.begin() as conn:
-        valid_dept_ids = set(
-            row[0] for row in conn.execute(text("SELECT department_id FROM departments;")).fetchall()
+        dept_by_code = dict(
+            (row[1], row[0]) for row in
+            conn.execute(text("SELECT department_id, business_unit FROM departments;")).fetchall()
         )
         valid_user_ids = set(
             str(row[0]) for row in conn.execute(text("SELECT id FROM users;")).fetchall()
         )
 
-    restorable = backup_df[backup_df["department_id"].isin(valid_dept_ids)].copy()
+    # re-attach each allocation to the team with the same code, drop the others
+    restorable = backup_df.copy()
+    restorable["department_id"] = restorable["_business_unit"].map(dept_by_code)
+    restorable = restorable[restorable["department_id"].notna()].drop(columns=["_business_unit"])
     orphaned = len(backup_df) - len(restorable)
     if orphaned:
         print(f"  WARNING: {orphaned} budget allocation(s) referenced a department_id that no "
-              f"longer exists after reload -- likely because the source CSV changed. Skipped, not restored.")
+              f"longer exists after reload -- likely because the source data changed. Skipped, not restored.")
 
     # approved_by is a nullable FK to users -- null it out rather than drop
     # the whole row if that specific user no longer exists post-reload.
@@ -133,15 +151,30 @@ def restore_budget_allocations(engine, backup_df):
         print(f"  restored {len(restorable)} budget allocation(s) after schema rebuild")
 
 
-def apply_schema(engine, schema_path="schema.sql"):
-    from sqlalchemy import text
-    with open(schema_path) as f:
-        ddl = f.read()
+def _run_sql_file(conn, path):
+    """Runs a whole .sql file in one go through the raw psycopg2 cursor, so
+    semicolons inside comments or strings can't split a statement."""
+    with open(path, encoding="utf-8") as f:
+        sql = f.read()
+    with conn.connection.cursor() as cur:
+        cur.execute(sql)
+
+
+def _migration_files():
+    """Backend Flyway versioned migrations (V1__..., V2__...) in version order."""
+    files = [f for f in os.listdir(config.MIGRATIONS_DIR) if re.match(r"^V\d+__.*\.sql$", f)]
+    files.sort(key=lambda f: int(re.match(r"^V(\d+)__", f).group(1)))
+    return [os.path.join(config.MIGRATIONS_DIR, f) for f in files]
+
+
+def apply_schema(engine, reset_path=os.path.join(os.path.dirname(__file__), "schema.sql")):
+    """Drops everything (schema.sql), then builds the schema from the backend's
+    migrations -- the single source of truth for the database structure."""
     with engine.begin() as conn:
-        for statement in ddl.split(";"):
-            statement = statement.strip()
-            if statement:
-                conn.execute(text(statement))
+        _run_sql_file(conn, reset_path)
+        for path in _migration_files():
+            _run_sql_file(conn, path)
+            print(f"  applied {os.path.basename(path)}")
     print("  schema applied successfully")
 
 
@@ -171,12 +204,52 @@ def load_to_postgres(tables, apply_schema_first=True):
             ("salary_history", "id"),
             ("employee_trainings", "id"),
             ("engagement_surveys", "id"),
-            ("employees", "employee_id"),  # NEW
-             ]
+            ("employees", "employee_id"),
+            ("applicants", "applicant_id"),  # new applicants from the app must not reuse CSV ids
+            ("performance_reviews", "id"),
+            ("leave_requests", "id"),
+        ]
         for tbl, col in serial_tables:
             conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{tbl}', '{col}'), coalesce(max({col}), 1)) FROM {tbl};"))
 
     if apply_schema_first:
         restore_budget_allocations(engine, budget_backup)
 
-    print("  done -- all 13 ETL tables loaded, plus any restored budget allocations")
+    print("  done -- all ETL tables loaded, plus any restored budget allocations")
+
+
+def upload_cv_pdfs(cv_files):
+    """Uploads each applicant's resume PDF to the (private) MinIO bucket, at
+    the file_url already written in applicant_cvs."""
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    print("LOAD -- uploading resume PDFs to MinIO")
+    s3 = boto3.client("s3", endpoint_url=config.MINIO_ENDPOINT,
+                      aws_access_key_id=config.MINIO_ACCESS_KEY,
+                      aws_secret_access_key=config.MINIO_SECRET_KEY)
+    try:
+        existing = {b["Name"] for b in s3.list_buckets().get("Buckets", [])}
+        if config.MINIO_BUCKET not in existing:
+            s3.create_bucket(Bucket=config.MINIO_BUCKET)
+    except (BotoCoreError, ClientError) as e:
+        print(f"  WARNING: MinIO not reachable ({e}). PDFs not uploaded: the CV text is in the "
+              f"database anyway; rerun later with --only-cv-upload.")
+        return 0
+
+    uploaded = 0
+    pairs = list(zip(cv_files["file_url"], cv_files["_pdf_path"]))
+    for i, (file_url, pdf_path) in enumerate(pairs, start=1):
+        key = file_url.rsplit("/", 1)[-1]
+        s3.upload_file(pdf_path, config.MINIO_BUCKET, key, ExtraArgs={"ContentType": "application/pdf"})
+        uploaded += 1
+        if i % 200 == 0:
+            print(f"  uploaded {i}/{len(cv_files)}")
+    print(f"  uploaded {uploaded} PDFs")
+    return uploaded
+
+
+def seed_skills(engine):
+    """Required skills per job title (regex rules, see job_title_skills.py)."""
+    from job_title_skills import seed_job_title_skills
+    seed_job_title_skills(engine)

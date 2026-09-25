@@ -13,10 +13,11 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 @Component
 public class JwtUtils {
+
+    private static final long SERVICE_TOKEN_MS = 5 * 60 * 1000;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -25,63 +26,46 @@ public class JwtUtils {
     private long jwtExpiration;
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return claims(token).getSubject();
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    /** Login token. The role travels in the token so the AI engine can check it without the database. */
+    public String generateToken(UserDetails user) {
+        Map<String, Object> claims = new HashMap<>();
+        user.getAuthorities().stream().findFirst().ifPresent(a -> claims.put("role", a.getAuthority()));
+        return build(claims, user.getUsername(), jwtExpiration);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return Jwts.builder()
-                .claims(extraClaims)
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey())
-                .compact();
+    /** Short-lived token for the backend's own calls to the AI engine (background CV processing). */
+    public String generateServiceToken() {
+        return build(Map.of("role", "ROLE_ADMIN", "service", true), "system@nexus-erp.internal", SERVICE_TOKEN_MS);
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token);
+            claims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    private String build(Map<String, Object> claims, String subject, long validityMs) {
+        long now = System.currentTimeMillis();
+        return Jwts.builder()
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + validityMs))
+                .signWith(signingKey())
+                .compact();
     }
 
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+    private Claims claims(String token) {
+        return Jwts.parser().verifyWith(signingKey()).build().parseSignedClaims(token).getPayload();
     }
 
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private SecretKey signingKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 }

@@ -1,0 +1,215 @@
+<!-- header -->
+<div class="erp-card overflow-hidden">
+  <div class="h-20 bg-gradient-to-r from-sky-500/20 via-indigo-500/15 to-transparent"></div>
+  <div class="px-6 pb-5 -mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="flex items-end gap-4">
+      <span class="flex h-20 w-20 items-center justify-center rounded-2xl bg-surface text-2xl font-semibold text-white ring-4 ring-surface shadow-card border border-line">
+        {{ employee.firstName[0] }}{{ employee.lastName[0] }}
+      </span>
+      <div class="pb-1">
+        <h1 class="text-xl font-semibold text-white">{{ employee.firstName }} {{ employee.lastName }}</h1>
+        <p class="text-sm text-slate-400">{{ employee.title || '—' }} · {{ employee.departmentName || '—' }}</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 pb-1">
+      <app-status-badge [status]="employee.employeeStatus" />
+      @if (employee.performanceScore) {
+        <span class="erp-badge" [ngClass]="performanceTone(employee.performanceScore)">{{ employee.performanceScore }}</span>
+      }
+      @if (employee.needsReview) {
+        <span class="erp-badge bg-amber-500/10 text-amber-300 border-amber-500/20">Data to review</span>
+      }
+      <span class="text-xs text-slate-500">#{{ employee.employeeId }}</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 border-t border-line divide-x divide-line">
+    <div class="p-4"><p class="erp-kicker">Salary</p><p class="mt-1 font-semibold text-white tabular-nums">${{ employee.salary | number:'1.0-0' }}</p></div>
+    <div class="p-4"><p class="erp-kicker">Tenure</p><p class="mt-1 font-semibold text-white">{{ tenureYears !== null ? tenureYears + ' yrs' : '—' }}</p></div>
+    <div class="p-4 border-t md:border-t-0 border-line"><p class="erp-kicker">Manager</p><p class="mt-1 text-sm text-white truncate">{{ employee.managerName || '—' }}</p></div>
+    <div class="p-4 border-t md:border-t-0 border-line"><p class="erp-kicker">Engagement</p><p class="mt-1 font-semibold text-white">{{ engagement !== null ? (engagement | number:'1.1-1') + ' / 5' : '—' }}</p></div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start">
+  <div class="erp-card overflow-hidden min-w-0">
+    <div class="erp-tabs px-4">
+      @for (t of tabs; track t.key) {
+        <button type="button" class="erp-tab" [class.erp-tab-active]="tab === t.key" (click)="tab = t.key">
+          {{ t.label }}
+          @if (t.key === 'performance' && reviews.length) { <span class="ml-1 text-xs text-slate-500">{{ reviews.length }}</span> }
+          @if (t.key === 'training' && trainings.length) { <span class="ml-1 text-xs text-slate-500">{{ trainings.length }}</span> }
+        </button>
+      }
+    </div>
+
+    <div class="p-5">
+      @switch (tab) {
+        @case ('profile') {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+            <section>
+              <p class="erp-kicker mb-3">Employment</p>
+              <dl class="space-y-2.5 text-sm">
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Team</dt><dd class="text-white text-right">{{ employee.departmentName || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Job function</dt><dd class="text-white">{{ employee.jobFunction || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Type</dt><dd class="text-white">{{ employee.employeeType || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Classification</dt><dd class="text-white">{{ employee.employeeClassificationType || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Start date</dt><dd class="text-white">{{ employee.startDate | date:'d MMM y' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Location</dt><dd class="text-white">{{ employee.location || '—' }}{{ employee.state ? ', ' + employee.state : '' }}</dd></div>
+              </dl>
+            </section>
+            <section>
+              <p class="erp-kicker mb-3">Personal</p>
+              <dl class="space-y-2.5 text-sm">
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Date of birth</dt><dd class="text-white">{{ employee.dob ? (employee.dob | date:'d MMM y') : '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Gender</dt><dd class="text-white">{{ employee.gender || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Education</dt><dd class="text-white">{{ employee.educationLevel || '—' }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-slate-400">Field of study</dt><dd class="text-white">{{ employee.educationField || '—' }}</dd></div>
+              </dl>
+            </section>
+
+            @if (employee.jobLevel != null) {
+              <section class="md:col-span-2">
+                <p class="erp-kicker mb-3">Career & working conditions</p>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  @for (f of [
+                    { l: 'Job level', v: employee.jobLevel + ' / 5' },
+                    { l: 'Overtime', v: employee.overtime ? 'Yes' : 'No' },
+                    { l: 'Business travel', v: employee.businessTravel || '—' },
+                    { l: 'Distance from home', v: employee.distanceFromHome != null ? employee.distanceFromHome + ' km' : '—' },
+                    { l: 'Total working years', v: employee.totalWorkingYears ?? '—' },
+                    { l: 'Previous employers', v: employee.numCompaniesWorked ?? '—' },
+                    { l: 'Years in role', v: employee.yearsInCurrentRole ?? '—' },
+                    { l: 'Since last promotion', v: (employee.yearsSinceLastPromotion ?? '—') + ' yrs' },
+                    { l: 'With current manager', v: (employee.yearsWithCurrManager ?? '—') + ' yrs' },
+                    { l: 'Stock options', v: (employee.stockOptionLevel ?? '—') + ' / 3' },
+                    { l: 'Last raise', v: employee.percentSalaryHike != null ? '+' + employee.percentSalaryHike + '%' : '—' },
+                    { l: 'Trainings last year', v: employee.trainingTimesLastYear ?? '—' }
+                  ]; track f.l) {
+                    <div class="rounded-lg bg-surface-muted border border-line px-3 py-2.5">
+                      <p class="text-[11px] text-slate-500">{{ f.l }}</p>
+                      <p class="text-sm font-medium text-white mt-0.5">{{ f.v }}</p>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+            @if (left) {
+              <section class="md:col-span-2 rounded-xl border border-rose-500/20 bg-rose-500/[0.05] p-4">
+                <p class="erp-kicker text-rose-300 mb-2">Departure</p>
+                <p class="text-sm text-white">
+                  {{ employee.terminationType === 'Unk' ? 'Unknown reason' : (employee.terminationType || '—') }}
+                  @if (employee.exitDate) { <span class="text-slate-400"> · left on {{ employee.exitDate | date:'d MMM y' }}</span> }
+                </p>
+                @if (employee.terminationDescription) { <p class="text-sm text-slate-300 mt-1">{{ employee.terminationDescription }}</p> }
+              </section>
+            }
+          </div>
+        }
+
+        @case ('pay') {
+          @if (salaryHistory.length) {
+            <div class="overflow-x-auto -mx-5">
+              <table class="erp-table">
+                <thead><tr><th>Effective date</th><th class="text-right">Salary</th><th class="text-right">Change</th><th>Reason</th></tr></thead>
+                <tbody>
+                  @for (s of salaryHistory; track s.id; let i = $index) {
+                    <tr>
+                      <td class="whitespace-nowrap">{{ s.effectiveDate | date:'d MMM y' }}</td>
+                      <td class="text-right font-medium text-white tabular-nums">${{ s.salary | number:'1.0-0' }} <span class="text-xs text-slate-500">{{ s.currency }}</span></td>
+                      <td class="text-right tabular-nums">
+                        @if (change(i); as c) { <span [class.text-emerald-300]="c > 0" [class.text-rose-300]="c < 0">{{ c > 0 ? '+' : '' }}{{ c | number:'1.1-1' }}%</span> }
+                        @else { <span class="text-slate-600">—</span> }
+                      </td>
+                      <td class="text-slate-400">{{ s.changeReason || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else { <p class="erp-empty">No salary history.</p> }
+        }
+
+        @case ('performance') {
+          <ng-content select="[review-form]" />
+
+          <p class="erp-kicker mb-3">Performance reviews</p>
+          @if (reviews.length) {
+            <ol class="space-y-3">
+              @for (r of reviews; track r.id) {
+                <li class="rounded-xl border border-line bg-surface-muted/60 p-4">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-1">
+                      @for (s of stars(r.rating); track $index) {
+                        <app-icon name="star" class="h-4 w-4" [class.text-amber-300]="s" [class.text-slate-700]="!s" />
+                      }
+                      <span class="ml-2 text-sm font-medium text-white">{{ r.rating }}/5</span>
+                    </div>
+                    <span class="text-xs text-slate-500">{{ r.reviewDate | date:'d MMM y' }}{{ r.reviewer ? ' · ' + r.reviewer : '' }}</span>
+                  </div>
+                  @if (r.comments) { <p class="mt-2 text-sm text-slate-300 leading-relaxed">{{ r.comments }}</p> }
+                </li>
+              }
+            </ol>
+          } @else { <p class="text-sm text-slate-500 mb-6">No review yet.</p> }
+
+          <p class="erp-kicker mt-6 mb-3">Engagement surveys</p>
+          @if (surveys.length) {
+            <div class="grid grid-cols-3 gap-3 mb-4">
+              @for (m of [{ l: 'Engagement', v: engagement }, { l: 'Satisfaction', v: satisfaction }, { l: 'Work-life balance', v: workLife }]; track m.l) {
+                <div class="rounded-lg bg-surface-muted border border-line px-3 py-2.5">
+                  <p class="text-[11px] text-slate-500">{{ m.l }} (avg)</p>
+                  <p class="text-lg font-semibold text-white">{{ m.v | number:'1.1-1' }}<span class="text-xs text-slate-500"> / 5</span></p>
+                </div>
+              }
+            </div>
+            <div class="overflow-x-auto -mx-5">
+              <table class="erp-table">
+                <thead><tr><th>Date</th><th class="text-right">Engagement</th><th class="text-right">Satisfaction</th><th class="text-right">Work-life</th></tr></thead>
+                <tbody>
+                  @for (s of surveys; track s.id) {
+                    <tr>
+                      <td>{{ s.surveyDate | date:'d MMM y' }}</td>
+                      <td class="text-right tabular-nums text-white">{{ s.engagementScore | number:'1.1-1' }}</td>
+                      <td class="text-right tabular-nums text-white">{{ s.satisfactionScore | number:'1.1-1' }}</td>
+                      <td class="text-right tabular-nums text-white">{{ s.workLifeBalanceScore | number:'1.1-1' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else { <p class="text-sm text-slate-500">No survey recorded.</p> }
+        }
+
+        @case ('training') {
+          @if (trainings.length) {
+            <div class="overflow-x-auto -mx-5">
+              <table class="erp-table">
+                <thead><tr><th>Program</th><th>Date</th><th>Status</th><th>Location</th></tr></thead>
+                <tbody>
+                  @for (t of trainings; track t.id) {
+                    <tr>
+                      <td class="font-medium text-white">{{ t.programName || '—' }}</td>
+                      <td class="text-slate-400 whitespace-nowrap">{{ t.trainingDate | date:'d MMM y' }}</td>
+                      <td>
+                        <span class="erp-badge" [ngClass]="(t.completionStatus || '').toUpperCase() === 'COMPLETED'
+                          ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border-amber-500/20'">
+                          {{ t.completionStatus || '—' }}
+                        </span>
+                      </td>
+                      <td class="text-slate-400">{{ t.location || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else { <p class="erp-empty">No training recorded.</p> }
+        }
+      }
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <ng-content select="[aside]" />
+  </div>
+</div>

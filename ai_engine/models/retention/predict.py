@@ -1,59 +1,64 @@
 import os
 import joblib
+import numpy as np
 import pandas as pd
 import xgboost as xgb
 import shap
 
 import config
 from models.retention import preprocess as prep
+from models.retention.train import fold_model_path
 
 class RetentionPredictor:
     def __init__(self):
-        # Load the saved model and schema from Step 2
+        # Final model (all data): used for employees the training never saw
         self.model = xgb.XGBClassifier()
         self.model.load_model(config.RETENTION_MODEL_PATH)
 
         saved_data = joblib.load(config.RETENTION_SCHEMA_PATH)
         self.category_schema = saved_data["category_schema"]
         self.feature_cols = saved_data["feature_cols"]
-        # Older artifacts (trained before this fix) won't have this key --
-        # default to {} so bucket_rare_categories just keeps every category
-        # as-is instead of crashing on a missing mapping.
         self.category_mapping = saved_data.get("category_mapping", {})
 
-        # Initialize SHAP (The math that explains WHY the model made a prediction)
-        self.explainer = shap.TreeExplainer(self.model)
+        # Out-of-fold models: an employee who was in the training data is
+        # scored by the fold model that did NOT see them (otherwise the model
+        # just remembers that current employees stayed).
+        self.fold_of = saved_data.get("fold_of_employee", {})
+        self.fold_models = []
+        for k in range(saved_data.get("n_folds", 0)):
+            path = fold_model_path(k)
+            if os.path.exists(path):
+                m = xgb.XGBClassifier()
+                m.load_model(path)
+                self.fold_models.append(m)
+        if len(self.fold_models) != saved_data.get("n_folds", 0):
+            self.fold_models, self.fold_of = [], {}   # incomplete artifacts: use the final model
 
     def analyze_active_employees(self):
         """Scores all current employees and finds their risk drivers."""
-        # 1. Fetch current employees and pre-treat their data
+        # 1. Fetch current employees and pre-treat them exactly like train.py
         raw_df = prep.fetch_raw_data(only_active=True)
         if raw_df.empty:
             return raw_df
-
-        # Must mirror train.py exactly: same gender normalization, and rare
-        # categories collapsed into "Other" using the SAME mapping learned
-        # at training time (not recomputed from this smaller active-only
-        # batch, which would bucket differently and drift from what the
-        # model was actually trained on).
         raw_df, _ = prep.clean_raw_data(raw_df, category_mapping=self.category_mapping)
+        raw_df = raw_df.reset_index(drop=True)
+        X_current = prep.format_ml_features(raw_df, schema=self.category_schema,
+                                            feature_cols=self.feature_cols)
 
-        X_current = prep.format_ml_features(raw_df, schema=self.category_schema)
-
-        # 2. Predict Risk Score (Probability of quitting)
-        raw_df["risk_score"] = self.model.predict_proba(X_current)[:, 1]
-
-        # 3. Calculate SHAP values to explain the score
-        shap_values = self.explainer.shap_values(X_current)
-        # Verified against xgboost 3.4.1 / shap 0.52.0: this returns a
-        # single (n_samples, n_features) array for a binary XGBClassifier,
-        # so shap_values[i] is already one employee's vector. Older shap
-        # versions historically returned [class_0_array, class_1_array]
-        # instead -- this guards against that so it fails loudly instead
-        # of quietly explaining the wrong thing if you ever pin an older
-        # shap version.
-        if isinstance(shap_values, list):
-            shap_values = shap_values[1]  # positive (churn) class
+        # 2. Risk score + SHAP values, per scoring model (fold or final)
+        group = raw_df["employee_id"].map(lambda e: self.fold_of.get(int(e), -1))
+        risk = np.zeros(len(raw_df))
+        shap_values = np.zeros((len(raw_df), len(self.feature_cols)))
+        for k in sorted(group.unique()):
+            model = self.model if k == -1 else self.fold_models[k]
+            idx = np.where(group == k)[0]
+            X_part = X_current.iloc[idx]
+            risk[idx] = model.predict_proba(X_part)[:, 1]
+            values = shap.TreeExplainer(model).shap_values(X_part)
+            if isinstance(values, list):      # older shap versions: [class_0, class_1]
+                values = values[1]
+            shap_values[idx] = values
+        raw_df["risk_score"] = risk
 
         # 4. Find the top 3 reasons pushing the score UP for each person
         top_drivers_list = []

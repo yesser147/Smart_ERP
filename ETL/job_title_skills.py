@@ -19,6 +19,17 @@ CREATE TABLE IF NOT EXISTS job_title_skills (
 
 # (regex, skills) -- ORDER MATTERS: first match wins, generic fallbacks last.
 RULES = [
+    # --- the company's own roles (IBM HR data set): checked first ---
+    (r"research scientist", "Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)"),
+    (r"laboratory technician", "Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording"),
+    (r"manufacturing director", "Manufacturing operations, production planning, GMP, quality management, lean / six sigma, supply chain, team leadership, budgeting"),
+    (r"healthcare representative", "Healthcare / pharmaceutical sales, product knowledge, relationship building with physicians, territory management, CRM, negotiation, medical terminology, presentations"),
+    (r"head of research|research director", "R&D strategy, scientific leadership, project and portfolio management, budgeting, regulatory affairs, team management, stakeholder communication, innovation"),
+    (r"sales executive", "B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship"),
+    (r"sales representative", "Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication"),
+    (r"hr specialist|human resources", "Recruitment, onboarding, employee relations, HR policies, labour law compliance, HRIS, payroll basics, communication"),
+    (r"(r&d|sales|hr) (manager|director)|senior (r&d|sales|hr) manager", "Team leadership, people management, budgeting, performance management, strategic planning, stakeholder communication, reporting, problem solving"),
+
     # truncated titles in the source data
     (r"^copy$|copywriter|publishing copy", "Copywriting, editing, proofreading, SEO writing, brand voice, research, deadline management"),
     (r"^sub$|press sub", "Sub-editing, copy editing, headline writing, fact-checking, style guides, page layout, deadline management"),
@@ -276,6 +287,9 @@ def seed_job_title_skills(engine, overwrite_manual: bool = False, verbose: bool 
     return {"inserted": inserted, "updated": updated, "kept": kept, "unmatched": unmatched}
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
     from load import build_engine  # ETL's actual engine builder, in load.py
     engine = build_engine()
+    seed_job_title_skills(engine)
     seed_job_title_skills(engine)

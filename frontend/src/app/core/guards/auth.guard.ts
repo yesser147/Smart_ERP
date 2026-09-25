@@ -6,10 +6,10 @@ export const authGuard: CanActivateFn = (route, state) => {
   const tokenService = inject(TokenService);
   const router = inject(Router);
 
-  if (tokenService.hasToken()) {
+  if (tokenService.isTokenValid()) {
     return true;
   }
-
-  router.navigate(['/auth/login'], { queryParams: { returnUrl: state.url } });
-  return false;
+  // missing or expired token: start from a clean session
+  tokenService.clearAuthData();
+  return router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });
 };

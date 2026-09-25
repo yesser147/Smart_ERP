@@ -88,7 +88,7 @@ def clean_raw_data(df, category_mapping=None):
     df = normalize_gender(df)
     df, mapping = bucket_rare_categories(
         df,
-        columns=["division_description", "job_function"],
+        columns=config.CATEGORICAL_FEATURES,
         mapping=category_mapping,
     )
     return df, mapping
@@ -100,22 +100,50 @@ def capture_text_categories(df):
     return {col: _unique_categories(df[col]) for col in config.CATEGORICAL_FEATURES}
 
 
-def format_ml_features(df, schema=None):
-    """STEP 1C: Clean and format the data (Pre-treatment)."""
-    df = df.copy()
+def _to_number(value):
+    """True/False -> 1.0/0.0, None -> NaN, numbers unchanged."""
+    if value is None:
+        return float("nan")
+    if isinstance(value, bool):
+        return float(value)
+    return value
 
-    # 1. Convert start dates to numerical 'tenure_days'
+
+def format_ml_features(df, schema=None, feature_cols=None):
+    """STEP 1C: Clean and format the data (Pre-treatment).
+
+    feature_cols: the exact feature list a saved model was trained with. The
+    predictor passes it so a model keeps working even if config's feature
+    list changed since it was trained (retrain to pick up the new list)."""
+    df = df.copy()
+    categorical = config.CATEGORICAL_FEATURES
+    numeric = config.NUMERIC_FEATURES
+    if feature_cols is not None:
+        categorical = [c for c in feature_cols if schema and c in schema]
+        numeric = [c for c in feature_cols if c not in categorical]
+
+    # 1. tenure_days = time actually spent in the company: until the exit
+    # date for people who left, until today for current employees. (Counting
+    # until today for leavers made them look much more senior than they were.)
     df["start_date"] = pd.to_datetime(df["start_date"])
-    df["tenure_days"] = (pd.Timestamp.now().normalize() - df["start_date"]).dt.days
+    today = pd.Timestamp.now().normalize()
+    if "exit_date" in df.columns:
+        end = pd.to_datetime(df["exit_date"]).fillna(today).clip(upper=today)
+    else:
+        end = today
+    df["tenure_days"] = (end - df["start_date"]).dt.days
 
     # 2. Format text columns based on the schema
-    for col in config.CATEGORICAL_FEATURES:
+    for col in categorical:
         df[col] = df[col].fillna("Unknown").astype(str)
         categories = schema[col] if schema else _unique_categories(df[col])
         df[col] = pd.Categorical(df[col], categories=categories)
 
-    # 3. Combine Categorical (text) and Numeric features
-    all_features = config.CATEGORICAL_FEATURES + config.NUMERIC_FEATURES
+    # 3. Numeric features as floats (booleans such as overtime become 0 / 1)
+    for col in numeric:
+        if col != "tenure_days":
+            df[col] = pd.to_numeric(df[col].map(_to_number), errors="coerce")
 
-    # Return ONLY the columns the ML model needs to learn from
+    # 4. Return ONLY the columns the model uses, in its training order
+    all_features = list(feature_cols) if feature_cols is not None else categorical + numeric
     return df[all_features]

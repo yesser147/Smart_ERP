@@ -1,4 +1,12 @@
-version: '3.8'
+# Whole application: `docker compose up -d --build`
+#
+# Credentials: the .env file next to this one (Docker services) and
+# backend/.env + ai_engine/.env (apps). Copy the .env.example files and fill them in.
+# Note: Postgres only uses POSTGRES_* the first time its volume is created.
+#
+# The ETL is NOT a service: it is run by hand from ETL/ when the data must be
+# reloaded (see README.md). After a reload, restart the backend:
+#   docker compose restart backend
 
 services:
   postgres:
@@ -6,21 +14,26 @@ services:
     container_name: smart_erp_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: smart_erp
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-smart_erp}
     ports:
-      - "5432:5432"
+      - "5432:5432"          # the ETL (run on your PC) and pgAdmin use it
     volumes:
       - erp_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: smart_erp_pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: saidaniyesser999@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?set PGADMIN_EMAIL in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?set PGADMIN_PASSWORD in .env}
     ports:
       - "5050:80"
     depends_on:
@@ -34,11 +47,68 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+
+  # ---------------------------------------------------------------- apps
+
+  backend:
+    build: ./backend
+    image: smart_erp_backend
+    container_name: smart_erp_backend
+    restart: unless-stopped      # also retries if MinIO wasn't ready yet
+    env_file: ./backend/.env
+    environment:                 # inside Docker, services are reached by name
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      MINIO_ENDPOINT: http://minio:9000
+      AI_SERVICE_URL: http://ai-engine:8000
+      FRONTEND_URL: http://localhost:4200
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  ai-engine:
+    build: ./ai_engine
+    image: smart_erp_ai_engine
+    container_name: smart_erp_ai_engine
+    restart: unless-stopped
+    env_file: ./ai_engine/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      MINIO_ENDPOINT: http://minio:9000
+      # Ollama runs on your PC, outside Docker
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"    # reachable from this PC only
+    volumes:
+      # retraining inside the container updates the model files of the repository
+      - ./ai_engine/artifacts:/app/artifacts
+      - ./ai_engine/models/budget/saved_models:/app/models/budget/saved_models
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    image: smart_erp_frontend
+    container_name: smart_erp_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+      - ai-engine
 
 volumes:
   erp_postgres_data:

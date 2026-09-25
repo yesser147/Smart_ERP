@@ -1,0 +1,109 @@
+<div class="erp-page">
+  <app-page-header title="Applicants" subtitle="Everyone who applied, and the AI analysis of their CV" icon="inbox">
+    @if (count('pending') > 0) {
+      @if (!batch) {
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="analyseAllPending()">
+          <app-icon name="sparkles" class="h-4 w-4 text-accent" /> Analyse {{ count('pending') }} pending CV(s)
+        </button>
+      } @else {
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="stopBatch()">
+          Stop ({{ batchDone }}/{{ batchTotal }})
+        </button>
+      }
+    }
+    <a routerLink="/dashboard/applicants/new" class="erp-btn-primary erp-btn-sm">
+      <app-icon name="user-plus" class="h-4 w-4" /> New application
+    </a>
+  </app-page-header>
+
+  @if (batch) {
+    <div class="erp-alert-info items-center">
+      <app-icon name="sparkles" class="h-5 w-5 shrink-0 animate-pulse" />
+      <div class="flex-1">
+        <p>Analysing CVs: {{ batchDone }} of {{ batchTotal }} done. You can keep working; this page must stay open.</p>
+        <div class="mt-2 h-1.5 rounded-full bg-sky-950 overflow-hidden">
+          <div class="h-full bg-accent transition-all" [style.width.%]="batchTotal ? (batchDone / batchTotal) * 100 : 0"></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="erp-card overflow-hidden">
+    <div class="flex flex-col gap-3 px-4 pt-3 lg:flex-row lg:items-end lg:justify-between border-b border-line">
+      <div class="erp-tabs border-b-0">
+        @for (tab of [{ key: '', label: 'All' }, { key: 'pending', label: 'CV to analyse' }, { key: 'analysed', label: 'Analysed' }, { key: 'none', label: 'No CV' }]; track tab.key) {
+          <button type="button" class="erp-tab" [class.erp-tab-active]="cvFilter === tab.key" (click)="setFilter($any(tab.key))">
+            {{ tab.label }} <span class="ml-1 text-xs text-slate-500">{{ count($any(tab.key)) }}</span>
+          </button>
+        }
+      </div>
+      <div class="relative pb-3">
+        <app-icon name="search" class="absolute left-2.5 top-[calc(50%-6px)] -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <input [(ngModel)]="search" (ngModelChange)="resetPage()" placeholder="Search name or e-mail..." class="erp-input w-64 py-1.5 pl-8" />
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="p-4 space-y-3">@for (i of [1, 2, 3, 4, 5]; track i) { <div class="erp-skeleton h-11"></div> }</div>
+    } @else if (error) {
+      <div class="p-4"><div class="erp-alert-error">The applicants could not be loaded.</div></div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead>
+            <tr>
+              <th><button type="button" class="uppercase hover:text-white" (click)="toggleSort('name')">Applicant {{ sort === 'name' ? (sortDesc ? '↓' : '↑') : '' }}</button></th>
+              <th>Education</th>
+              <th class="text-right">Experience</th>
+              <th><button type="button" class="uppercase hover:text-white" (click)="toggleSort('createdAt')">Applied {{ sort === 'createdAt' ? (sortDesc ? '↓' : '↑') : '' }}</button></th>
+              <th>CV</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of pageRows; track a.applicantId) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/dashboard/applicant', a.applicantId]" class="font-medium text-white hover:text-accent">{{ a.firstName }} {{ a.lastName }}</a>
+                  <span class="block text-xs text-slate-500">{{ a.email }}</span>
+                </td>
+                <td class="text-slate-400">{{ a.educationLevel || '—' }}</td>
+                <td class="text-right tabular-nums text-slate-400">{{ a.yearsOfExperience != null ? a.yearsOfExperience + ' yrs' : '—' }}</td>
+                <td class="text-slate-400 whitespace-nowrap">{{ a.createdAt | date:'d MMM y' }}</td>
+                <td>
+                  @if (busy.has(a.applicantId)) {
+                    <span class="erp-badge bg-sky-500/10 text-sky-300 border-sky-500/20"><app-icon name="arrow-path" class="h-3 w-3 animate-spin" /> Analysing</span>
+                  } @else if (a.isProcessed) {
+                    <span class="erp-badge bg-emerald-500/10 text-emerald-300 border-emerald-500/20"><app-icon name="check" class="h-3 w-3" /> Analysed</span>
+                  } @else if (a.hasCv) {
+                    <span class="erp-badge bg-amber-500/10 text-amber-300 border-amber-500/20">To analyse</span>
+                  } @else {
+                    <span class="erp-badge bg-slate-500/10 text-slate-400 border-slate-500/20">No CV</span>
+                  }
+                  @if (errors.get(a.applicantId); as e) { <p class="text-[11px] text-rose-300 mt-1 max-w-xs">{{ e }}</p> }
+                </td>
+                <td class="text-right whitespace-nowrap">
+                  @if (a.hasCv && !a.isProcessed && !busy.has(a.applicantId)) {
+                    <button type="button" class="erp-btn-secondary erp-btn-sm mr-1" (click)="analyse(a)" [disabled]="!!batch">Analyse</button>
+                  }
+                  <a [routerLink]="['/dashboard/applicant', a.applicantId]" class="erp-btn-ghost text-xs">Open <app-icon name="chevron-right" class="h-3.5 w-3.5" /></a>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="erp-empty">No applicant matches.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages > 1) {
+        <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+          <span>{{ filtered.length }} applicants · page {{ page }} of {{ totalPages }}</span>
+          <div class="flex gap-2">
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page - 1)" [disabled]="page === 1">Previous</button>
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page + 1)" [disabled]="page >= totalPages">Next</button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

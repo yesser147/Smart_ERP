@@ -1,0 +1,73 @@
+<div class="erp-page">
+  <app-page-header title="Leave requests" icon="calendar" subtitle="Approve or refuse the time off requested by employees" />
+
+  @if (actionError) { <div class="erp-alert-error">{{ actionError }}</div> }
+
+  <div class="erp-card overflow-hidden">
+    <div class="flex flex-col gap-3 px-4 pt-3 lg:flex-row lg:items-end lg:justify-between border-b border-line">
+      <div class="erp-tabs border-b-0">
+        @for (tab of [{ key: 'PENDING', label: 'To decide' }, { key: 'APPROVED', label: 'Approved' }, { key: 'REJECTED', label: 'Refused' }, { key: '', label: 'Recent' }]; track tab.key) {
+          <button type="button" class="erp-tab" [class.erp-tab-active]="filter === tab.key" (click)="setFilter($any(tab.key))">
+            {{ tab.label }}
+            <span class="ml-1 text-xs" [class.text-amber-300]="tab.key === 'PENDING' && count('PENDING')" [class.text-slate-500]="tab.key !== 'PENDING' || !count('PENDING')">{{ count($any(tab.key)) }}</span>
+          </button>
+        }
+      </div>
+      <div class="relative pb-3">
+        <app-icon name="search" class="absolute left-2.5 top-[calc(50%-6px)] -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <input [(ngModel)]="search" (ngModelChange)="resetPage()" placeholder="Search employee..." class="erp-input w-56 py-1.5 pl-8" />
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="p-4 space-y-3">@for (i of [1, 2, 3, 4]; track i) { <div class="erp-skeleton h-12"></div> }</div>
+    } @else if (error) {
+      <div class="p-4"><div class="erp-alert-error">The leave requests could not be loaded.</div></div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="erp-table">
+          <thead>
+            <tr><th>Employee</th><th>Type</th><th>Dates</th><th class="text-right">Days</th><th>Reason</th><th>Status</th><th class="text-right"></th></tr>
+          </thead>
+          <tbody>
+            @for (r of pageRows; track r.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/dashboard/employee', r.employeeId]" class="font-medium text-white hover:text-accent">{{ r.employeeName }}</a>
+                  <span class="block text-xs text-slate-500">asked {{ r.createdAt | date:'d MMM y' }}</span>
+                </td>
+                <td class="text-slate-300">{{ labels[r.leaveType] || r.leaveType }}</td>
+                <td class="whitespace-nowrap text-slate-300">{{ r.startDate | date:'d MMM' }} → {{ r.endDate | date:'d MMM y' }}</td>
+                <td class="text-right tabular-nums">{{ r.days }}</td>
+                <td class="text-slate-400 max-w-xs truncate" [title]="r.reason || ''">{{ r.reason || '—' }}</td>
+                <td>
+                  <app-status-badge [status]="r.status" />
+                  @if (r.decidedBy) { <span class="block text-[11px] text-slate-500 mt-1">by {{ r.decidedBy }}</span> }
+                </td>
+                <td class="text-right whitespace-nowrap">
+                  @if (r.status === 'PENDING') {
+                    <button type="button" class="erp-btn-success erp-btn-sm mr-1" (click)="decide(r, true)" [disabled]="busy.has(r.id)">
+                      <app-icon name="check" class="h-3.5 w-3.5" /> Approve
+                    </button>
+                    <button type="button" class="erp-btn-danger erp-btn-sm" (click)="decide(r, false)" [disabled]="busy.has(r.id)">Refuse</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="erp-empty">{{ filter === 'PENDING' ? 'Nothing left to decide.' : 'No leave request.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (totalPages > 1) {
+        <div class="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-slate-400">
+          <span>{{ filtered.length }} requests · page {{ page }} of {{ totalPages }}</span>
+          <div class="flex gap-2">
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page - 1)" [disabled]="page === 1">Previous</button>
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="goTo(page + 1)" [disabled]="page >= totalPages">Next</button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

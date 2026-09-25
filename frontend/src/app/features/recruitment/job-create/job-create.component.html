@@ -1,0 +1,77 @@
+<div class="erp-page max-w-4xl">
+  <app-page-header title="New job opening" subtitle="Publish a role; it appears on the careers page right away"
+                   icon="briefcase" backLink="/dashboard/jobs" backLabel="Job openings" />
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+    <div class="erp-card">
+      <div class="erp-card-header"><h2 class="erp-section-title">Role</h2></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+        <div class="sm:col-span-2">
+          <label class="erp-label" for="title">Job title *</label>
+          <input id="title" formControlName="title" class="erp-input" placeholder="e.g. Senior Sales Executive" />
+          @if (invalid('title')) { <p class="text-xs text-rose-300 mt-1">The title is required.</p> }
+        </div>
+        <div class="sm:col-span-2">
+          <label class="erp-label" for="team">Team *</label>
+          <select id="team" formControlName="departmentId" class="erp-input">
+            <option [ngValue]="null" disabled>Choose a team</option>
+            @for (t of teams; track t.departmentId) { <option [ngValue]="t.departmentId">{{ teamLabel(t) }}</option> }
+          </select>
+          @if (invalid('departmentId')) { <p class="text-xs text-rose-300 mt-1">Choose the team that is hiring.</p> }
+        </div>
+        <div>
+          <label class="erp-label" for="location">Location</label>
+          <input id="location" formControlName="location" class="erp-input" placeholder="e.g. Head Office" />
+        </div>
+        <div>
+          <label class="erp-label" for="years">Required experience (years)</label>
+          <input id="years" type="number" min="0" step="0.5" formControlName="requiredExperienceYears" class="erp-input" />
+        </div>
+        <div>
+          <label class="erp-label" for="min">Salary from ($ / year)</label>
+          <input id="min" type="number" min="0" step="1000" formControlName="offeredSalaryMin" class="erp-input" />
+        </div>
+        <div>
+          <label class="erp-label" for="max">Salary to ($ / year)</label>
+          <input id="max" type="number" min="0" step="1000" formControlName="offeredSalaryMax" class="erp-input" />
+          @if (salaryRangeInvalid) { <p class="text-xs text-rose-300 mt-1">The maximum must be above the minimum.</p> }
+        </div>
+      </div>
+    </div>
+
+    <div class="erp-card">
+      <div class="erp-card-header">
+        <div>
+          <h2 class="erp-section-title">Description</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Shown to candidates, and used by the AI to rank applicants</p>
+        </div>
+        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="generate()" [disabled]="generating">
+          <app-icon name="sparkles" class="h-4 w-4 text-accent" [class.animate-pulse]="generating" />
+          {{ generating ? 'Writing...' : 'Write with AI' }}
+        </button>
+      </div>
+      <div class="p-5 space-y-3">
+        @if (aiError) { <div class="erp-alert-warning">{{ aiError }}</div> }
+        <textarea formControlName="description" rows="14" class="erp-input font-mono text-[13px] leading-relaxed"
+                  placeholder="About the role, responsibilities, profile..."></textarea>
+        @if (skills.length) {
+          <div>
+            <p class="erp-kicker mb-2">Skills the AI will look for in CVs</p>
+            <div class="flex flex-wrap gap-1.5">
+              @for (s of skills; track s) { <span class="erp-chip">{{ s }}</span> }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (saveError) { <div class="erp-alert-error">{{ saveError }}</div> }
+
+    <div class="flex justify-end gap-2">
+      <a routerLink="/dashboard/jobs" class="erp-btn-secondary">Cancel</a>
+      <button type="submit" class="erp-btn-primary" [disabled]="saving">
+        <app-icon name="check" class="h-4 w-4" /> {{ saving ? 'Publishing...' : 'Publish opening' }}
+      </button>
+    </div>
+  </form>
+</div>

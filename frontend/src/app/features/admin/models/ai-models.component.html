@@ -1,0 +1,84 @@
+<div class="erp-page max-w-6xl">
+  <app-page-header title="AI models" icon="sparkles" subtitle="How good the prediction models are, measured on data they never saw (cross-validation)">
+    <button type="button" class="erp-btn-primary erp-btn-sm" (click)="retrain()" [disabled]="retraining || loading">
+      <app-icon name="arrow-path" class="h-4 w-4" [class.animate-spin]="retraining" /> {{ retraining ? 'Retraining...' : 'Retrain models' }}
+    </button>
+  </app-page-header>
+
+  @if (error) { <div class="erp-alert-error">{{ error }}</div> }
+  @if (retrainMessage) { <div class="erp-alert-success">{{ retrainMessage }}</div> }
+
+  @if (loading) {
+    <div class="grid gap-6 lg:grid-cols-2">@for (i of [1, 2]; track i) { <div class="erp-skeleton h-80"></div> }</div>
+  } @else if (status) {
+    <div class="grid gap-6 lg:grid-cols-2">
+      <!-- retention -->
+      <div class="erp-card">
+        <div class="erp-card-header">
+          <div>
+            <h2 class="erp-section-title">Attrition risk</h2>
+            <p class="text-xs text-slate-500 mt-0.5">{{ status.retention.name }}</p>
+          </div>
+          <span class="erp-badge" [ngClass]="tone(retentionVerdict.tone)">{{ retentionVerdict.label }}</span>
+        </div>
+        <div class="p-5 space-y-5">
+          <p class="text-sm text-slate-300">{{ retentionVerdict.text }}</p>
+          @if (retention; as m) {
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">ROC AUC</p><p class="text-xl font-semibold text-white">{{ m['cv_auc'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">± {{ m['cv_auc_std'] | number:'1.2-2' }}</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">PR AUC</p><p class="text-xl font-semibold text-white">{{ m['cv_pr_auc'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">chance = {{ m['churn_rate'] | number:'1.2-2' }}</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Baseline (logistic)</p><p class="text-xl font-semibold text-white">{{ m['baseline_cv_auc'] != null ? (m['baseline_cv_auc'] | number:'1.2-2') : '—' }}</p><p class="text-[10px] text-slate-500">ROC AUC</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Alert threshold</p><p class="text-xl font-semibold text-white">{{ m['risk_threshold'] * 100 | number:'1.0-0' }}%</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Precision at threshold</p><p class="text-xl font-semibold text-white">{{ m['threshold_precision'] * 100 | number:'1.0-0' }}%</p><p class="text-[10px] text-slate-500">of alerts really leave</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Recall at threshold</p><p class="text-xl font-semibold text-white">{{ m['threshold_recall'] * 100 | number:'1.0-0' }}%</p><p class="text-[10px] text-slate-500">of leavers caught</p></div>
+            </div>
+            <p class="text-xs text-slate-500">
+              Trained on {{ m['n_rows'] }} employees ({{ m['n_churned'] }} departures) with {{ m['features']?.length }} features
+              @if (status.retention.trained_at) { · {{ status.retention.trained_at | date:'d MMM y, HH:mm' }} }
+            </p>
+          }
+        </div>
+      </div>
+
+      <!-- budget -->
+      <div class="erp-card">
+        <div class="erp-card-header">
+          <div>
+            <h2 class="erp-section-title">Training budget → performance</h2>
+            <p class="text-xs text-slate-500 mt-0.5">{{ status.budget.name }}</p>
+          </div>
+          <span class="erp-badge" [ngClass]="tone(budgetVerdict.tone)">{{ budgetVerdict.label }}</span>
+        </div>
+        <div class="p-5 space-y-5">
+          <p class="text-sm text-slate-300">{{ budgetVerdict.text }}</p>
+          @if (budget; as m) {
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">R²</p><p class="text-xl font-semibold" [class.text-rose-300]="m['cv_r2'] < 0" [class.text-white]="m['cv_r2'] >= 0">{{ m['cv_r2'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">± {{ m['cv_r2_std'] | number:'1.2-2' }}</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Mean error</p><p class="text-xl font-semibold text-white">{{ m['cv_mae'] | number:'1.3-3' }}</p><p class="text-[10px] text-slate-500">target spread {{ m['target_std'] | number:'1.3-3' }}</p></div>
+              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Teams</p><p class="text-xl font-semibold text-white">{{ m['n_rows'] }}</p><p class="text-[10px] text-slate-500">with {{ m['min_headcount'] }}+ people</p></div>
+            </div>
+            <p class="text-xs text-slate-500">
+              Budget range seen: ${{ m['budget_min'] | number:'1.0-0' }} – ${{ m['budget_max'] | number:'1.0-0' }}
+              @if (status.budget.trained_at) { · trained {{ status.budget.trained_at | date:'d MMM y, HH:mm' }} }
+            </p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- matching -->
+    <div class="erp-card p-5">
+      <div class="flex items-start gap-3">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/20"><app-icon name="info" class="h-5 w-5" /></span>
+        <div class="space-y-1">
+          <h2 class="erp-section-title">Candidate matching</h2>
+          <p class="text-sm text-slate-300">
+            Evaluated on a public data set of resume / job pairs labelled by recruiters: CV text similarity reached a ROC AUC of 0.54 (300 pairs)
+            and the LLM review 0.50 (40 pairs). The ranking is a help to read CVs faster, not a decision: a recruiter must review every candidate.
+          </p>
+          <p class="text-xs text-slate-500">Script: ai_engine/models/recruitment/evaluate_matcher.py</p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

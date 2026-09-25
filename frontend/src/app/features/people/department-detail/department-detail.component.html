@@ -1,0 +1,46 @@
+<div class="erp-page">
+  <app-page-header [title]="team?.divisionDescription || (error ? 'Team not found' : 'Loading...')" icon="users"
+                   [subtitle]="team ? team.departmentType + ' · ' + team.businessUnit + ' · #' + team.departmentId : ''"
+                   [backLink]="team ? ['/dashboard/department-type', team.departmentType] : '/dashboard/departments'"
+                   [backLabel]="team?.departmentType || 'Departments'" />
+
+  @if (loading) {
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">@for (i of [1, 2, 3, 4]; track i) { <div class="erp-skeleton h-28"></div> }</div>
+  } @else if (error) {
+    <div class="erp-alert-error">There is no team #{{ id }}.</div>
+  } @else if (team) {
+    @if (team; as t) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <app-stat-card label="Active employees" icon="users" color="sky" [value]="t.headcount"
+                     [meta]="t.totalEverEmployed + ' employed since the start'" />
+      <app-stat-card label="Average salary" icon="banknotes" color="emerald"
+                     [value]="t.avgSalary !== null ? '$' + (t.avgSalary | number:'1.0-0') : '—'" />
+      <app-stat-card label="Turnover" icon="arrow-path" color="rose" [value]="(t.turnoverRatePct | number:'1.1-1') + '%'"
+                     [meta]="t.terminatedCount + ' departures'" />
+      <app-stat-card label="Training investment" icon="academic-cap" color="violet"
+                     [value]="'$' + (trainingInvestment | number:'1.0-0')" [meta]="trainedEmployees + ' people trained'" />
+    </div>
+
+    <div class="erp-card overflow-hidden">
+      <div class="erp-card-header">
+        <h2 class="erp-section-title">Job openings</h2>
+        <span class="text-xs text-slate-500">{{ openJobs }} open · {{ applications }} applications received</span>
+      </div>
+      <table class="erp-table">
+        <thead><tr><th>Role</th><th class="text-right">Applicants</th><th>Status</th></tr></thead>
+        <tbody>
+          @for (j of jobs; track j.jobId) {
+            <tr class="cursor-pointer" [routerLink]="['/dashboard/jobs', j.jobId]">
+              <td class="font-medium text-white">{{ j.title }} <span class="text-xs text-slate-500">#{{ j.jobId }}</span></td>
+              <td class="text-right tabular-nums">{{ j.applicantCount }}</td>
+              <td><app-status-badge [status]="j.status" /></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="erp-empty">No job opening for this team.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  }
+</div>

@@ -49,6 +49,4 @@ public class AttritionRiskIndicators {
     @Column(name = "recent_wlb")
     private BigDecimal recentWlb;
 
-    @Column(name = "heuristic_risk_level")
-    private String heuristicRiskLevel;
 }

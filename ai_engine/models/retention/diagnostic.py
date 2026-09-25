@@ -1,12 +1,13 @@
-import os
 import json
+import logging
 import pandas as pd
 from sqlalchemy import text
 from database import engine
-from groq import Groq
+from models.recruitment.llm_client import generate_json
 import config
 
-METRICS_PATH = os.path.join(config.ARTIFACT_DIR, "retention_metrics.json")
+log = logging.getLogger(__name__)
+METRICS_PATH = config.RETENTION_METRICS_PATH
 
 
 def _load_model_quality():
@@ -31,6 +32,7 @@ def _load_model_quality():
         "level": level,
         "cv_auc": auc,
         "cv_pr_auc": m.get("cv_pr_auc"),
+        "risk_threshold": m.get("risk_threshold"),
         "churn_rate": m.get("churn_rate"),
         "n_rows": m.get("n_rows"),
         "n_churned": m.get("n_churned"),
@@ -65,9 +67,8 @@ def get_cohort_exit_reasons(department_ids):
 def generate_macro_retention_strategy(high_risk_df, total_active_count, threshold=0.70):
     """
     Analyzes all employees above the risk threshold, aggregates SHAP drivers into percentages,
-    and prompts Groq LLM to generate a generalized company-wide strategy.
+    and prompts the LLM to generate a generalized company-wide strategy.
     """
-    client = Groq(api_key=config.GROQ_API_KEY)
     quality = _load_model_quality()
     quality_str = json.dumps(quality)
 
@@ -97,7 +98,7 @@ def generate_macro_retention_strategy(high_risk_df, total_active_count, threshol
         exits_text = "\n".join([f"- {note}" for note in exit_notes])
         historical_context = f"\nHistorical Exit Patterns in Affected Departments:\n{exits_text}\n"
 
-    # 3. Prompt Groq for a Macro Strategy
+    # 3. Prompt the LLM for a Macro Strategy
     prompt = f"""You are an AI Chief HR Officer.
 An XGBoost ML model analyzed the entire workforce ({total_active_count} active employees).
 
@@ -143,20 +144,12 @@ Constraints:
 }}"""
 
     try:
-        response = client.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=1024,
-            timeout=30.0,
-            response_format={"type": "json_object"}
-        )
-        result = json.loads(response.choices[0].message.content)
+        result = generate_json(prompt, temperature=0.2, max_tokens=1024, timeout=30)
         result["model_quality"] = quality
         return result
 
     except Exception as e:
-        print(f"\n[API Warning] LLM Generation Failed: {str(e)}")
+        log.warning("Retention strategy generation failed: %s", e)
         return {
             "macro_metrics": {
                 "total_active_employees": total_active_count,

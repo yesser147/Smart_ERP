@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_tokens") // Or "user_token" depending on your exact DB table name
+@Table(name = "user_tokens")
 public class UserToken {
 
     @Id
@@ -28,6 +28,12 @@ public class UserToken {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiryDate;
 
+    @Column(name = "is_used")
+    private Boolean used = false;
+
+    @Column(name = "is_revoked")
+    private Boolean revoked = false;
+
     public UserToken() {}
 
     public UserToken(String token, TokenType tokenType, User user, int expirationInMinutes) {
@@ -39,6 +45,11 @@ public class UserToken {
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(this.expiryDate);
+    }
+
+    /** A token can set a password once, if it wasn't revoked and hasn't expired. */
+    public boolean isUsable() {
+        return !Boolean.TRUE.equals(used) && !Boolean.TRUE.equals(revoked) && !isExpired();
     }
 
     // Getters and Setters
@@ -55,5 +66,11 @@ public class UserToken {
     public void setUser(User user) { this.user = user; }
 
     public LocalDateTime getExpiryDate() { return expiryDate; }
+
+    public Boolean getUsed() { return used; }
+    public void setUsed(Boolean used) { this.used = used; }
+
+    public Boolean getRevoked() { return revoked; }
+    public void setRevoked(Boolean revoked) { this.revoked = revoked; }
     public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
 }

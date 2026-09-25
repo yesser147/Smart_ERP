@@ -26,6 +26,9 @@ public class JobPosting {
     private BigDecimal offeredSalaryMin;
     private BigDecimal offeredSalaryMax;
     private String status = "OPEN";
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
     private LocalDateTime createdAt = LocalDateTime.now();
     
 }

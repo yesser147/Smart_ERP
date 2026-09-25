@@ -1,74 +1,115 @@
-import os
-import requests
+"""
+The ONE place that calls an LLM. Every AI feature (chatbot, CV reading,
+matching, candidate chat, retention strategy, budget memo) goes through it,
+so the provider, model and timeouts are configured once in .env:
+
+    LLM_PROVIDER=groq    Groq first, local Ollama as fallback
+    LLM_PROVIDER=ollama  local only: no data leaves the machine
+"""
+
 import json
+import logging
+
+import requests
+
+import config
+
+log = logging.getLogger(__name__)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
 
 
 class LLMUnavailable(Exception):
     pass
 
 
-# Env vars are read inside the functions so they work even if load_dotenv()
-# runs after this module is imported.
-def _groq(messages, json_mode, temperature):
-    key = os.getenv("GROQ_API_KEY")
-    if not key:
-        raise LLMUnavailable("GROQ_API_KEY manquante")
+def _ollama_chat_url():
+    return f"{config.OLLAMA_URL.rstrip('/')}/api/chat"
+
+
+def _groq(messages, json_mode, temperature, max_tokens, timeout):
+    if not config.GROQ_API_KEY:
+        raise LLMUnavailable("GROQ_API_KEY is not set")
     body = {
-        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),  # use the same model as your chatbot
+        "model": config.GROQ_MODEL,
         "messages": messages,
         "temperature": temperature,
     }
+    if max_tokens:
+        body["max_tokens"] = max_tokens
     if json_mode:
-        body["response_format"] = {"type": "json_object"}   # prompt must mention JSON (yours do)
-    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {key}"}, json=body, timeout=60)
+        body["response_format"] = {"type": "json_object"}   # prompts must mention JSON (they do)
+    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
+                      json=body, timeout=timeout)
     r.raise_for_status()
     return r.json()["choices"][0]["message"]["content"].strip()
 
 
-def _ollama(messages, json_mode, temperature):
+def _ollama(messages, json_mode, temperature, max_tokens, timeout):
+    options = {"temperature": temperature, "num_ctx": 8192}
+    if max_tokens:
+        options["num_predict"] = max_tokens
     body = {
-        "model": os.getenv("OLLAMA_MODEL", "llama3.1"),
+        "model": config.OLLAMA_MODEL,
         "messages": messages,
         "stream": False,
-        "options": {"temperature": temperature, "num_ctx": 8192},
+        "options": options,
     }
     if json_mode:
         body["format"] = "json"
-    r = requests.post(OLLAMA_CHAT_URL, json=body, timeout=180)
+    r = requests.post(_ollama_chat_url(), json=body, timeout=max(timeout, 180))
     r.raise_for_status()
     return r.json()["message"]["content"].strip()
 
 
-def chat(messages: list[dict], json_mode: bool = False, temperature: float = 0.3) -> str:
-    provider = os.getenv("LLM_PROVIDER", "groq")
+def _providers(groq_fn, ollama_fn):
     # local-only mode never falls back to the cloud
-    order = [_groq, _ollama] if provider == "groq" else [_ollama]
+    return [groq_fn, ollama_fn] if config.LLM_PROVIDER == "groq" else [ollama_fn]
+
+
+def chat(messages: list[dict], json_mode: bool = False, temperature: float = 0.3,
+         max_tokens: int | None = None, timeout: float = 60) -> str:
     errors = []
-    for fn in order:
+    for fn in _providers(_groq, _ollama):
         try:
-            return fn(messages, json_mode, temperature)
+            return fn(messages, json_mode, temperature, max_tokens, timeout)
         except Exception as e:
             errors.append(f"{fn.__name__.lstrip('_')}: {e}")
     raise LLMUnavailable(" | ".join(errors))
 
 
-def generate(prompt: str, json_mode: bool = False, temperature: float = 0.1) -> str:
-    return chat([{"role": "user", "content": prompt}], json_mode, temperature)
+def generate(prompt: str, json_mode: bool = False, temperature: float = 0.1,
+             max_tokens: int | None = None, timeout: float = 60) -> str:
+    return chat([{"role": "user", "content": prompt}], json_mode, temperature, max_tokens, timeout)
+
+
+def generate_json(prompt: str, temperature: float = 0.1, retries: int = 2, **kwargs) -> dict:
+    """generate() in JSON mode, parsed. Retries when the model returns
+    invalid JSON; raises LLMUnavailable / ValueError when it keeps failing."""
+    last_error = None
+    for attempt in range(retries + 1):
+        raw = generate(prompt, json_mode=True, temperature=temperature, **kwargs)
+        try:
+            payload = json.loads(raw)
+            if isinstance(payload, dict):
+                return payload
+            last_error = ValueError("the model returned JSON that is not an object")
+        except json.JSONDecodeError as e:
+            last_error = e
+        log.warning("LLM returned invalid JSON (attempt %d/%d): %s", attempt + 1, retries + 1, last_error)
+    raise ValueError(f"invalid JSON from the LLM: {last_error}")
+
 
 def _groq_stream(messages, temperature):
-    key = os.getenv("GROQ_API_KEY")
-    if not key:
-        raise LLMUnavailable("GROQ_API_KEY manquante")
+    if not config.GROQ_API_KEY:
+        raise LLMUnavailable("GROQ_API_KEY is not set")
     body = {
-        "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "model": config.GROQ_MODEL,
         "messages": messages,
         "temperature": temperature,
         "stream": True,
     }
-    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {key}"},
+    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
                       json=body, timeout=60, stream=True)
     r.raise_for_status()
     r.encoding = "utf-8"
@@ -85,12 +126,12 @@ def _groq_stream(messages, temperature):
 
 def _ollama_stream(messages, temperature):
     body = {
-        "model": os.getenv("OLLAMA_MODEL", "llama3.1"),
+        "model": config.OLLAMA_MODEL,
         "messages": messages,
         "stream": True,
         "options": {"temperature": temperature, "num_ctx": 8192},
     }
-    r = requests.post(OLLAMA_CHAT_URL, json=body, timeout=180, stream=True)
+    r = requests.post(_ollama_chat_url(), json=body, timeout=180, stream=True)
     r.raise_for_status()
     r.encoding = "utf-8"
     for line in r.iter_lines(decode_unicode=True):
@@ -107,10 +148,8 @@ def _ollama_stream(messages, temperature):
 def stream_chat(messages: list[dict], temperature: float = 0.3):
     """Yields text chunks. Provider fallback only happens before the first chunk,
     so connection errors surface before any output is sent."""
-    provider = os.getenv("LLM_PROVIDER", "groq")
-    order = [_groq_stream, _ollama_stream] if provider == "groq" else [_ollama_stream]
     errors = []
-    for fn in order:
+    for fn in _providers(_groq_stream, _ollama_stream):
         gen = fn(messages, temperature)
         try:
             first = next(gen)

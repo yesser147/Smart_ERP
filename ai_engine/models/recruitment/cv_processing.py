@@ -10,15 +10,15 @@ structure_and_embed() always runs.
 """
 
 import io
-import requests
 import pdfplumber
 from sqlalchemy import text
 from database import engine
+from storage import download_cv
 from models.recruitment.cv_intelligence_core import structure_and_embed, write_results
 
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
-    """pdfplumber does the actual PDF-to-text extraction -- Ollama never
+    """pdfplumber does the actual PDF-to-text extraction -- the LLM never
     sees the PDF binary, only the resulting plain text."""
     text_parts = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -30,9 +30,8 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
 
 
 def download_pdf(file_url: str) -> bytes:
-    response = requests.get(file_url, timeout=30)
-    response.raise_for_status()
-    return response.content
+    """The bucket is private: storage.download_cv signs the request."""
+    return download_cv(file_url)
 
 
 def process_applicant_cv(applicant_id: int) -> dict:
@@ -47,31 +46,29 @@ def process_applicant_cv(applicant_id: int) -> dict:
         """), {"aid": applicant_id}).fetchone()
 
     if row is None:
-        return {"status": "error", "message": "Aucun CV trouvé pour ce candidat."}
+        return {"status": "error", "message": "No CV found for this candidate."}
 
     resume_text = row.parsed_text
     if not resume_text:
         if not row.file_url:
-            return {"status": "error", "message": "Aucun fichier CV n'a été téléversé."}
+            return {"status": "error", "message": "No CV file was uploaded."}
         try:
             pdf_bytes = download_pdf(row.file_url)
             resume_text = extract_text_from_pdf_bytes(pdf_bytes)
         except Exception as e:
-            return {"status": "error", "message": f"Échec de l'extraction du PDF: {e}"}
+            return {"status": "error", "message": f"Could not read the PDF: {e}"}
 
         if not resume_text:
-            return {"status": "error", "message": "Le PDF ne contient aucun texte extractible (scan image ?)."}
+            return {"status": "error", "message": "The PDF contains no text (is it a scanned image?)."}
 
         with engine.begin() as conn:
             conn.execute(text("UPDATE applicant_cvs SET parsed_text = :txt WHERE applicant_id = :aid"),
                          {"txt": resume_text, "aid": applicant_id})
 
-    # This is the step that was at risk of being skipped -- now it's the
-    # only path through structure_and_embed, guaranteed to run every time.
     try:
         result = structure_and_embed(resume_text)
     except Exception as e:
-        return {"status": "error", "message": f"Échec de l'analyse LLM: {e}"}
+        return {"status": "error", "message": f"The AI could not analyse the CV: {e}"}
 
     with engine.begin() as conn:
         write_results(conn, applicant_id, result)

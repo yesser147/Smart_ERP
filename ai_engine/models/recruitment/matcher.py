@@ -12,13 +12,17 @@ Only complete (LLM-judged) scores are cached.
 """
 
 import json
+import logging
 import numpy as np
 import pandas as pd
 from types import SimpleNamespace
 from sqlalchemy import text
+import config
 from database import engine
 from embeddings import embed_text, get_model
-from models.recruitment.llm_client import generate
+from models.recruitment.llm_client import generate_json
+
+log = logging.getLogger(__name__)
 
 LLM_BATCH_SIZE = 5
 EMB_LOW, EMB_HIGH = 15.0, 60.0             # raw cosine % -> 0-100 (tune on real values)
@@ -50,10 +54,10 @@ def _generate_skills_with_llm(job) -> str:
 required for the job "{job.title}"{f' in the department: {ctx}' if ctx else ''}.
 Return ONLY a valid JSON object: {{"skills": ["skill1", "skill2"]}}"""
     try:
-        skills = json.loads(generate(prompt, json_mode=True)).get("skills", [])
+        skills = generate_json(prompt).get("skills", [])
         return ", ".join(str(s) for s in skills if s)
     except Exception as e:
-        print(f"  ⚠️  Skill generation failed for '{job.title}': {e}")
+        log.warning("Skill generation failed for '%s': %s", job.title, e)
         return ""
 
 
@@ -168,13 +172,22 @@ def _coverage_scores(required: list, skills_by_applicant: dict) -> dict:
 
     model = get_model()
     req_vecs = model.encode(required, normalize_embeddings=True)
+
+    # Encode every distinct skill of every candidate in ONE batch (much
+    # faster than one encode call per candidate), then look vectors up.
+    cleaned = {aid: [str(x) for x in skills if x] for aid, skills in skills_by_applicant.items()}
+    unique_skills = sorted({x for skills in cleaned.values() for x in skills})
+    vec_by_skill = {}
+    if unique_skills:
+        vecs = model.encode(unique_skills, normalize_embeddings=True, batch_size=128)
+        vec_by_skill = dict(zip(unique_skills, vecs))
+
     out = {}
-    for aid, skills in skills_by_applicant.items():
-        skills = [str(s) for s in skills if s]
+    for aid, skills in cleaned.items():
         if not skills:
             out[aid] = 0.0
             continue
-        cand_vecs = model.encode(skills, normalize_embeddings=True)
+        cand_vecs = np.stack([vec_by_skill[x] for x in skills])
         best = (req_vecs @ cand_vecs.T).max(axis=1)
         scaled = np.clip((best - SKILL_SIM_LOW) / (SKILL_SIM_HIGH - SKILL_SIM_LOW), 0, 1)
         out[aid] = round(float(scaled.mean()) * 100, 1)
@@ -231,7 +244,7 @@ Return ONLY a valid JSON object with no other text, in this exact shape:
 }}"""
 
     try:
-        payload = json.loads(generate(prompt, json_mode=True))
+        payload = generate_json(prompt)
         return {
             int(r["applicant_id"]): {"score": max(0.0, min(100.0, float(r["score"]))),
                                      "reasoning": r.get("reasoning", "")}
@@ -239,7 +252,7 @@ Return ONLY a valid JSON object with no other text, in this exact shape:
             if "applicant_id" in r and "score" in r
         }
     except Exception as e:
-        print(f"  ⚠️  LLM batch failed: {e}")
+        log.warning("LLM re-ranking batch failed: %s", e)
         return {}
 
 
@@ -278,31 +291,47 @@ def _persist_score(application_id, score: float, reasoning: str, embedding_score
 
 # ------------------------------------------------------------------ main entry
 
+def _clean(value):
+    """pandas uses NaN for missing values; JSON can't encode NaN."""
+    if value is None:
+        return None
+    try:
+        return None if pd.isna(value) else value
+    except (TypeError, ValueError):
+        return value
+
+
 def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = False):
     job = _load_job(job_id)
     if job is None:
         return None
 
     applicants_df = _fetch_job_applicants(job_id)
-    if applicants_df.empty:
-        return {**_job_meta(job), "candidates": []}
-
-    scorable = applicants_df[applicants_df["cv_embedding"].notna()].copy()
+    processed = applicants_df[applicants_df["cv_embedding"].notna()].copy()
+    unprocessed_ids = applicants_df.loc[applicants_df["cv_embedding"].isna(), "applicant_id"].astype(int).tolist()
+    summary = {
+        "n_applicants": int(len(applicants_df)),
+        "n_processed": int(len(processed)),
+        "unprocessed_applicant_ids": unprocessed_ids,
+    }
+    if processed.empty:
+        return {**_job_meta(job), **summary, "candidates": []}
 
     if recompute_all:
-        to_score = scorable
-        already_scored = pd.DataFrame(columns=scorable.columns)
+        to_score = processed
+        already_scored = processed.iloc[0:0]
     else:
-        already_scored = scorable[scorable["ai_match_score"].notna()]
-        to_score = scorable[scorable["ai_match_score"].isna()]
+        already_scored = processed[processed["ai_match_score"].notna()]
+        to_score = processed[processed["ai_match_score"].isna()]
 
     def base(r):
         # skills go out as a JSON string: that's what the frontend's parseSkills expects
+        years = _clean(r.years_of_experience)
         return {
             "applicant_id": int(r.applicant_id),
             "name": f"{r.first_name} {r.last_name}",
-            "education_level": r.education_level,
-            "years_of_experience": float(r.years_of_experience) if pd.notna(r.years_of_experience) else None,
+            "education_level": _clean(r.education_level),
+            "years_of_experience": float(years) if years is not None else None,
             "skills": json.dumps(_safe_parse_skills(r.extracted_skills_json)),
         }
 
@@ -310,11 +339,12 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
 
     # Cached: score, similarity and reasoning all come from the DB.
     for r in already_scored.itertuples():
+        emb = _clean(r.ai_embedding_score)
         candidates.append({
             **base(r),
             "match_score": float(r.ai_match_score),
-            "embedding_score": float(r.ai_embedding_score) if pd.notna(r.ai_embedding_score) else None,
-            "ai_reasoning": r.ai_match_reasoning if pd.notna(r.ai_match_reasoning) else None,
+            "embedding_score": float(emb) if emb is not None else None,
+            "ai_reasoning": _clean(r.ai_match_reasoning),
         })
 
     if not to_score.empty:
@@ -328,27 +358,33 @@ def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = 
         )
         role_scores = _role_relevance(
             job,
-            {int(r.applicant_id): (r.experience_profile if pd.notna(r.experience_profile) else None)
-             for r in to_score.itertuples()},
+            {int(r.applicant_id): _clean(r.experience_profile) for r in to_score.itertuples()},
         )
-        llm_scores = _rerank_with_llm(job, to_score)
+        cheap = {aid: _provisional(coverages.get(aid), role_scores.get(aid),
+                                   _calibrate_embedding(raw_sims.get(aid, 0.0)))
+                 for aid in applicant_ids}
+
+        # Pre-screen: only the most promising candidates are sent to the LLM
+        # (the slow, expensive step); the others keep their pre-screen score.
+        shortlist = sorted(applicant_ids, key=lambda a: cheap[a], reverse=True)[:config.MATCH_LLM_MAX]
+        llm_scores = _rerank_with_llm(job, to_score[to_score["applicant_id"].astype(int).isin(shortlist)])
 
         for r in to_score.itertuples():
             aid = int(r.applicant_id)
             emb = _calibrate_embedding(raw_sims.get(aid, 0.0))
-            coverage = coverages.get(aid)
-            role = role_scores.get(aid)
             llm_result = llm_scores.get(aid)
 
             if llm_result:
-                final = _blend(llm_result["score"], coverage, role, emb)
+                final = _blend(llm_result["score"], coverages.get(aid), role_scores.get(aid), emb)
                 reasoning = llm_result["reasoning"]
                 _persist_score(r.application_id, final, reasoning, emb)   # only complete scores are cached
+            elif aid not in shortlist:
+                final, reasoning = cheap[aid], "Not reviewed by the AI: low pre-screen score."
             else:
-                final, reasoning = _provisional(coverage, role, emb), None   # retried on next search
+                final, reasoning = cheap[aid], None   # LLM failed: retried on next search
 
             candidates.append({**base(r), "match_score": final,
                                "embedding_score": emb, "ai_reasoning": reasoning})
 
     candidates.sort(key=lambda c: c["match_score"], reverse=True)
-    return {**_job_meta(job), "candidates": candidates[:top_k]}
+    return {**_job_meta(job), **summary, "candidates": candidates[:top_k]}

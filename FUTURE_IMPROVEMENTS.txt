@@ -1,0 +1,183 @@
+SMART ERP CORE: CORRECTIONS AND FUTURE IMPROVEMENTS
+=====================================================
+Companion to RAPPORT.docx. First written from commit a8a92c2, updated after the bug-fix pass and the
+data-source change (2026-09-25), then after the features / redesign / cleanup pass (2026-09-26).
+Every item has a status:
+
+  [FIXED]      done and tested
+  [PARTIAL]    done in part, a bigger improvement is still possible
+  [TODO]       not done
+  [NOTE]       information, nothing to do
+  [YOU]        needs an action from you (outside the code)
+
+How the last pass was tested: ETL -> throwaway Postgres + MinIO containers (other ports, deleted
+afterwards), backend (mvnw) and AI engine (venv) started by hand against them, the production frontend
+build served locally, every page opened in a browser. Your real database and containers were not touched.
+Backend: 9 unit tests pass. AI engine: 14 unit tests pass. Frontend: builds with no warning.
+
+=================================================================
+0. ACTIONS FOR YOU  (do these first)
+=================================================================
+
+[YOU] Revoke the Gmail app password that was committed to git, create a new one, put it in backend/.env.
+[YOU] Rebuild and reload: `docker compose up -d --build`, then the ETL (README section 4) if you want the
+      new tables filled (performance reviews, leave requests, job descriptions). Back up the DB first.
+[YOU] Set ADMIN_EMAIL / ADMIN_PASSWORD in backend/.env (used only when the admin account is created).
+[YOU] Optional git cleanup (I did not touch git): the __pycache__ folders are still tracked:
+      git rm -r --cached ETL/__pycache__ ai_engine/__pycache__ ai_engine/models/*/__pycache__
+      Secrets are still in old commits; "git filter-repo" removes them from history.
+
+=================================================================
+A. BUGS THAT BROKE SOMETHING
+=================================================================
+
+A1-A18 [FIXED] (first pass: schema comma, role names, ports, requirements, ai_query_logs, random AI
+            scores, CV upload limits, model paths, read-only DB role, endless skeleton, skills seed,
+            applicant sequence, exit reasons, duplicated allocations, reindex, executive titles,
+            .env override, batch CV processing after a reload.)
+A19 [FIXED] Candidate matching page showed "Unable to load candidate matches", 0 applicants and no
+            required experience when some CVs were not processed yet: an unprocessed CV has no education
+            level (NaN) and NaN is not valid JSON, so the whole answer failed, and the page built
+            everything from that one answer. Now: NaN -> null in every AI answer; the job, its
+            applications and the AI ranking load separately (an AI failure shows a message + Retry);
+            the page says "X of Y CVs analysed" and analyses the remaining CVs with a progress bar.
+            Tested on job #34: 0/15 -> 15/15 analysed, ranking with scores and AI reasoning.
+A20 [FIXED] An HR manager opening an admin-only address was logged out (any 403 cleared the session).
+            Only a 401 (expired / invalid session) logs out now.
+A21 [FIXED] The leave page loaded the latest 200 requests only: pending requests older than that were
+            invisible. It now loads every pending request plus the recent history.
+A22 [FIXED] The high-risk KPI fell back to an SQL heuristic (685 people) when the AI engine was down,
+            which contradicted the model (163). The Overview now shows "—" / "AI engine unavailable".
+
+=================================================================
+B. SECURITY
+=================================================================
+
+B1-B8 [FIXED] (secrets out of tracked files, role checks, JWT on the AI API, private MinIO bucket,
+            set-password rules, chatbot SQL guard, per-conversation memory.)
+B9  [FIXED] Emails, phone numbers AND the candidate's first/last name are redacted before a CV is sent
+            to the LLM. LLM_PROVIDER=ollama keeps everything on the machine.
+B10 [FIXED] Admin credentials come from ADMIN_EMAIL / ADMIN_PASSWORD (defaults only for a first demo).
+B11 [NOTE]  ETL accounts have no usable password (and fictitious e-mails) on purpose.
+B12 [FIXED] FastAPI /docs and the backend Swagger UI are off unless API_DOCS=true.
+B13 [FIXED] Account creation now uses the same password rule as set-password (8+ chars, a letter and a
+            digit; it accepted 6 characters before).
+B14 [FIXED] Public application endpoint: 5 applications per 10 minutes per IP (429), closed postings
+            and duplicate applications refused.
+B15 [FIXED] Only current employees can request leave, and not in the past (backend rule + tests).
+
+=================================================================
+C. DATA / ETL
+=================================================================
+
+C1-C8 [FIXED] (dates, teams, time to hire, training costs, managers, cleanup, documentation, single
+            schema source.)
+C9  [FIXED] Old ETL output files removed.
+C10 [FIXED] New generated tables: performance_reviews (1,467, rating = IBM PerformanceRating) and
+            leave_requests (2,255, 44 pending); every job opening has a description.
+
+=================================================================
+D. AI AND ML
+=================================================================
+
+D1-D7, D11 [FIXED] (tenure, protected attributes, caching, sync endpoints, HTTP codes, stored chats,
+            one LLM client, cleanup.)
+D2  [FIXED] Baseline comparison: a logistic regression is trained next to XGBoost. Latest retrain:
+            XGBoost ROC AUC 0.82, logistic baseline 0.83. The simple model is as good: the value of the
+            XGBoost model here is the SHAP explanation per employee, not extra accuracy. Worth saying in
+            the report. Budget model: R2 -0.26, still no predictive power (I6).
+D8  [NOTE]  Matcher evaluated on a public labelled set (cnamuangtoun/resume-job-description-fit):
+            CV/job text similarity ROC AUC 0.54 on 300 pairs, LLM review 0.50 on 40 pairs. Neither
+            separates good from bad fits on that data, so the weights were NOT tuned on it. The ranking
+            is presented as a reading aid (AI models page). Script: models/recruitment/evaluate_matcher.py.
+D9  [FIXED] HNSW index on CV embeddings; only the best 25 candidates (cheap signals) go to the LLM
+            (MATCH_LLM_MAX), the others are marked "not reviewed by the AI".
+D10 [PARTIAL] The embedding model is configurable (EMBEDDING_MODEL). A multilingual model needs the CVs
+            re-embedded (models/recruitment/reindex_embeddings.py) and the vector size kept at 384.
+D12 [PARTIAL] Kaplan-Meier retention curves per department (Turnover page). A Cox model is still possible.
+D13 [FIXED] Models retrained from the new "AI models" page on the current data (artifacts updated).
+D14 [FIXED] Risk alert threshold learned at training time (now 28%: 56% precision, 54% recall).
+
+=================================================================
+E. BACKEND
+=================================================================
+
+E1  [FIXED] Applicant counts come with the job list (no more loading every application).
+E2  [FIXED] Hire checks.
+E3  [FIXED] Full status history table (application_status_history) + audit log.
+E4  [FIXED] Logs and config cleanup.
+E5  [FIXED] OpenAPI / Swagger UI (springdoc), enabled with API_DOCS=true.
+E6  [FIXED] Unit tests: HrService (status rules, hire), LeaveService (dates, decisions, eligibility),
+            rate limiter. [TODO] integration tests with Testcontainers.
+E7  [FIXED] Budget allocations can be approved and are kept with their history.
+E8  [FIXED] Removed unused endpoints and code: /analytics/turnover, /analytics/risk, /auth/me and their
+            classes, unused repository methods.
+
+=================================================================
+F. FRONTEND
+=================================================================
+
+F1  [FIXED] New professional layout: grouped sidebar with icons, active marker, badges, collapsible rail,
+            mobile menu; top bar with breadcrumb, notifications and user menu; one page header, card,
+            table, tab and badge style everywhere; split-screen sign-in pages.
+F2  [FIXED] Real routes for every page (bookmarkable, back button works).
+F3  [FIXED] URLs from environment.ts.
+F4  [FIXED] Generated *.spec.ts files, placeholder dashboards, the unused budget simulator, 4 copies of
+            the markdown converter, unused services / models / signals / CSS removed.
+F5  [FIXED] One language: English everywhere (UI, backend messages, e-mails, AI errors).
+F6  [NOTE]  Browsers pause hidden tabs: a page opened in a background tab finishes loading when shown.
+
+=================================================================
+G. PROJECT HYGIENE
+=================================================================
+
+G1-G4 [FIXED] (README, single schema, Dockerfiles, .gitignore.) [YOU] untrack __pycache__ (section 0).
+G5  [FIXED] Planning PDF and the sample CV moved to docs/; .github/modernize leftovers removed.
+G6  [PARTIAL] The app starts with one command; the ETL stays manual on purpose (it erases data).
+G7  [FIXED] Loose scripts removed (ai_engine/test_*_main.py runners, one-off analysis scripts).
+
+=================================================================
+I. DATA SOURCE
+=================================================================
+
+I1-I5 [FIXED] IBM HR Analytics + real Kaggle resumes, V3 attributes, retention model, out-of-fold
+            scoring, readable names.
+I6  [TODO]  Budget advisor: no public data links training spend to performance; keep it presented as a
+            simulation tool (the AI models page says so).
+I7  [FIXED] Matcher measured on a labelled data set (see D8).
+I8  [TODO]  Optional: real job descriptions from LinkedIn Job Postings (Kaggle, needs a login).
+I9  [NOTE]  Check the licences of the IBM and Resume data sets before publishing.
+
+=================================================================
+H. FEATURES ADDED IN THE LAST PASS (all tested in the browser)
+=================================================================
+
+H1  [FIXED] Public careers site (/careers): job board, job page, application form with CV (rate-limited).
+H2  [FIXED] Automatic CV analysis after a public application; HR is notified when it is done.
+H3  [FIXED] Semantic CV search across all analysed CVs (Recruitment > CV search).
+H4  [FIXED] Job opening creation with an AI-written description; the skills fill job_title_skills.
+H5  [FIXED] Interview questions generated from the gaps between the job and the CV.
+H6  [FIXED] Chatbot: frequent questions (from ai_query_logs), automatic chart, full table, CSV download.
+H7  [FIXED] Employee file: AI flight-risk card with rank and SHAP drivers; "People to talk to first" list
+            on the Retention page.
+H8  [FIXED] AI models page: metrics explained, verdicts, Retrain button (admins).
+H9  [PARTIAL] Leave requests (employee request, HR approval), performance reviews (HR adds, employee sees),
+            payroll CSV export. [TODO] use leave / reviews as ML features, real payroll computation.
+H10 [FIXED] In-app notifications (bell), e.g. new application, CV analysed, leave decided, new review.
+H11 [FIXED] Audit log page (hires, status changes, roles, approvals).
+H12 [PARTIAL] CSV export of employees and payroll, printable retention report (Print / Save as PDF).
+            [TODO] Excel / PDF export of the other dashboards.
+H13 [FIXED] "Forgot password" flow (60-minute link) for active accounts.
+H14 [FIXED] Admin: users & roles (change role, deactivate), new account.
+H15 [FIXED] Job openings: close / reopen, status history on applications, offer then hire.
+
+=================================================================
+K. NEXT IDEAS
+=================================================================
+
+K1  Integration tests (Testcontainers) and a CI pipeline.
+K2  Use leave and review data as retention features, then compare the model quality.
+K3  Background job queue for CV analysis (today the batch runs from the open page or the CLI script).
+K4  Excel / PDF export of every dashboard.
+K5  Multilingual embeddings for French CVs (D10).
+K6  Internationalisation of the UI (French / English).
