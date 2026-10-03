@@ -42,7 +42,8 @@ export class HireEmployeeComponent implements OnInit {
     location: ['', Validators.required],
     startDate: [new Date().toISOString().slice(0, 10), Validators.required],
     salary: [null as number | null, [Validators.required, Validators.min(1)]],
-    roleName: ['ROLE_EMPLOYEE', Validators.required]
+    roleName: ['ROLE_EMPLOYEE', Validators.required],
+    gender: ['']   // not asked on the careers form; used for the pay-equity analytics
   });
 
   ngOnInit(): void {
@@ -55,6 +56,7 @@ export class HireEmployeeComponent implements OnInit {
       next: a => {
         this.applicant.set(a);
         if (a.state) this.form.patchValue({ state: a.state });
+        if (a.gender) this.form.patchValue({ gender: a.gender.toUpperCase() });
       },
       error: () => this.error.set('This applicant does not exist.')
     });

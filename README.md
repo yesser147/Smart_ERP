@@ -10,12 +10,12 @@ Known limits and next steps: `FUTURE_IMPROVEMENTS.txt`.
 | Area | Pages |
 |---|---|
 | Analytics | Overview, Turnover (with retention curves), Compensation & performance, Recruitment & training (funnel, time to hire) |
-| People | Employees (CSV and payroll export), employee file (AI flight-risk card, performance reviews), Departments, Leave requests |
+| People | Employees (CSV export), employee file (AI flight-risk card, performance reviews), Departments, Leave requests (an approved leave switches the employee to "On Leave" on its first day and back to "Active" after it, automatically every night) |
 | Recruitment | Job openings (create one with an AI-written description), candidates ranked by AI, Applicants (batch CV analysis), CV search, interview questions, offer and hire |
-| AI & strategy | Budget advisor (what-if simulator, approve an allocation), Retention strategy (printable), HR chatbot (bottom right) |
+| AI & strategy | Budget advisor (what-if simulator, approve an allocation), Retention strategy (printable), HR chatbot (bottom right): ask for a chart in the question or click "Create a chart", then pin it to the Overview ("My charts") |
 | Administration | Users & roles, Audit log, AI models (quality + retrain) |
 | Self-service | My space: an employee's own file, reviews and leave requests |
-| Public | Careers site at http://localhost:4200/careers (no login): open jobs and the application form |
+| Public | Home page at http://localhost:4200 with two entrances: the careers site (no login: open jobs and the application form) and the employee sign-in |
 
 Everything runs in Docker except the ETL (the data loader), which you run by
 hand only when the data must be (re)loaded.
@@ -206,7 +206,6 @@ cd ai_engine; venv\Scripts\python main_api.py   # needs the venv: python -m venv
 cd frontend;  npm install; npm start            # needs Node 18+
 ```
 
-AI engine unit tests: `cd ai_engine; venv\Scripts\python -m unittest discover -s tests -v`
 
 ## 8. Troubleshooting
 

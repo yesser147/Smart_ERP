@@ -17,12 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Performance reviews, budget allocations and the payroll export. */
+/** Performance reviews and budget allocations. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -83,33 +81,5 @@ public class WorkforceService {
         auditService.log("BUDGET_ALLOCATION_APPROVED", "department", req.departmentId(),
                 req.allocatedBudget() + " USD for " + allocation.getFiscalPeriod());
         return BudgetAllocationDTO.fromEntity(saved);
-    }
-
-    // ---------------- payroll export
-
-    /** Monthly gross pay of the active employees, as CSV (UTF-8, comma-separated). */
-    public String payrollCsv() {
-        StringBuilder csv = new StringBuilder("employee_id,first_name,last_name,title,department,team,annual_salary,monthly_gross,currency\n");
-        for (Employee e : employeeRepository.findActiveWithDepartment()) {
-            BigDecimal annual = e.getSalary() == null ? BigDecimal.ZERO : e.getSalary();
-            var d = e.getDepartment();
-            csv.append(e.getEmployeeId()).append(',')
-               .append(cell(e.getFirstName())).append(',')
-               .append(cell(e.getLastName())).append(',')
-               .append(cell(e.getTitle())).append(',')
-               .append(cell(d != null ? d.getDepartmentType() : "")).append(',')
-               .append(cell(d != null ? d.getDivisionDescription() : "")).append(',')
-               .append(annual.setScale(2, RoundingMode.HALF_UP)).append(',')
-               .append(annual.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP)).append(',')
-               .append(e.getCurrency() == null ? "USD" : e.getCurrency()).append('\n');
-        }
-        auditService.log("PAYROLL_EXPORTED", "payroll", null, "monthly payroll CSV");
-        return csv.toString();
-    }
-
-    private static String cell(String value) {
-        if (value == null) return "";
-        String v = value.replace("\"", "\"\"");
-        return v.contains(",") || v.contains("\"") ? "\"" + v + "\"" : v;
     }
 }

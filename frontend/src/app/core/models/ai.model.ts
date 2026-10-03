@@ -30,6 +30,48 @@ export interface SimulationResult {
   performance_gain: number;
 }
 
+/** One line of the screening checklist the AI builds for a job. */
+export interface JobRequirement {
+  requirement: string;
+  type: 'must' | 'nice';
+  category: string;
+}
+
+/** That line checked against one candidate's CV. */
+export interface RequirementCheck extends JobRequirement {
+  status: 'met' | 'partial' | 'missing';
+  evidence: string;
+}
+
+/** A chart chosen by the AI for a query result (validated by the AI engine). */
+export interface ChartSpec {
+  type: 'bar' | 'horizontal-bar' | 'stacked-bar' | 'line' | 'pie' | 'donut' | 'scatter';
+  title: string;
+  x: string;
+  y: string[];
+  series: string | null;
+  y_format: 'number' | 'money' | 'percent';
+}
+
+/** A chart pinned to the dashboard, with fresh rows. */
+export interface SavedChart {
+  id: number;
+  title: string;
+  question: string;
+  chart: ChartSpec;
+  rows: Record<string, unknown>[];
+  error: string | null;
+  created_at: string | null;
+}
+
+/** Events of the streamed HR chatbot answer (newline-delimited JSON). */
+export type AssistantEvent =
+  | { type: 'data'; question: string; sql_query: string; tabular_data: Record<string, unknown>[] }
+  | { type: 'chart'; chart: ChartSpec }
+  | { type: 'text'; text: string }
+  | { type: 'done' }
+  | { type: 'error'; message: string };
+
 export interface CandidateMatch {
   applicant_id: number;
   name: string;
@@ -39,6 +81,9 @@ export interface CandidateMatch {
   match_score: number;
   embedding_score?: number | null;
   ai_reasoning?: string | null;
+  /** the checklist (empty when the candidate was not reviewed by the AI) */
+  requirements?: RequirementCheck[];
+  reviewed?: boolean;
 }
 
 export interface JobMatchResult {
@@ -47,6 +92,7 @@ export interface JobMatchResult {
   candidates: CandidateMatch[];
   required_skills?: string;
   required_experience_years?: number | null;
+  requirements?: JobRequirement[];
   n_applicants: number;
   n_processed: number;
   unprocessed_applicant_ids: number[];
@@ -72,6 +118,8 @@ export interface JobDescriptionResult {
   title: string;
   description: string;
   skills: string[];
+  /** true when the title already existed: its skills were kept */
+  known_title: boolean;
 }
 
 export interface InterviewQuestion {

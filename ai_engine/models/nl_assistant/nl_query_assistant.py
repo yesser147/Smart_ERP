@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import text
 
 from database import ai_engine  # Restricted read-only engine
-from models.recruitment.llm_client import chat
+from models.recruitment.llm_client import chat, stream_chat
 
 log = logging.getLogger(__name__)
 
@@ -104,6 +104,10 @@ def validate_sql(sql_query: str) -> bool:
     return all(t.lower() in _ALLOWED_LOWER or t.lower() in cte_names for t in tables)
 
 
+class ChatbotError(Exception):
+    """A question that cannot be answered (shown to the user)."""
+
+
 class HRQueryAssistant:
     def __init__(self):
         # one short history per conversation, so users never share context
@@ -144,12 +148,6 @@ class HRQueryAssistant:
             self._histories.popitem(last=False)
         return history
 
-    # kept for backwards compatibility with older callers
-    def _validate_sql_safety(self, sql_query: str) -> bool:
-        return validate_sql(sql_query)
-
-    # ------------------------------------------------------------- LLM steps
-
     def generate_sql(self, user_question: str, history: list[dict]) -> str:
         """Generates SQL using view schema context, domain value mappings, and chat memory."""
         schema_context = self._get_schema_context()
@@ -167,7 +165,10 @@ RULES:
    note the limitation is acceptable; do not fabricate a name.
 2. Produce ONLY a standard PostgreSQL SELECT query.
 3. CONVERSATIONAL MEMORY: Use chat history to resolve references (e.g., if the user asks "What about that department?", filter using the department_id or business_unit from the preceding turn).
-4. OPTIMIZATION: Default to LIMIT 10 unless explicit limits are requested.
+4. OPTIMIZATION: When listing individual rows (employees, applicants...), default to
+   LIMIT 10 unless another limit is requested. For aggregates (GROUP BY: per department,
+   per year, per month, by gender...) return every group ordered meaningfully (time
+   series in time order), with LIMIT 50 as a safety cap, so charts are complete.
 5. DOMAIN VALUE MAPPINGS:
    - Active job postings in `v_recruitment_funnel_ats`: Always filter with `UPPER(posting_status) IN ('OPEN', 'ACTIVE')`.
    - Terminated employees: Account for status variations using `UPPER(employee_status) LIKE '%TERMINATED%'`.
@@ -193,13 +194,9 @@ RULES:
         payload = json.loads(chat(messages, json_mode=True, temperature=0.0))
         return str(payload.get("sql_query", "")).strip()
 
-    def synthesize_answer(self, user_question: str, df: pd.DataFrame, history: list[dict]) -> str:
-        """Generates a concise executive response based on returned data and history."""
-        if df.empty:
-            return "No matching records were found in the database for your query."
-
+    def _answer_messages(self, user_question: str, df: pd.DataFrame, history: list[dict]) -> list[dict]:
+        """Prompt for the 2-3 sentence executive answer based on the returned rows."""
         data_preview = df.head(50).to_dict(orient="records")
-
         system_prompt = f"""You are an Executive AI HR Advisor.
 Analyze the SQL query result and summarize the key business takeaway in 2-3 direct sentences.
 Use the conversation history to make your answer contextual.
@@ -208,40 +205,47 @@ QUERY RESULT DATA:
 {json.dumps(data_preview, default=str)}
 
 Respond directly. Do not repeat raw JSON. Do not explain the SQL."""
+        return [{"role": "system", "content": system_prompt}, *history, {"role": "user", "content": user_question}]
 
-        messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(history)
-        messages.append({"role": "user", "content": user_question})
+    # ------------------------------------------------------------- entry points
 
-        return chat(messages, temperature=0.2, max_tokens=250)
-
-    # ------------------------------------------------------------- entry point
-
-    def ask(self, user_question: str, conversation_id: str = "default") -> dict:
+    def prepare(self, user_question: str, conversation_id: str = "default") -> dict:
+        """Question -> SQL -> rows. Everything that can fail happens here, BEFORE the
+        answer starts streaming, so errors become normal HTTP errors."""
         history = self._history(conversation_id)
         try:
             sql_query = self.generate_sql(user_question, history)
+        except Exception as e:
+            log.exception("SQL generation failed")
+            raise ChatbotError(f"The AI could not understand the question: {e}") from e
 
-            if not validate_sql(sql_query):
-                log.warning("Blocked generated SQL: %s", sql_query)
-                return {"error": "Query blocked: only read-only SELECT queries on the HR analytics views are allowed."}
+        if not validate_sql(sql_query):
+            log.warning("Blocked generated SQL: %s", sql_query)
+            raise ChatbotError("Query blocked: only read-only SELECT queries on the HR analytics views are allowed.")
 
+        try:
             with ai_engine.connect() as conn:
                 df = pd.read_sql_query(text(sql_query), conn)
-
-            summary = self.synthesize_answer(user_question, df, history)
-
-            history.append({"role": "user", "content": user_question})
-            history.append({"role": "assistant", "content": summary})
-            del history[:-HISTORY_MESSAGES]
-
-            return {
-                "question": user_question,
-                "sql_query": sql_query,
-                "tabular_data": json.loads(df.to_json(orient="records", date_format="iso")),
-                "summary": summary
-            }
-
         except Exception as e:
-            log.exception("AI chat pipeline failed")
-            return {"error": f"Pipeline execution error: {str(e)}"}
+            log.warning("Generated SQL failed: %s | %s", sql_query, e)
+            raise ChatbotError("The generated query could not run. Try rephrasing the question.") from e
+
+        return {"question": user_question, "sql_query": sql_query, "df": df, "history": history}
+
+    def stream_answer(self, prepared: dict):
+        """Yields the written answer piece by piece, then saves the turn in the
+        conversation memory."""
+        question, df, history = prepared["question"], prepared["df"], prepared["history"]
+        if df.empty:
+            answer = "No matching records were found in the database for your query."
+            yield answer
+        else:
+            parts = []
+            for chunk in stream_chat(self._answer_messages(question, df, history), temperature=0.2):
+                parts.append(chunk)
+                yield chunk
+            answer = "".join(parts)
+
+        history.append({"role": "user", "content": question})
+        history.append({"role": "assistant", "content": answer})
+        del history[:-HISTORY_MESSAGES]

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 import math
 import threading
@@ -18,7 +19,9 @@ from sqlalchemy import text
 import config
 from database import engine
 from security import require_admin, require_hr_user
-from models.nl_assistant.nl_query_assistant import HRQueryAssistant
+from models.nl_assistant.nl_query_assistant import ChatbotError, HRQueryAssistant
+from models.nl_assistant.chart_spec import suggest_chart, wants_chart
+from models.nl_assistant.saved_charts import SavedChartError, chart_for_query, delete_chart, list_charts, save_chart
 from models.budget_advisor.predict import BudgetPrescriptor
 from models.budget_advisor.advise import generate_budget_proposal
 from models.retention.predict import RetentionPredictor
@@ -151,6 +154,8 @@ class JobDescriptionRequest(BaseModel):
     title: str = Field(min_length=2, max_length=150)
     department: str | None = None
     required_experience_years: float | None = None
+    team: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=1500)
 
 
 # ---------------------------------------------------------------- HR chatbot
@@ -170,14 +175,86 @@ def _log_question(user_email: str | None, question: str, answer: str | None, ela
 
 @app.post("/api/ai/chat")
 def ask_assistant(request: ChatRequest, user: dict = Depends(require_hr_user)):
+    """Streams newline-delimited JSON: {"type": "data", sql_query, tabular_data} first,
+    then {"type": "chart", chart} when the question asks for a chart (chosen by the AI), then
+    {"type": "text", "text": ...} pieces of the written answer, then {"type": "done"}."""
     started = time.time()
     # one memory per conversation (the widget sends its own id), per user by default
     conversation_id = request.conversation_id or f"user:{user.get('sub', 'anonymous')}"
-    result = nl_assistant.ask(request.question, conversation_id=conversation_id)
-    if result.get("error"):
-        raise HTTPException(status_code=400, detail=result["error"])
-    _log_question(user.get("sub"), request.question, result.get("summary"), int((time.time() - started) * 1000))
-    return result
+    try:
+        prepared = nl_assistant.prepare(request.question, conversation_id=conversation_id)
+    except ChatbotError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    def events():
+        line = lambda obj: json.dumps(obj, default=str) + "\n"
+        yield line({
+            "type": "data",
+            "question": request.question,
+            "sql_query": prepared["sql_query"],
+            "tabular_data": json.loads(prepared["df"].to_json(orient="records", date_format="iso")),
+        })
+        if wants_chart(request.question):
+            previous = [m["content"] for m in prepared["history"] if m["role"] == "user"]
+            chart = suggest_chart(request.question, prepared["df"], previous)
+            if chart:
+                yield line({"type": "chart", "chart": chart})
+        answer = []
+        try:
+            for chunk in nl_assistant.stream_answer(prepared):
+                answer.append(chunk)
+                yield line({"type": "text", "text": chunk})
+            yield line({"type": "done"})
+        except Exception as e:
+            log.warning("Chatbot answer failed: %s", e)
+            yield line({"type": "error", "message": f"The AI could not write the answer: {e}"})
+        _log_question(user.get("sub"), request.question, "".join(answer) or None, int((time.time() - started) * 1000))
+
+    return StreamingResponse(events(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+class ChartForAnswerRequest(BaseModel):
+    question: str = Field(default="", max_length=1000)
+    sql_query: str = Field(min_length=1, max_length=5000)
+
+
+@app.post("/api/ai/chat/chart")
+def chart_for_answer(request: ChartForAnswerRequest, user: dict = Depends(require_hr_user)):
+    """'Create a chart' under an answer that came without one."""
+    try:
+        return {"chart": chart_for_query(request.question, request.sql_query)}
+    except SavedChartError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class SaveChartRequest(BaseModel):
+    title: str = Field(default="", max_length=200)
+    question: str = Field(default="", max_length=1000)
+    sql_query: str = Field(min_length=1, max_length=5000)
+    chart: dict
+
+
+@app.get("/api/ai/charts")
+def my_charts(user: dict = Depends(require_hr_user)):
+    """The charts this user pinned to the dashboard, with fresh data."""
+    return list_charts(user.get("sub"))
+
+
+@app.post("/api/ai/charts")
+def pin_chart(request: SaveChartRequest, user: dict = Depends(require_hr_user)):
+    try:
+        chart_id = save_chart(user.get("sub"), request.title, request.question, request.sql_query, request.chart)
+    except SavedChartError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"id": chart_id}
+
+
+@app.delete("/api/ai/charts/{chart_id}")
+def unpin_chart(chart_id: int, user: dict = Depends(require_hr_user)):
+    if not delete_chart(user.get("sub"), chart_id):
+        raise HTTPException(status_code=404, detail="Chart not found.")
+    return {"status": "deleted"}
 
 
 @app.get("/api/ai/chat/popular")
@@ -388,7 +465,8 @@ def search_candidates(q: str, limit: int = 20):
 @app.post("/api/ai/recruitment/job-description")
 def generate_job_description(request: JobDescriptionRequest):
     try:
-        return job_description(request.title, request.department, request.required_experience_years)
+        return job_description(request.title, request.department, request.required_experience_years,
+                               request.team, request.notes)
     except LLMUnavailable as e:
         raise HTTPException(status_code=503, detail=f"AI unavailable: {e}")
     except Exception:

@@ -1,35 +1,46 @@
 """
-Candidate matching for a job's real applicants.
+Candidate matching for a job's real applicants: requirement-by-requirement.
 
-Final score = weighted blend (a missing signal is dropped and the rest
-renormalized):
-    40% LLM judgment         (skills + past roles + years, small batches)
-    25% skill coverage       (each REQUIRED skill matched semantically)
-    25% role relevance       (job title vs the candidate's past job titles)
-    10% CV-vs-job similarity (calibrated embedding)
-plus a gate: covering almost none of the required skills caps the score.
-Only complete (LLM-judged) scores are cached.
+1. The job is turned into a short list of REQUIREMENTS (must-haves and
+   nice-to-haves), once, and cached on the job posting. The required years of
+   experience are added as a must-have checked by code, not by the LLM.
+2. Cheap signals (skill coverage, role relevance, CV-vs-job similarity) pick
+   the candidates worth a full review (config.MATCH_LLM_MAX).
+3. Each of them is REVIEWED by the LLM: every requirement is marked met,
+   partial or missing, with the evidence quoted from the CV.
+4. The score comes from that checklist:
+       met = 1, partial = 0.5, missing = 0; a must-have counts double
+       1 must-have missing -> score capped at 60, 2 or more -> capped at 40
+   so every score can be explained line by line.
+
+Only complete (reviewed) scores are cached, with their checklist.
 """
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
-from types import SimpleNamespace
 from sqlalchemy import text
+
 import config
 from database import engine
 from embeddings import embed_text, get_model
 from models.recruitment.llm_client import generate_json
+from models.recruitment.privacy import redact
 
 log = logging.getLogger(__name__)
 
-LLM_BATCH_SIZE = 5
-EMB_LOW, EMB_HIGH = 15.0, 60.0             # raw cosine % -> 0-100 (tune on real values)
+EMB_LOW, EMB_HIGH = 15.0, 60.0             # raw cosine % -> 0-100
 SKILL_SIM_LOW, SKILL_SIM_HIGH = 0.25, 0.65
 ROLE_SIM_LOW, ROLE_SIM_HIGH = 0.15, 0.60
-W_LLM, W_COVERAGE, W_ROLE, W_EMB = 0.40, 0.25, 0.25, 0.10
-GATE_COVERAGE, GATE_CAP = 20.0, 35.0
+
+WEIGHT = {"must": 2.0, "nice": 1.0}
+POINTS = {"met": 1.0, "partial": 0.5, "missing": 0.0}
+CAP_ONE_MUST_MISSING, CAP_MUSTS_MISSING = 60.0, 40.0
+CV_EXCERPT_CHARS = 3000
 
 
 def _safe_parse_skills(raw_value):
@@ -43,6 +54,16 @@ def _safe_parse_skills(raw_value):
         return json.loads(raw_value)
     except (TypeError, json.JSONDecodeError):
         return []
+
+
+def _clean(value):
+    """pandas uses NaN for missing values; JSON can't encode NaN."""
+    if value is None:
+        return None
+    try:
+        return None if pd.isna(value) else value
+    except (TypeError, ValueError):
+        return value
 
 
 # ---------------------------------------------------------------- job profile
@@ -84,7 +105,7 @@ def get_required_skills(job) -> str:
 def _load_job(job_id: int):
     with engine.connect() as conn:
         row = conn.execute(text("""
-            SELECT jp.job_id, jp.title, jp.required_experience_years,
+            SELECT jp.job_id, jp.title, jp.required_experience_years, jp.description, jp.ai_requirements,
                    d.department_type, d.division_description
             FROM job_postings jp
             LEFT JOIN departments d ON d.department_id = jp.department_id
@@ -105,33 +126,100 @@ def _job_profile_text(job) -> str:
     return " ".join(parts)
 
 
-def _job_meta(job) -> dict:
-    """Job details sent back with every match result (shown on the job page)."""
-    return {
-        "job_id": job.job_id,
-        "job_title": job.title,
-        "required_skills": job.required_skills or "",
-        "required_experience_years": (
-            float(job.required_experience_years)
-            if job.required_experience_years is not None else None
-        ),
-    }
+def _split_skills(raw) -> list:
+    return [s.strip() for s in str(raw or "").split(",") if s.strip()]
 
 
-# -------------------------------------------------------------------- signals
+# ---------------------------------------------------------------- requirements
+
+def _years_requirement(job) -> dict | None:
+    years = _clean(job.required_experience_years)
+    if not years:
+        return None
+    return {"requirement": f"{float(years):g}+ years of relevant experience", "type": "must",
+            "category": "years", "years": float(years)}
+
+
+def _requirements_from_skills(job) -> list[dict]:
+    """Fallback when the LLM can't extract the requirements: the first required
+    skills are must-haves, the rest nice-to-haves."""
+    skills = _split_skills(job.required_skills)
+    return [{"requirement": s, "type": "must" if i < 4 else "nice", "category": "skill"}
+            for i, s in enumerate(skills[:10])]
+
+
+def _extract_requirements(job) -> list[dict]:
+    prompt = f"""You prepare the screening checklist for a job opening.
+
+JOB TITLE: {job.title}
+DEPARTMENT: {job.department_type or '-'} / {job.division_description or '-'}
+REQUIRED SKILLS (reference list): {job.required_skills or '-'}
+JOB DESCRIPTION:
+{(job.description or '-')[:3000]}
+
+List 5 to 8 requirements a recruiter would check in a CV for this job.
+- "must": essential for the job (at most 4); "nice": a plus.
+- Each requirement must be concrete and verifiable from a CV (a skill, a tool,
+  a type of experience, a degree), written in at most 8 words.
+- Do NOT include the number of years of experience (it is checked separately).
+- category is one of: skill, experience, education, other.
+
+Return ONLY a valid JSON object:
+{{"requirements": [{{"requirement": "B2B sales experience", "type": "must", "category": "experience"}}]}}"""
+    try:
+        raw = generate_json(prompt, temperature=0.0).get("requirements", [])
+        reqs = []
+        for r in raw:
+            label = str(r.get("requirement", "")).strip()
+            if not label:
+                continue
+            reqs.append({
+                "requirement": label[:80],
+                "type": "must" if str(r.get("type", "")).lower() == "must" else "nice",
+                "category": str(r.get("category", "other")).lower(),
+            })
+        # keep the "at most 4 must-haves" rule even if the model ignored it
+        musts = [r for r in reqs if r["type"] == "must"]
+        for r in musts[4:]:
+            r["type"] = "nice"
+        if len(reqs) >= 3:
+            return reqs[:8]
+    except Exception as e:
+        log.warning("Requirement extraction failed for job %s: %s", job.job_id, e)
+    return _requirements_from_skills(job)
+
+
+def get_requirements(job, refresh: bool = False) -> list[dict]:
+    """The job's checklist (years requirement first), cached in job_postings.ai_requirements."""
+    cached = job.ai_requirements
+    if isinstance(cached, str):
+        cached = json.loads(cached)
+    if cached and not refresh:
+        return cached
+
+    reqs = _extract_requirements(job)
+    years = _years_requirement(job)
+    if years:
+        reqs = [years] + reqs
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE job_postings SET ai_requirements = CAST(:r AS jsonb) WHERE job_id = :jid"),
+                     {"r": json.dumps(reqs), "jid": job.job_id})
+    job.ai_requirements = reqs
+    return reqs
+
+
+# ---------------------------------------------------------------- cheap signals (pre-screen)
 
 def _fetch_job_applicants(job_id: int) -> pd.DataFrame:
     """Only people who actually applied to this job. Years come from the
-    CV itself when available (the applicants table values are not tied
-    to the resume text)."""
+    CV itself when available."""
     query = text("""
         SELECT
-            ja.application_id, ja.ai_match_score,
-            ja.ai_match_reasoning, ja.ai_embedding_score,
-            a.applicant_id, a.first_name, a.last_name,
-            a.education_level,
+            ja.application_id, ja.ai_match_score, ja.ai_match_reasoning,
+            ja.ai_embedding_score, ja.ai_match_details,
+            a.applicant_id, a.first_name, a.last_name, a.education_level,
             COALESCE(ac.cv_years_of_experience, a.years_of_experience) AS years_of_experience,
-            ac.extracted_skills_json, ac.experience_profile, ac.cv_embedding
+            ac.extracted_skills_json, ac.experience_profile, ac.parsed_text, ac.cv_embedding
         FROM job_applications ja
         JOIN applicants a ON a.applicant_id = ja.applicant_id
         LEFT JOIN applicant_cvs ac ON ac.applicant_id = a.applicant_id
@@ -161,10 +249,6 @@ def _calibrate_embedding(sim_pct: float) -> float:
     return round(max(0.0, min(100.0, (sim_pct - EMB_LOW) / (EMB_HIGH - EMB_LOW) * 100)), 1)
 
 
-def _split_skills(raw) -> list:
-    return [s.strip() for s in str(raw or "").split(",") if s.strip()]
-
-
 def _coverage_scores(required: list, skills_by_applicant: dict) -> dict:
     """{applicant_id: 0-100, or None if the job has no required skills}."""
     if not required:
@@ -173,8 +257,7 @@ def _coverage_scores(required: list, skills_by_applicant: dict) -> dict:
     model = get_model()
     req_vecs = model.encode(required, normalize_embeddings=True)
 
-    # Encode every distinct skill of every candidate in ONE batch (much
-    # faster than one encode call per candidate), then look vectors up.
+    # every distinct skill of every candidate encoded in ONE batch
     cleaned = {aid: [str(x) for x in skills if x] for aid, skills in skills_by_applicant.items()}
     unique_skills = sorted({x for skills in cleaned.values() for x in skills})
     vec_by_skill = {}
@@ -195,8 +278,7 @@ def _coverage_scores(required: list, skills_by_applicant: dict) -> dict:
 
 
 def _role_relevance(job, profiles: dict) -> dict:
-    """{applicant_id: 0-100, or None if the CV has no experience profile}:
-    semantic fit between the job title and the candidate's past job titles."""
+    """{applicant_id: 0-100, or None if the CV has no experience profile}."""
     out = {aid: None for aid in profiles}
     ids = [aid for aid, p in profiles.items() if p]
     if not ids:
@@ -212,179 +294,215 @@ def _role_relevance(job, profiles: dict) -> dict:
     return out
 
 
-def _rerank_batch(job, rows: pd.DataFrame) -> dict:
-    payload_in = [
-        {
-            "applicant_id": int(r.applicant_id),
-            "years_of_experience": float(r.years_of_experience) if pd.notna(r.years_of_experience) else None,
-            "education_level": r.education_level,
-            "past_roles": r.experience_profile if pd.notna(r.experience_profile) else None,
-            "skills": _safe_parse_skills(r.extracted_skills_json),
-        }
-        for r in rows.itertuples()
-    ]
-
-    prompt = f"""You are ranking job candidates for this position:
-{_job_profile_text(job)}
-
-Candidates (JSON):
-{json.dumps(payload_in, indent=2)}
-
-Score each candidate 0-100 for how well they can actually do THIS job.
-Consider (1) whether their skills match the required skills and (2) whether
-their past roles are in a relevant field. A career in an unrelated field (for
-example an accountant applying for a nursing job) must score below 25, even
-with more years of experience than required or a higher degree.
-
-Return ONLY a valid JSON object with no other text, in this exact shape:
-{{
-  "rankings": [
-    {{"applicant_id": 123, "score": 82, "reasoning": "one short sentence why"}}
-  ]
-}}"""
-
-    try:
-        payload = generate_json(prompt)
-        return {
-            int(r["applicant_id"]): {"score": max(0.0, min(100.0, float(r["score"]))),
-                                     "reasoning": r.get("reasoning", "")}
-            for r in payload.get("rankings", [])
-            if "applicant_id" in r and "score" in r
-        }
-    except Exception as e:
-        log.warning("LLM re-ranking batch failed: %s", e)
-        return {}
+def _prescreen(coverage, role, emb: float) -> float:
+    """Cheap estimate used to choose who gets the full review."""
+    parts = [(w, v) for w, v in ((0.4, coverage), (0.3, role), (0.3, emb)) if v is not None]
+    return round(sum(w * v for w, v in parts) / sum(w for w, _ in parts), 1)
 
 
-def _rerank_with_llm(job, rows: pd.DataFrame) -> dict:
-    results = {}
-    for start in range(0, len(rows), LLM_BATCH_SIZE):
-        results.update(_rerank_batch(job, rows.iloc[start:start + LLM_BATCH_SIZE]))
-    return results
+# ---------------------------------------------------------------- the review (checklist)
+
+def _check_years(req: dict, years) -> dict:
+    """The years requirement is checked by code: the LLM is bad at arithmetic."""
+    years = _clean(years)
+    needed = req["years"]
+    if years is None:
+        status, evidence = "missing", "Years of experience not found in the CV"
+    elif float(years) >= needed:
+        status, evidence = "met", f"{float(years):g} years of experience"
+    elif float(years) >= 0.6 * needed:
+        status, evidence = "partial", f"{float(years):g} years of experience (asks {needed:g})"
+    else:
+        status, evidence = "missing", f"{float(years):g} years of experience (asks {needed:g})"
+    return {**{k: req[k] for k in ("requirement", "type", "category")}, "status": status, "evidence": evidence}
 
 
-def _weighted(parts) -> float:
-    parts = [(w, v) for w, v in parts if v is not None]
-    return sum(w * v for w, v in parts) / sum(w for w, _ in parts)
+def _review_candidate(job, requirements: list[dict], row) -> dict | None:
+    """Asks the LLM to check every (non-years) requirement against one CV.
+    Returns {"checks": [...], "summary": "..."} or None if the LLM failed."""
+    llm_reqs = [r for r in requirements if r.get("category") != "years"]
+    checks = []
+    if llm_reqs:
+        numbered = "\n".join(f'{i + 1}. [{r["type"]}] {r["requirement"]}' for i, r in enumerate(llm_reqs))
+        cv = redact((_clean(row.parsed_text) or "")[:CV_EXCERPT_CHARS], (row.first_name, row.last_name))
+        prompt = f"""You check a candidate's CV against the requirements of a job, one by one.
+
+JOB: {job.title}
+
+REQUIREMENTS:
+{numbered}
+
+CANDIDATE
+Education: {_clean(row.education_level) or 'not stated'}
+Past roles: {_clean(row.experience_profile) or 'not stated'}
+Skills: {json.dumps(_safe_parse_skills(row.extracted_skills_json))}
+CV excerpt:
+{cv}
+
+For EACH requirement decide:
+- "met": the CV clearly shows it;
+- "partial": related or transferable experience, or only mentioned without detail;
+- "missing": nothing in the CV supports it.
+Be strict: never assume something that is not written. For met and partial, give
+the evidence: a short quote or paraphrase from the CV (at most 15 words).
+Then write one sentence summarising the fit.
+
+Return ONLY a valid JSON object:
+{{"checks": [{{"id": 1, "status": "met", "evidence": "..."}}], "summary": "..."}}"""
+        try:
+            payload = generate_json(prompt, temperature=0.0)
+        except Exception as e:
+            log.warning("Review failed for applicant %s: %s", row.applicant_id, e)
+            return None
+        by_id = {}
+        for c in payload.get("checks", []):
+            try:
+                by_id[int(c.get("id"))] = c
+            except (TypeError, ValueError):
+                continue
+        for i, req in enumerate(llm_reqs):
+            c = by_id.get(i + 1, {})
+            status = str(c.get("status", "missing")).lower()
+            if status not in POINTS:
+                status = "missing"
+            checks.append({**req, "status": status,
+                           "evidence": str(c.get("evidence") or "")[:160] if status != "missing" else ""})
+        summary = str(payload.get("summary") or "").strip()
+    else:
+        summary = ""
+
+    years_req = next((r for r in requirements if r.get("category") == "years"), None)
+    if years_req:
+        checks.insert(0, _check_years(years_req, row.years_of_experience))
+    return {"checks": checks, "summary": summary}
 
 
-def _blend(llm_score: float, coverage, role, emb: float) -> float:
-    final = _weighted([(W_LLM, llm_score), (W_COVERAGE, coverage), (W_ROLE, role), (W_EMB, emb)])
-    if coverage is not None and coverage < GATE_COVERAGE:
-        final = min(final, GATE_CAP)
-    return round(final, 1)
+def score_checklist(checks: list[dict]) -> float:
+    """met = 1, partial = 0.5, missing = 0, must-haves count double; missing
+    must-haves cap the score (60 for one, 40 for two or more)."""
+    if not checks:
+        return 0.0
+    total = sum(WEIGHT[c["type"]] for c in checks)
+    got = sum(WEIGHT[c["type"]] * POINTS[c["status"]] for c in checks)
+    score = 100.0 * got / total
+    missing_musts = sum(1 for c in checks if c["type"] == "must" and c["status"] == "missing")
+    if missing_musts == 1:
+        score = min(score, CAP_ONE_MUST_MISSING)
+    elif missing_musts >= 2:
+        score = min(score, CAP_MUSTS_MISSING)
+    return round(score, 1)
 
 
-def _provisional(coverage, role, emb: float) -> float:
-    """Used when the LLM failed: shown but never cached."""
-    return round(_weighted([(0.4, coverage), (0.3, role), (0.3, emb)]), 1)
+def _reasoning(checks: list[dict], summary: str) -> str:
+    musts = [c for c in checks if c["type"] == "must"]
+    nices = [c for c in checks if c["type"] == "nice"]
+    met = lambda cs: sum(1 for c in cs if c["status"] == "met")
+    parts = [f"Must-haves met: {met(musts)}/{len(musts)}"]
+    if nices:
+        parts.append(f"nice-to-haves: {met(nices)}/{len(nices)}")
+    missing = [c["requirement"] for c in musts if c["status"] == "missing"]
+    text_out = ", ".join(parts) + (f"; missing: {', '.join(missing)}" if missing else "") + "."
+    return f"{text_out} {summary}".strip()
 
 
-def _persist_score(application_id, score: float, reasoning: str, embedding_score: float):
+def _persist(application_id, score: float, reasoning: str, embedding_score: float, checks: list[dict]):
     with engine.begin() as conn:
         conn.execute(text("""
             UPDATE job_applications
-            SET ai_match_score = :score, ai_match_reasoning = :why, ai_embedding_score = :emb
+            SET ai_match_score = :score, ai_match_reasoning = :why, ai_embedding_score = :emb,
+                ai_match_details = CAST(:details AS jsonb)
             WHERE application_id = :aid
-        """), {"score": round(score), "why": reasoning, "emb": embedding_score, "aid": application_id})
+        """), {"score": round(score), "why": reasoning, "emb": embedding_score,
+               "details": json.dumps(checks), "aid": application_id})
 
 
 # ------------------------------------------------------------------ main entry
-
-def _clean(value):
-    """pandas uses NaN for missing values; JSON can't encode NaN."""
-    if value is None:
-        return None
-    try:
-        return None if pd.isna(value) else value
-    except (TypeError, ValueError):
-        return value
-
 
 def match_candidates_to_job(job_id: int, top_k: int = 10, recompute_all: bool = False):
     job = _load_job(job_id)
     if job is None:
         return None
+    requirements = get_requirements(job, refresh=recompute_all)
 
     applicants_df = _fetch_job_applicants(job_id)
     processed = applicants_df[applicants_df["cv_embedding"].notna()].copy()
     unprocessed_ids = applicants_df.loc[applicants_df["cv_embedding"].isna(), "applicant_id"].astype(int).tolist()
-    summary = {
+    meta = {
+        "job_id": job.job_id,
+        "job_title": job.title,
+        "required_skills": job.required_skills or "",
+        "required_experience_years": float(job.required_experience_years)
+        if job.required_experience_years is not None else None,
+        "requirements": requirements,
         "n_applicants": int(len(applicants_df)),
         "n_processed": int(len(processed)),
         "unprocessed_applicant_ids": unprocessed_ids,
     }
     if processed.empty:
-        return {**_job_meta(job), **summary, "candidates": []}
+        return {**meta, "candidates": []}
 
     if recompute_all:
-        to_score = processed
-        already_scored = processed.iloc[0:0]
+        to_score, already_scored = processed, processed.iloc[0:0]
     else:
-        already_scored = processed[processed["ai_match_score"].notna()]
-        to_score = processed[processed["ai_match_score"].isna()]
+        done = processed["ai_match_score"].notna() & processed["ai_match_details"].notna()
+        already_scored, to_score = processed[done], processed[~done]
 
     def base(r):
-        # skills go out as a JSON string: that's what the frontend's parseSkills expects
         years = _clean(r.years_of_experience)
         return {
             "applicant_id": int(r.applicant_id),
             "name": f"{r.first_name} {r.last_name}",
             "education_level": _clean(r.education_level),
             "years_of_experience": float(years) if years is not None else None,
+            # a JSON string: that's what the frontend's parseSkills expects
             "skills": json.dumps(_safe_parse_skills(r.extracted_skills_json)),
         }
 
     candidates = []
-
-    # Cached: score, similarity and reasoning all come from the DB.
     for r in already_scored.itertuples():
         emb = _clean(r.ai_embedding_score)
+        details = r.ai_match_details
         candidates.append({
             **base(r),
             "match_score": float(r.ai_match_score),
             "embedding_score": float(emb) if emb is not None else None,
             "ai_reasoning": _clean(r.ai_match_reasoning),
+            "requirements": json.loads(details) if isinstance(details, str) else details,
+            "reviewed": True,
         })
 
     if not to_score.empty:
-        applicant_ids = to_score["applicant_id"].astype(int).tolist()
-
-        raw_sims = _embedding_scores(_job_profile_text(job), applicant_ids)
+        ids = to_score["applicant_id"].astype(int).tolist()
+        raw_sims = _embedding_scores(_job_profile_text(job), ids)
         coverages = _coverage_scores(
             _split_skills(job.required_skills),
-            {int(r.applicant_id): _safe_parse_skills(r.extracted_skills_json)
-             for r in to_score.itertuples()},
+            {int(r.applicant_id): _safe_parse_skills(r.extracted_skills_json) for r in to_score.itertuples()},
         )
-        role_scores = _role_relevance(
-            job,
-            {int(r.applicant_id): _clean(r.experience_profile) for r in to_score.itertuples()},
-        )
-        cheap = {aid: _provisional(coverages.get(aid), role_scores.get(aid),
-                                   _calibrate_embedding(raw_sims.get(aid, 0.0)))
-                 for aid in applicant_ids}
+        roles = _role_relevance(job, {int(r.applicant_id): _clean(r.experience_profile)
+                                      for r in to_score.itertuples()})
+        emb = {aid: _calibrate_embedding(raw_sims.get(aid, 0.0)) for aid in ids}
+        cheap = {aid: _prescreen(coverages.get(aid), roles.get(aid), emb[aid]) for aid in ids}
 
-        # Pre-screen: only the most promising candidates are sent to the LLM
-        # (the slow, expensive step); the others keep their pre-screen score.
-        shortlist = sorted(applicant_ids, key=lambda a: cheap[a], reverse=True)[:config.MATCH_LLM_MAX]
-        llm_scores = _rerank_with_llm(job, to_score[to_score["applicant_id"].astype(int).isin(shortlist)])
+        # only the most promising candidates get the (slow) LLM review, in parallel
+        shortlist = set(sorted(ids, key=lambda a: cheap[a], reverse=True)[:config.MATCH_LLM_MAX])
+        rows = {int(r.applicant_id): r for r in to_score.itertuples()}
+        with ThreadPoolExecutor(max_workers=max(1, config.MATCH_LLM_WORKERS)) as pool:
+            reviews = dict(zip(shortlist, pool.map(lambda a: _review_candidate(job, requirements, rows[a]), shortlist)))
 
-        for r in to_score.itertuples():
-            aid = int(r.applicant_id)
-            emb = _calibrate_embedding(raw_sims.get(aid, 0.0))
-            llm_result = llm_scores.get(aid)
-
-            if llm_result:
-                final = _blend(llm_result["score"], coverages.get(aid), role_scores.get(aid), emb)
-                reasoning = llm_result["reasoning"]
-                _persist_score(r.application_id, final, reasoning, emb)   # only complete scores are cached
-            elif aid not in shortlist:
-                final, reasoning = cheap[aid], "Not reviewed by the AI: low pre-screen score."
+        for aid, r in rows.items():
+            review = reviews.get(aid)
+            if review:
+                score = round(score_checklist(review["checks"]))   # stored as a whole number
+                reasoning = _reasoning(review["checks"], review["summary"])
+                _persist(r.application_id, score, reasoning, emb[aid], review["checks"])   # cached
+                candidates.append({**base(r), "match_score": score, "embedding_score": emb[aid],
+                                   "ai_reasoning": reasoning, "requirements": review["checks"], "reviewed": True})
             else:
-                final, reasoning = cheap[aid], None   # LLM failed: retried on next search
+                why = ("Not reviewed: low pre-screen score." if aid not in shortlist
+                       else "The AI review failed; it will be retried on the next search.")
+                candidates.append({**base(r), "match_score": cheap[aid], "embedding_score": emb[aid],
+                                   "ai_reasoning": why, "requirements": [], "reviewed": False})
 
-            candidates.append({**base(r), "match_score": final,
-                               "embedding_score": emb, "ai_reasoning": reasoning})
-
-    candidates.sort(key=lambda c: c["match_score"], reverse=True)
-    return {**_job_meta(job), **summary, "candidates": candidates[:top_k]}
+    # reviewed candidates first (their score is the checklist), then the pre-screen-only ones
+    candidates.sort(key=lambda c: (c["reviewed"], c["match_score"]), reverse=True)
+    return {**meta, "candidates": candidates[:top_k]}

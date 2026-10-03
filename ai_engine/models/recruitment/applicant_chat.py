@@ -11,37 +11,17 @@ LLM calls go through llm_client (Groq first, Ollama as fallback).
 """
 
 import json
-import re
 from sqlalchemy import text
 from database import engine
 from models.recruitment.matcher import _load_job, _safe_parse_skills
 from models.recruitment.llm_client import stream_chat
+from models.recruitment.privacy import redact
 
 # system context + the last 12 messages are sent to the LLM
 HISTORY_LIMIT = 12
 
-_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-# phone-like sequences (digits with spaces, dots, dashes, parentheses, leading +);
-# only redacted when they hold 9+ digits, so date ranges like "2015 - 2019" stay
-_PHONE_RE = re.compile(r"\+?\(?\d[\d\s().-]{7,}\d")
-
-
-def _redact_phone(match: re.Match) -> str:
-    return "[phone]" if sum(c.isdigit() for c in match.group()) >= 9 else match.group()
-
-
 class ChatError(Exception):
     pass
-
-
-def _redact(resume_text: str, names: tuple[str, ...] = ()) -> str:
-    """The resume may leave the machine (Groq), so strip contact details and
-    the candidate's own name."""
-    text_out = _PHONE_RE.sub(_redact_phone, _EMAIL_RE.sub("[email]", resume_text))
-    for name in names:
-        if name and len(name) >= 2:
-            text_out = re.sub(r"\b" + re.escape(name) + r"\b", "[name]", text_out, flags=re.IGNORECASE)
-    return text_out
 
 
 def _build_context_block(applicant_id: int, job_id: int) -> str | None:
@@ -82,7 +62,7 @@ Years of experience: {applicant.years_of_experience if applicant.years_of_experi
 Past roles: {applicant.experience_profile or 'not specified'}
 Extracted skills: {json.dumps(skills)}
 Resume text:
-{_redact((applicant.parsed_text or '')[:3000], (applicant.first_name, applicant.last_name))}
+{redact((applicant.parsed_text or '')[:3000], (applicant.first_name, applicant.last_name))}
 
 From now on, answer the user's questions about this candidate's fit for this
 job directly and concisely, in plain text (not JSON) -- this is a conversation,
@@ -134,7 +114,7 @@ def stream_chat_message(applicant_id: int, job_id: int, user_message: str):
                 + [{"role": "user", "content": user_message}])
 
     stream = stream_chat(messages, temperature=0.3)
-    first = next(stream, None)          # connects here; raises LLMUnavailable if no provider works
+    first = next(stream, None)         
 
     def generate():
         parts = []

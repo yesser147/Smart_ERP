@@ -4,12 +4,26 @@
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
     <div class="erp-card">
-      <div class="erp-card-header"><h2 class="erp-section-title">Role</h2></div>
+      <div class="erp-card-header"><h2 class="erp-section-title">1. Role</h2></div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
         <div class="sm:col-span-2">
           <label class="erp-label" for="title">Job title *</label>
-          <input id="title" formControlName="title" class="erp-input" placeholder="e.g. Senior Sales Executive" />
-          @if (invalid('title')) { <p class="text-xs text-rose-300 mt-1">The title is required.</p> }
+          <select id="title" formControlName="titleChoice" class="erp-input">
+            <option value="" disabled>Choose an existing job, or create a new title</option>
+            <option [value]="NEW_TITLE">+ New job title...</option>
+            <optgroup label="Existing jobs">
+              @for (t of titles; track t.title) { <option [value]="t.title">{{ t.title }}</option> }
+            </optgroup>
+          </select>
+          @if (isNewTitle) {
+            <input formControlName="newTitle" class="erp-input mt-2" placeholder="e.g. Clinical Data Analyst" autocomplete="off" />
+            <p class="text-xs text-slate-500 mt-1">The AI will define the skills of this new job; they are reused for its next openings.</p>
+          } @else if (form.controls.titleChoice.value) {
+            <p class="text-xs text-slate-500 mt-1">Filled in from the latest opening of this job; you can change anything. Its skills are reused.</p>
+          }
+          @if (titleMissing && (form.controls.titleChoice.touched || form.controls.newTitle.touched)) {
+            <p class="text-xs text-rose-300 mt-1">Choose a job title or type the new one.</p>
+          }
         </div>
         <div class="sm:col-span-2">
           <label class="erp-label" for="team">Team *</label>
@@ -36,30 +50,50 @@
           <input id="max" type="number" min="0" step="1000" formControlName="offeredSalaryMax" class="erp-input" />
           @if (salaryRangeInvalid) { <p class="text-xs text-rose-300 mt-1">The maximum must be above the minimum.</p> }
         </div>
+        <div class="sm:col-span-2">
+          <label class="erp-label" for="notes">Notes for the AI <span class="font-normal text-slate-500">(optional)</span></label>
+          <textarea id="notes" formControlName="notes" rows="3" class="erp-input"
+                    placeholder="Anything specific, even in rough words: e.g. 'travel 2 days/week, french is a plus, team of 6'"></textarea>
+          <p class="text-xs text-slate-500 mt-1">The AI rewrites these points properly in the description.</p>
+        </div>
       </div>
     </div>
 
     <div class="erp-card">
       <div class="erp-card-header">
         <div>
-          <h2 class="erp-section-title">Description</h2>
+          <h2 class="erp-section-title">2. Description, written by the AI</h2>
           <p class="text-xs text-slate-500 mt-0.5">Shown to candidates, and used by the AI to rank applicants</p>
         </div>
-        <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="generate()" [disabled]="generating">
-          <app-icon name="sparkles" class="h-4 w-4 text-accent" [class.animate-pulse]="generating" />
-          {{ generating ? 'Writing...' : 'Write with AI' }}
+        <button type="button" class="erp-btn-primary erp-btn-sm" (click)="generate()" [disabled]="generating">
+          <app-icon name="sparkles" class="h-4 w-4" [class.animate-pulse]="generating" />
+          {{ generating ? 'Writing...' : description ? 'Write again' : 'Write with AI' }}
         </button>
       </div>
-      <div class="p-5 space-y-3">
+      <div class="p-5 space-y-4">
         @if (aiError) { <div class="erp-alert-warning">{{ aiError }}</div> }
-        <textarea formControlName="description" rows="14" class="erp-input font-mono text-[13px] leading-relaxed"
-                  placeholder="About the role, responsibilities, profile..."></textarea>
-        @if (skills.length) {
-          <div>
-            <p class="erp-kicker mb-2">Skills the AI will look for in CVs</p>
-            <div class="flex flex-wrap gap-1.5">
-              @for (s of skills; track s) { <span class="erp-chip">{{ s }}</span> }
+        @if (stale) {
+          <div class="erp-alert-warning">The role changed since the text was written: click "Write again" before publishing.</div>
+        }
+        @if (description) {
+          <div class="rounded-lg border border-line bg-canvas/60 p-4 text-sm leading-relaxed text-slate-200 whitespace-pre-line"
+               [class.opacity-50]="stale">{{ description }}</div>
+          @if (skills.length) {
+            <div>
+              <p class="erp-kicker mb-2">
+                Skills the AI will look for in CVs
+                <span class="normal-case tracking-normal font-normal text-slate-500">· {{ knownTitle ? 'the skills of this job, kept as they are' : 'defined for this new job' }}</span>
+              </p>
+              <div class="flex flex-wrap gap-1.5">
+                @for (s of skills; track s) { <span class="erp-chip">{{ s }}</span> }
+              </div>
             </div>
+          }
+        } @else {
+          <div class="rounded-lg border border-dashed border-line px-4 py-10 text-center">
+            <app-icon name="sparkles" class="mx-auto h-6 w-6 text-accent" />
+            <p class="mt-2 text-sm text-slate-300">Fill in the role, then click <strong>Write with AI</strong>.</p>
+            <p class="mt-1 text-xs text-slate-500">The description is always written by the AI, so it is clean and uses the right skills.</p>
           </div>
         }
       </div>
@@ -69,7 +103,8 @@
 
     <div class="flex justify-end gap-2">
       <a routerLink="/dashboard/jobs" class="erp-btn-secondary">Cancel</a>
-      <button type="submit" class="erp-btn-primary" [disabled]="saving">
+      <button type="submit" class="erp-btn-primary" [disabled]="saving || !canPublish"
+              [title]="canPublish ? '' : 'Write the description with the AI first'">
         <app-icon name="check" class="h-4 w-4" /> {{ saving ? 'Publishing...' : 'Publish opening' }}
       </button>
     </div>

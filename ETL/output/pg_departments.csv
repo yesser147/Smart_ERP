@@ -1,99 +1,99 @@
 department_id,business_unit,department_type,division_description,is_deleted,created_at
-1,HR-HRS-1,Human Resources,HR Specialists - Team 1,False,2026-09-25 22:42:27
-2,HR-HRS-2,Human Resources,HR Specialists - Team 2,False,2026-09-25 22:42:27
-3,HR-HRS-3,Human Resources,HR Specialists - Team 3,False,2026-09-25 22:42:27
-4,HR-MGT-1,Human Resources,Managers,False,2026-09-25 22:42:27
-5,RD-HCR-1,Research & Development,Healthcare Representatives - Team 1,False,2026-09-25 22:42:27
-6,RD-HCR-2,Research & Development,Healthcare Representatives - Team 2,False,2026-09-25 22:42:27
-7,RD-HCR-3,Research & Development,Healthcare Representatives - Team 3,False,2026-09-25 22:42:27
-8,RD-HCR-4,Research & Development,Healthcare Representatives - Team 4,False,2026-09-25 22:42:27
-9,RD-HCR-5,Research & Development,Healthcare Representatives - Team 5,False,2026-09-25 22:42:27
-10,RD-HCR-6,Research & Development,Healthcare Representatives - Team 6,False,2026-09-25 22:42:27
-11,RD-HCR-7,Research & Development,Healthcare Representatives - Team 7,False,2026-09-25 22:42:27
-12,RD-HCR-8,Research & Development,Healthcare Representatives - Team 8,False,2026-09-25 22:42:27
-13,RD-HCR-9,Research & Development,Healthcare Representatives - Team 9,False,2026-09-25 22:42:27
-14,RD-LAB-1,Research & Development,Laboratory Technicians - Team 1,False,2026-09-25 22:42:27
-15,RD-LAB-2,Research & Development,Laboratory Technicians - Team 2,False,2026-09-25 22:42:27
-16,RD-LAB-3,Research & Development,Laboratory Technicians - Team 3,False,2026-09-25 22:42:27
-17,RD-LAB-4,Research & Development,Laboratory Technicians - Team 4,False,2026-09-25 22:42:27
-18,RD-LAB-5,Research & Development,Laboratory Technicians - Team 5,False,2026-09-25 22:42:27
-19,RD-LAB-6,Research & Development,Laboratory Technicians - Team 6,False,2026-09-25 22:42:27
-20,RD-LAB-7,Research & Development,Laboratory Technicians - Team 7,False,2026-09-25 22:42:27
-21,RD-LAB-8,Research & Development,Laboratory Technicians - Team 8,False,2026-09-25 22:42:27
-22,RD-LAB-9,Research & Development,Laboratory Technicians - Team 9,False,2026-09-25 22:42:27
-23,RD-LAB-10,Research & Development,Laboratory Technicians - Team 10,False,2026-09-25 22:42:27
-24,RD-LAB-11,Research & Development,Laboratory Technicians - Team 11,False,2026-09-25 22:42:27
-25,RD-LAB-12,Research & Development,Laboratory Technicians - Team 12,False,2026-09-25 22:42:27
-26,RD-LAB-13,Research & Development,Laboratory Technicians - Team 13,False,2026-09-25 22:42:27
-27,RD-LAB-14,Research & Development,Laboratory Technicians - Team 14,False,2026-09-25 22:42:27
-28,RD-LAB-15,Research & Development,Laboratory Technicians - Team 15,False,2026-09-25 22:42:27
-29,RD-LAB-16,Research & Development,Laboratory Technicians - Team 16,False,2026-09-25 22:42:27
-30,RD-LAB-17,Research & Development,Laboratory Technicians - Team 17,False,2026-09-25 22:42:27
-31,RD-MGT-1,Research & Development,Managers - Team 1,False,2026-09-25 22:42:27
-32,RD-MGT-2,Research & Development,Managers - Team 2,False,2026-09-25 22:42:27
-33,RD-MGT-3,Research & Development,Managers - Team 3,False,2026-09-25 22:42:27
-34,RD-MGT-4,Research & Development,Managers - Team 4,False,2026-09-25 22:42:27
-35,RD-MFG-1,Research & Development,Manufacturing Directors - Team 1,False,2026-09-25 22:42:27
-36,RD-MFG-2,Research & Development,Manufacturing Directors - Team 2,False,2026-09-25 22:42:27
-37,RD-MFG-3,Research & Development,Manufacturing Directors - Team 3,False,2026-09-25 22:42:27
-38,RD-MFG-4,Research & Development,Manufacturing Directors - Team 4,False,2026-09-25 22:42:27
-39,RD-MFG-5,Research & Development,Manufacturing Directors - Team 5,False,2026-09-25 22:42:27
-40,RD-MFG-6,Research & Development,Manufacturing Directors - Team 6,False,2026-09-25 22:42:27
-41,RD-MFG-7,Research & Development,Manufacturing Directors - Team 7,False,2026-09-25 22:42:27
-42,RD-MFG-8,Research & Development,Manufacturing Directors - Team 8,False,2026-09-25 22:42:27
-43,RD-MFG-9,Research & Development,Manufacturing Directors - Team 9,False,2026-09-25 22:42:27
-44,RD-MFG-10,Research & Development,Manufacturing Directors - Team 10,False,2026-09-25 22:42:27
-45,RD-RDIR-1,Research & Development,Research Directors - Team 1,False,2026-09-25 22:42:27
-46,RD-RDIR-2,Research & Development,Research Directors - Team 2,False,2026-09-25 22:42:27
-47,RD-RDIR-3,Research & Development,Research Directors - Team 3,False,2026-09-25 22:42:27
-48,RD-RDIR-4,Research & Development,Research Directors - Team 4,False,2026-09-25 22:42:27
-49,RD-RDIR-5,Research & Development,Research Directors - Team 5,False,2026-09-25 22:42:27
-50,RD-RSC-1,Research & Development,Research Scientists - Team 1,False,2026-09-25 22:42:27
-51,RD-RSC-2,Research & Development,Research Scientists - Team 2,False,2026-09-25 22:42:27
-52,RD-RSC-3,Research & Development,Research Scientists - Team 3,False,2026-09-25 22:42:27
-53,RD-RSC-4,Research & Development,Research Scientists - Team 4,False,2026-09-25 22:42:27
-54,RD-RSC-5,Research & Development,Research Scientists - Team 5,False,2026-09-25 22:42:27
-55,RD-RSC-6,Research & Development,Research Scientists - Team 6,False,2026-09-25 22:42:27
-56,RD-RSC-7,Research & Development,Research Scientists - Team 7,False,2026-09-25 22:42:27
-57,RD-RSC-8,Research & Development,Research Scientists - Team 8,False,2026-09-25 22:42:27
-58,RD-RSC-9,Research & Development,Research Scientists - Team 9,False,2026-09-25 22:42:27
-59,RD-RSC-10,Research & Development,Research Scientists - Team 10,False,2026-09-25 22:42:27
-60,RD-RSC-11,Research & Development,Research Scientists - Team 11,False,2026-09-25 22:42:27
-61,RD-RSC-12,Research & Development,Research Scientists - Team 12,False,2026-09-25 22:42:27
-62,RD-RSC-13,Research & Development,Research Scientists - Team 13,False,2026-09-25 22:42:27
-63,RD-RSC-14,Research & Development,Research Scientists - Team 14,False,2026-09-25 22:42:27
-64,RD-RSC-15,Research & Development,Research Scientists - Team 15,False,2026-09-25 22:42:27
-65,RD-RSC-16,Research & Development,Research Scientists - Team 16,False,2026-09-25 22:42:27
-66,RD-RSC-17,Research & Development,Research Scientists - Team 17,False,2026-09-25 22:42:27
-67,RD-RSC-18,Research & Development,Research Scientists - Team 18,False,2026-09-25 22:42:27
-68,RD-RSC-19,Research & Development,Research Scientists - Team 19,False,2026-09-25 22:42:27
-69,SL-MGT-1,Sales,Managers - Team 1,False,2026-09-25 22:42:27
-70,SL-MGT-2,Sales,Managers - Team 2,False,2026-09-25 22:42:27
-71,SL-SEX-1,Sales,Sales Executives - Team 1,False,2026-09-25 22:42:27
-72,SL-SEX-2,Sales,Sales Executives - Team 2,False,2026-09-25 22:42:27
-73,SL-SEX-3,Sales,Sales Executives - Team 3,False,2026-09-25 22:42:27
-74,SL-SEX-4,Sales,Sales Executives - Team 4,False,2026-09-25 22:42:27
-75,SL-SEX-5,Sales,Sales Executives - Team 5,False,2026-09-25 22:42:27
-76,SL-SEX-6,Sales,Sales Executives - Team 6,False,2026-09-25 22:42:27
-77,SL-SEX-7,Sales,Sales Executives - Team 7,False,2026-09-25 22:42:27
-78,SL-SEX-8,Sales,Sales Executives - Team 8,False,2026-09-25 22:42:27
-79,SL-SEX-9,Sales,Sales Executives - Team 9,False,2026-09-25 22:42:27
-80,SL-SEX-10,Sales,Sales Executives - Team 10,False,2026-09-25 22:42:27
-81,SL-SEX-11,Sales,Sales Executives - Team 11,False,2026-09-25 22:42:27
-82,SL-SEX-12,Sales,Sales Executives - Team 12,False,2026-09-25 22:42:27
-83,SL-SEX-13,Sales,Sales Executives - Team 13,False,2026-09-25 22:42:27
-84,SL-SEX-14,Sales,Sales Executives - Team 14,False,2026-09-25 22:42:27
-85,SL-SEX-15,Sales,Sales Executives - Team 15,False,2026-09-25 22:42:27
-86,SL-SEX-16,Sales,Sales Executives - Team 16,False,2026-09-25 22:42:27
-87,SL-SEX-17,Sales,Sales Executives - Team 17,False,2026-09-25 22:42:27
-88,SL-SEX-18,Sales,Sales Executives - Team 18,False,2026-09-25 22:42:27
-89,SL-SEX-19,Sales,Sales Executives - Team 19,False,2026-09-25 22:42:27
-90,SL-SEX-20,Sales,Sales Executives - Team 20,False,2026-09-25 22:42:27
-91,SL-SEX-21,Sales,Sales Executives - Team 21,False,2026-09-25 22:42:27
-92,SL-SEX-22,Sales,Sales Executives - Team 22,False,2026-09-25 22:42:27
-93,SL-SREP-1,Sales,Sales Representatives - Team 1,False,2026-09-25 22:42:27
-94,SL-SREP-2,Sales,Sales Representatives - Team 2,False,2026-09-25 22:42:27
-95,SL-SREP-3,Sales,Sales Representatives - Team 3,False,2026-09-25 22:42:27
-96,SL-SREP-4,Sales,Sales Representatives - Team 4,False,2026-09-25 22:42:27
-97,SL-SREP-5,Sales,Sales Representatives - Team 5,False,2026-09-25 22:42:27
-98,SL-SREP-6,Sales,Sales Representatives - Team 6,False,2026-09-25 22:42:27
+1,HR-HRS-1,Human Resources,HR Specialists - Team 1,False,2026-10-02 19:10:55
+2,HR-HRS-2,Human Resources,HR Specialists - Team 2,False,2026-10-02 19:10:55
+3,HR-HRS-3,Human Resources,HR Specialists - Team 3,False,2026-10-02 19:10:55
+4,HR-MGT-1,Human Resources,Managers,False,2026-10-02 19:10:55
+5,RD-HCR-1,Research & Development,Healthcare Representatives - Team 1,False,2026-10-02 19:10:55
+6,RD-HCR-2,Research & Development,Healthcare Representatives - Team 2,False,2026-10-02 19:10:55
+7,RD-HCR-3,Research & Development,Healthcare Representatives - Team 3,False,2026-10-02 19:10:55
+8,RD-HCR-4,Research & Development,Healthcare Representatives - Team 4,False,2026-10-02 19:10:55
+9,RD-HCR-5,Research & Development,Healthcare Representatives - Team 5,False,2026-10-02 19:10:55
+10,RD-HCR-6,Research & Development,Healthcare Representatives - Team 6,False,2026-10-02 19:10:55
+11,RD-HCR-7,Research & Development,Healthcare Representatives - Team 7,False,2026-10-02 19:10:55
+12,RD-HCR-8,Research & Development,Healthcare Representatives - Team 8,False,2026-10-02 19:10:55
+13,RD-HCR-9,Research & Development,Healthcare Representatives - Team 9,False,2026-10-02 19:10:55
+14,RD-LAB-1,Research & Development,Laboratory Technicians - Team 1,False,2026-10-02 19:10:55
+15,RD-LAB-2,Research & Development,Laboratory Technicians - Team 2,False,2026-10-02 19:10:55
+16,RD-LAB-3,Research & Development,Laboratory Technicians - Team 3,False,2026-10-02 19:10:55
+17,RD-LAB-4,Research & Development,Laboratory Technicians - Team 4,False,2026-10-02 19:10:55
+18,RD-LAB-5,Research & Development,Laboratory Technicians - Team 5,False,2026-10-02 19:10:55
+19,RD-LAB-6,Research & Development,Laboratory Technicians - Team 6,False,2026-10-02 19:10:55
+20,RD-LAB-7,Research & Development,Laboratory Technicians - Team 7,False,2026-10-02 19:10:55
+21,RD-LAB-8,Research & Development,Laboratory Technicians - Team 8,False,2026-10-02 19:10:55
+22,RD-LAB-9,Research & Development,Laboratory Technicians - Team 9,False,2026-10-02 19:10:55
+23,RD-LAB-10,Research & Development,Laboratory Technicians - Team 10,False,2026-10-02 19:10:55
+24,RD-LAB-11,Research & Development,Laboratory Technicians - Team 11,False,2026-10-02 19:10:55
+25,RD-LAB-12,Research & Development,Laboratory Technicians - Team 12,False,2026-10-02 19:10:55
+26,RD-LAB-13,Research & Development,Laboratory Technicians - Team 13,False,2026-10-02 19:10:55
+27,RD-LAB-14,Research & Development,Laboratory Technicians - Team 14,False,2026-10-02 19:10:55
+28,RD-LAB-15,Research & Development,Laboratory Technicians - Team 15,False,2026-10-02 19:10:55
+29,RD-LAB-16,Research & Development,Laboratory Technicians - Team 16,False,2026-10-02 19:10:55
+30,RD-LAB-17,Research & Development,Laboratory Technicians - Team 17,False,2026-10-02 19:10:55
+31,RD-MGT-1,Research & Development,Managers - Team 1,False,2026-10-02 19:10:55
+32,RD-MGT-2,Research & Development,Managers - Team 2,False,2026-10-02 19:10:55
+33,RD-MGT-3,Research & Development,Managers - Team 3,False,2026-10-02 19:10:55
+34,RD-MGT-4,Research & Development,Managers - Team 4,False,2026-10-02 19:10:55
+35,RD-MFG-1,Research & Development,Manufacturing Directors - Team 1,False,2026-10-02 19:10:55
+36,RD-MFG-2,Research & Development,Manufacturing Directors - Team 2,False,2026-10-02 19:10:55
+37,RD-MFG-3,Research & Development,Manufacturing Directors - Team 3,False,2026-10-02 19:10:55
+38,RD-MFG-4,Research & Development,Manufacturing Directors - Team 4,False,2026-10-02 19:10:55
+39,RD-MFG-5,Research & Development,Manufacturing Directors - Team 5,False,2026-10-02 19:10:55
+40,RD-MFG-6,Research & Development,Manufacturing Directors - Team 6,False,2026-10-02 19:10:55
+41,RD-MFG-7,Research & Development,Manufacturing Directors - Team 7,False,2026-10-02 19:10:55
+42,RD-MFG-8,Research & Development,Manufacturing Directors - Team 8,False,2026-10-02 19:10:55
+43,RD-MFG-9,Research & Development,Manufacturing Directors - Team 9,False,2026-10-02 19:10:55
+44,RD-MFG-10,Research & Development,Manufacturing Directors - Team 10,False,2026-10-02 19:10:55
+45,RD-RDIR-1,Research & Development,Research Directors - Team 1,False,2026-10-02 19:10:55
+46,RD-RDIR-2,Research & Development,Research Directors - Team 2,False,2026-10-02 19:10:55
+47,RD-RDIR-3,Research & Development,Research Directors - Team 3,False,2026-10-02 19:10:55
+48,RD-RDIR-4,Research & Development,Research Directors - Team 4,False,2026-10-02 19:10:55
+49,RD-RDIR-5,Research & Development,Research Directors - Team 5,False,2026-10-02 19:10:55
+50,RD-RSC-1,Research & Development,Research Scientists - Team 1,False,2026-10-02 19:10:55
+51,RD-RSC-2,Research & Development,Research Scientists - Team 2,False,2026-10-02 19:10:55
+52,RD-RSC-3,Research & Development,Research Scientists - Team 3,False,2026-10-02 19:10:55
+53,RD-RSC-4,Research & Development,Research Scientists - Team 4,False,2026-10-02 19:10:55
+54,RD-RSC-5,Research & Development,Research Scientists - Team 5,False,2026-10-02 19:10:55
+55,RD-RSC-6,Research & Development,Research Scientists - Team 6,False,2026-10-02 19:10:55
+56,RD-RSC-7,Research & Development,Research Scientists - Team 7,False,2026-10-02 19:10:55
+57,RD-RSC-8,Research & Development,Research Scientists - Team 8,False,2026-10-02 19:10:55
+58,RD-RSC-9,Research & Development,Research Scientists - Team 9,False,2026-10-02 19:10:55
+59,RD-RSC-10,Research & Development,Research Scientists - Team 10,False,2026-10-02 19:10:55
+60,RD-RSC-11,Research & Development,Research Scientists - Team 11,False,2026-10-02 19:10:55
+61,RD-RSC-12,Research & Development,Research Scientists - Team 12,False,2026-10-02 19:10:55
+62,RD-RSC-13,Research & Development,Research Scientists - Team 13,False,2026-10-02 19:10:55
+63,RD-RSC-14,Research & Development,Research Scientists - Team 14,False,2026-10-02 19:10:55
+64,RD-RSC-15,Research & Development,Research Scientists - Team 15,False,2026-10-02 19:10:55
+65,RD-RSC-16,Research & Development,Research Scientists - Team 16,False,2026-10-02 19:10:55
+66,RD-RSC-17,Research & Development,Research Scientists - Team 17,False,2026-10-02 19:10:55
+67,RD-RSC-18,Research & Development,Research Scientists - Team 18,False,2026-10-02 19:10:55
+68,RD-RSC-19,Research & Development,Research Scientists - Team 19,False,2026-10-02 19:10:55
+69,SL-MGT-1,Sales,Managers - Team 1,False,2026-10-02 19:10:55
+70,SL-MGT-2,Sales,Managers - Team 2,False,2026-10-02 19:10:55
+71,SL-SEX-1,Sales,Sales Executives - Team 1,False,2026-10-02 19:10:55
+72,SL-SEX-2,Sales,Sales Executives - Team 2,False,2026-10-02 19:10:55
+73,SL-SEX-3,Sales,Sales Executives - Team 3,False,2026-10-02 19:10:55
+74,SL-SEX-4,Sales,Sales Executives - Team 4,False,2026-10-02 19:10:55
+75,SL-SEX-5,Sales,Sales Executives - Team 5,False,2026-10-02 19:10:55
+76,SL-SEX-6,Sales,Sales Executives - Team 6,False,2026-10-02 19:10:55
+77,SL-SEX-7,Sales,Sales Executives - Team 7,False,2026-10-02 19:10:55
+78,SL-SEX-8,Sales,Sales Executives - Team 8,False,2026-10-02 19:10:55
+79,SL-SEX-9,Sales,Sales Executives - Team 9,False,2026-10-02 19:10:55
+80,SL-SEX-10,Sales,Sales Executives - Team 10,False,2026-10-02 19:10:55
+81,SL-SEX-11,Sales,Sales Executives - Team 11,False,2026-10-02 19:10:55
+82,SL-SEX-12,Sales,Sales Executives - Team 12,False,2026-10-02 19:10:55
+83,SL-SEX-13,Sales,Sales Executives - Team 13,False,2026-10-02 19:10:55
+84,SL-SEX-14,Sales,Sales Executives - Team 14,False,2026-10-02 19:10:55
+85,SL-SEX-15,Sales,Sales Executives - Team 15,False,2026-10-02 19:10:55
+86,SL-SEX-16,Sales,Sales Executives - Team 16,False,2026-10-02 19:10:55
+87,SL-SEX-17,Sales,Sales Executives - Team 17,False,2026-10-02 19:10:55
+88,SL-SEX-18,Sales,Sales Executives - Team 18,False,2026-10-02 19:10:55
+89,SL-SEX-19,Sales,Sales Executives - Team 19,False,2026-10-02 19:10:55
+90,SL-SEX-20,Sales,Sales Executives - Team 20,False,2026-10-02 19:10:55
+91,SL-SEX-21,Sales,Sales Executives - Team 21,False,2026-10-02 19:10:55
+92,SL-SEX-22,Sales,Sales Executives - Team 22,False,2026-10-02 19:10:55
+93,SL-SREP-1,Sales,Sales Representatives - Team 1,False,2026-10-02 19:10:55
+94,SL-SREP-2,Sales,Sales Representatives - Team 2,False,2026-10-02 19:10:55
+95,SL-SREP-3,Sales,Sales Representatives - Team 3,False,2026-10-02 19:10:55
+96,SL-SREP-4,Sales,Sales Representatives - Team 4,False,2026-10-02 19:10:55
+97,SL-SREP-5,Sales,Sales Representatives - Team 5,False,2026-10-02 19:10:55
+98,SL-SREP-6,Sales,Sales Representatives - Team 6,False,2026-10-02 19:10:55

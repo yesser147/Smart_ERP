@@ -58,6 +58,15 @@
           </select>
         </div>
         <div>
+          <label class="erp-label" for="gender">Gender</label>
+          <select id="gender" formControlName="gender" class="erp-input">
+            <option value="">Not specified</option>
+            <option value="FEMALE">Female</option>
+            <option value="MALE">Male</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1">Used only for the pay-equity analytics.</p>
+        </div>
+        <div>
           <label class="erp-label" for="class">Classification</label>
           <select id="class" formControlName="employeeClassificationType" class="erp-input">
             <option value="Exempt">Exempt</option>

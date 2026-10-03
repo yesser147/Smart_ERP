@@ -1,39 +1,47 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { NgClass, SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgApexchartsModule } from 'ng-apexcharts';
 import { AiService } from '../../../core/services/ai.service';
-import { PopularQuestion } from '../../../core/models/ai.model';
+import { PinnedChartsService } from '../../../core/services/pinned-charts.service';
+import { ChartSpec, PopularQuestion } from '../../../core/models/ai.model';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { AiChartComponent } from '../../../shared/components/ai-chart/ai-chart.component';
 import { MarkdownPipe } from '../../../shared/pipes/markdown.pipe';
-import { DARK_CHART, GRID, PALETTE } from '../../../shared/utils/chart-theme';
 import { saveFile, toCsv } from '../../../shared/utils/download';
 import { errorMessage } from '../../../shared/utils/errors';
 
 interface Message {
   sender: 'user' | 'ai';
   text: string;
+  question?: string;
+  sql?: string;
   data?: Record<string, unknown>[];
-  chart?: any;
+  /** the chart chosen by the AI: sent with the answer when the question asks for one,
+   *  or later with the "Create a chart" button */
+  spec?: ChartSpec | null;
+  chartState?: 'loading' | string;   // a string = why no chart could be drawn
   showAll?: boolean;
+  pin?: 'saving' | 'pinned' | string;   // a string = the error message
 }
 
 const DEFAULT_QUESTIONS = [
   'How many active employees are there per department?',
-  'What is the average salary by department?',
-  'Which job titles have the highest turnover?',
+  'Average salary by department and gender',
+  'Show turnover by department as a pie chart',
   'How many applications did we receive per open job?',
 ];
 
-/** Floating HR assistant: questions in plain language -> SQL -> answer, table and chart. */
+/** Floating HR assistant: question in plain language -> SQL -> table, chart chosen by
+ *  the AI, and a written answer streamed word by word. Charts can be pinned to the dashboard. */
 @Component({
   selector: 'app-ai-assistant',
   standalone: true,
-  imports: [NgClass, SlicePipe, FormsModule, NgApexchartsModule, IconComponent, MarkdownPipe],
+  imports: [NgClass, SlicePipe, FormsModule, IconComponent, AiChartComponent, MarkdownPipe],
   templateUrl: './ai-assistant.component.html'
 })
 export class AiAssistantComponent {
   private ai = inject(AiService);
+  private pinned = inject(PinnedChartsService);
 
   @ViewChild('scroll') scroll?: ElementRef<HTMLElement>;
 
@@ -42,11 +50,14 @@ export class AiAssistantComponent {
 
   isOpen = false;
   isLoading = false;
+  busy = false;
   userInput = '';
   suggestions: string[] = DEFAULT_QUESTIONS;
   private suggestionsLoaded = false;
+  /** the message whose chart is shown in the large view */
+  expanded: Message | null = null;
   messages: Message[] = [
-    { sender: 'ai', text: 'Hi! Ask me anything about your workforce data: headcount, salaries, turnover, recruitment...' }
+    { sender: 'ai', text: 'Hi! Ask me anything about your workforce data. Want a chart? Say so in the question ("as a pie chart", "plot it per year"...) or click **Create a chart** under a table.' }
   ];
 
   toggle(): void {
@@ -62,31 +73,91 @@ export class AiAssistantComponent {
     }
   }
 
+  @HostListener('document:keydown.escape')
+  closeExpanded(): void {
+    this.expanded = null;
+  }
+
   send(text?: string): void {
     const query = (text ?? this.userInput).trim();
-    if (!query || this.isLoading) return;
+    if (!query || this.busy) return;
     this.messages.push({ sender: 'user', text: query });
     this.userInput = '';
-    this.isLoading = true;
+    this.isLoading = true;        // typing dots until the first words arrive
+    this.busy = true;             // no new question until this answer is complete
     this.scrollDown();
 
+    let reply: Message | null = null;
+    const ensureReply = (): Message => {
+      if (!reply) {
+        reply = { sender: 'ai', text: '', question: query };
+        this.messages.push(reply);
+      }
+      return reply;
+    };
+
     this.ai.askAssistant(query, this.conversationId).subscribe({
-      next: res => {
-        this.messages.push({
-          sender: 'ai',
-          text: res.summary || 'Here is what I found.',
-          data: res.tabular_data ?? undefined,
-          chart: this.autoChart(res.tabular_data),
-        });
-        this.isLoading = false;
+      next: ev => {
+        const m = ensureReply();
+        if (ev.type === 'data') {
+          m.data = ev.tabular_data;
+          m.sql = ev.sql_query;
+        } else if (ev.type === 'chart') {
+          m.spec = ev.chart;
+        } else if (ev.type === 'text') {
+          m.text += ev.text;
+          this.isLoading = false;
+        } else if (ev.type === 'error') {
+          m.text += (m.text ? '\n\n' : '') + ev.message;
+        }
         this.scrollDown();
       },
       error: err => {
-        this.messages.push({ sender: 'ai', text: errorMessage(err, 'Sorry, something went wrong with that question.') });
-        this.isLoading = false;
+        ensureReply().text = err?.message || 'Sorry, something went wrong with that question.';
+        this.isLoading = this.busy = false;
         this.scrollDown();
+      },
+      complete: () => {
+        const m = ensureReply();
+        if (!m.text) m.text = 'Here is what I found.';
+        this.isLoading = this.busy = false;
       }
     });
+  }
+
+  chartTitle(m: Message): string {
+    return m.spec?.title || m.question || 'Chart';
+  }
+
+  createChart(m: Message): void {
+    if (!m.sql || m.chartState === 'loading') return;
+    m.chartState = 'loading';
+    this.ai.chartForAnswer(m.question ?? '', m.sql).subscribe({
+      next: res => { m.spec = res.chart; m.chartState = undefined; this.scrollDown(); },
+      error: err => m.chartState = errorMessage(err, 'No chart could be drawn for this result.')
+    });
+  }
+
+  chartError(m: Message): string | null {
+    return m.chartState && m.chartState !== 'loading' ? m.chartState : null;
+  }
+
+  pin(m: Message): void {
+    if (!m.spec || !m.sql || m.pin === 'saving' || m.pin === 'pinned') return;
+    m.pin = 'saving';
+    this.pinned.pin({ title: this.chartTitle(m), question: m.question ?? '', sql_query: m.sql, chart: m.spec }).subscribe({
+      next: () => m.pin = 'pinned',
+      error: err => m.pin = errorMessage(err, 'The chart could not be pinned.')
+    });
+  }
+
+  pinError(m: Message): string | null {
+    return m.pin && m.pin !== 'saving' && m.pin !== 'pinned' ? m.pin : null;
+  }
+
+  /** decimals shortened for reading (the CSV keeps the exact values) */
+  cell(v: unknown): unknown {
+    return typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 100) / 100 : v;
   }
 
   keys(row: Record<string, unknown> | undefined): string[] {
@@ -96,28 +167,6 @@ export class AiAssistantComponent {
   download(m: Message): void {
     if (!m.data?.length) return;
     saveFile(toCsv(m.data, this.keys(m.data[0]).map(k => ({ key: k, label: k }))), 'assistant-result.csv');
-  }
-
-  /** A bar chart when the result is "one label column + numeric columns" with 2 to 25 rows. */
-  private autoChart(rows: Record<string, unknown>[] | undefined): any {
-    if (!rows || rows.length < 2 || rows.length > 25) return undefined;
-    const keys = Object.keys(rows[0]);
-    const isNum = (k: string) => rows.every(r => r[k] === null || typeof r[k] === 'number');
-    const numeric = keys.filter(isNum).filter(k => !/(^|_)id$/i.test(k));
-    const labels = keys.filter(k => !isNum(k));
-    if (labels.length !== 1 || numeric.length < 1 || numeric.length > 3) return undefined;
-
-    return {
-      series: numeric.map(k => ({ name: k.replace(/_/g, ' '), data: rows.map(r => Number(r[k] ?? 0)) })),
-      chart: { type: 'bar', height: 220, ...DARK_CHART },
-      xaxis: { categories: rows.map(r => String(r[labels[0]] ?? '')), labels: { rotate: -45, trim: true, maxHeight: 80, style: { fontSize: '10px' } } },
-      colors: PALETTE,
-      plotOptions: { bar: { borderRadius: 3, columnWidth: '55%' } },
-      dataLabels: { enabled: false },
-      grid: GRID,
-      legend: { show: numeric.length > 1, labels: { colors: '#94a3b8' } },
-      tooltip: { theme: 'dark' },
-    };
   }
 
   private scrollDown(): void {

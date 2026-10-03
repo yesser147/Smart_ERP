@@ -27,6 +27,7 @@ public class LeaveService {
     private final EmployeeRepository employeeRepository;
     private final NotificationService notificationService;
     private final AuditService auditService;
+    private final LeaveStatusScheduler leaveStatusScheduler;
 
     public List<LeaveRequestDTO> forEmployee(Long employeeId) {
         return repository.findByEmployeeEmployeeIdOrderByStartDateDesc(employeeId)
@@ -85,6 +86,8 @@ public class LeaveService {
         notificationService.notifyEmployee(e.getEmployeeId(), "Leave request " + leave.getStatus().toLowerCase(),
                 "Your " + leave.getLeaveType().toLowerCase() + " leave from " + leave.getStartDate() + " to "
                         + leave.getEndDate() + " was " + leave.getStatus().toLowerCase() + ".", "/dashboard/me");
+        // a leave that starts today takes effect immediately, not at the next nightly run
+        if (approve) leaveStatusScheduler.syncStatuses();
         return LeaveRequestDTO.fromEntity(leave);
     }
 }

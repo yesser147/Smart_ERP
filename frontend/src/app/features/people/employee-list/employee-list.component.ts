@@ -37,7 +37,7 @@ export class EmployeeListComponent implements OnInit {
   loading = true;
   refreshing = false;
   error = false;
-  exporting: 'csv' | 'payroll' | null = null;
+  exporting: 'csv' | null = null;
 
   searchTerm = '';
   sortColumn: SortColumn = 'name';
@@ -127,17 +127,6 @@ export class EmployeeListComponent implements OnInit {
       next: pages => {
         const rows = pages.flatMap(p => p.content) as unknown as Record<string, unknown>[];
         saveFile(toCsv(rows, EXPORT_COLUMNS), 'employees.csv');
-        this.exporting = null;
-      },
-      error: () => this.exporting = null
-    });
-  }
-
-  exportPayroll(): void {
-    this.exporting = 'payroll';
-    this.hr.exportPayroll().subscribe({
-      next: blob => {
-        saveFile(blob, `payroll-${new Date().toISOString().slice(0, 7)}.csv`);
         this.exporting = null;
       },
       error: () => this.exporting = null

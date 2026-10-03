@@ -40,7 +40,7 @@ public class SecurityConfig {
                 // careers site: open job list and applications (rate-limited)
                 .requestMatchers(HttpMethod.GET, "/public/jobs").permitAll()
                 .requestMatchers(HttpMethod.POST, "/public/applications").permitAll()
-                .requestMatchers("/auth/register", "/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // HR data (salaries, personal data, hiring actions) is for HR staff only
                 .requestMatchers("/hr/**", "/analytics/**").hasAnyRole(HR)
                 // own file, notifications: any logged-in user

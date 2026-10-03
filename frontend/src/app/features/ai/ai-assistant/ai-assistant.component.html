@@ -24,11 +24,25 @@
                [ngClass]="m.sender === 'user' ? 'bg-accent text-slate-950 rounded-br-md' : 'bg-surface-muted border border-line text-slate-200 rounded-bl-md'">
             <div class="erp-prose" [innerHTML]="m.text | markdown"></div>
 
-            @if (m.chart) {
-              <div class="mt-3 rounded-lg border border-line bg-canvas/60 p-2">
-                <apx-chart [series]="m.chart.series" [chart]="m.chart.chart" [xaxis]="m.chart.xaxis"
-                           [colors]="m.chart.colors" [plotOptions]="m.chart.plotOptions"
-                           [dataLabels]="m.chart.dataLabels" [grid]="m.chart.grid" [legend]="m.chart.legend" [tooltip]="m.chart.tooltip" />
+            @if (m.spec && m.data?.length) {
+              <div class="mt-3 rounded-lg border border-line bg-canvas/60">
+                <div class="flex items-center justify-between gap-2 px-2.5 pt-2">
+                  <p class="truncate text-[11px] font-medium text-slate-300">{{ chartTitle(m) }}</p>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <button type="button" class="erp-icon-btn h-7 w-7" title="Enlarge" (click)="expanded = m">
+                      <app-icon name="external" class="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" class="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-[11px] transition-colors"
+                            [ngClass]="m.pin === 'pinned' ? 'border-emerald-500/30 text-emerald-300' : 'text-slate-300 hover:border-accent/40 hover:text-white'"
+                            [disabled]="m.pin === 'saving' || m.pin === 'pinned'" (click)="pin(m)"
+                            title="Add this chart to your dashboard; it is refreshed with live data every time">
+                      <app-icon [name]="m.pin === 'pinned' ? 'check' : 'plus'" class="h-3.5 w-3.5" />
+                      {{ m.pin === 'pinned' ? 'Pinned' : m.pin === 'saving' ? 'Pinning...' : 'Pin to dashboard' }}
+                    </button>
+                  </div>
+                </div>
+                <app-ai-chart [spec]="m.spec" [rows]="m.data!" [height]="230" />
+                @if (pinError(m); as e) { <p class="px-2.5 pb-2 text-[11px] text-rose-300">{{ e }}</p> }
               </div>
             }
 
@@ -41,7 +55,7 @@
                     </thead>
                     <tbody class="divide-y divide-line">
                       @for (row of (m.showAll ? m.data! : (m.data! | slice:0:5)); track $index) {
-                        <tr>@for (k of keys(row); track k) { <td class="px-2 py-1.5 text-slate-300 whitespace-nowrap">{{ row[k] }}</td> }</tr>
+                        <tr>@for (k of keys(row); track k) { <td class="px-2 py-1.5 text-slate-300 whitespace-nowrap">{{ cell(row[k]) }}</td> }</tr>
                       }
                     </tbody>
                   </table>
@@ -50,8 +64,17 @@
                   @if (m.data!.length > 5) {
                     <button type="button" class="hover:text-white" (click)="m.showAll = !m.showAll">{{ m.showAll ? 'Show less' : 'Show all ' + m.data!.length + ' rows' }}</button>
                   } @else { <span>{{ m.data!.length }} row(s)</span> }
-                  <button type="button" class="inline-flex items-center gap-1 hover:text-white" (click)="download(m)"><app-icon name="download" class="h-3.5 w-3.5" /> CSV</button>
+                  <span class="inline-flex items-center gap-3">
+                    @if (!m.spec && m.data!.length > 1 && m.sql) {
+                      <button type="button" class="inline-flex items-center gap-1 text-accent hover:text-white disabled:opacity-60"
+                              [disabled]="m.chartState === 'loading'" (click)="createChart(m)">
+                        <app-icon name="chart-bar" class="h-3.5 w-3.5" /> {{ m.chartState === 'loading' ? 'Drawing...' : 'Create a chart' }}
+                      </button>
+                    }
+                    <button type="button" class="inline-flex items-center gap-1 hover:text-white" (click)="download(m)"><app-icon name="download" class="h-3.5 w-3.5" /> CSV</button>
+                  </span>
                 </div>
+                @if (chartError(m); as e) { <p class="border-t border-line px-2 py-1.5 text-[11px] text-amber-300">{{ e }}</p> }
               </div>
             }
           </div>
@@ -70,7 +93,7 @@
         </div>
       }
 
-      @if (messages.length === 1 && !isLoading) {
+      @if (messages.length === 1 && !busy) {
         <div class="space-y-2">
           <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Frequently asked</p>
           @for (q of suggestions; track q) {
@@ -85,9 +108,35 @@
 
     <form (ngSubmit)="send()" class="flex gap-2 border-t border-line p-3">
       <input type="text" [(ngModel)]="userInput" name="prompt" class="erp-input" placeholder="Ask a question in plain language..." autocomplete="off" />
-      <button type="submit" class="erp-btn-primary px-3" [disabled]="isLoading || !userInput.trim()" aria-label="Send">
+      <button type="submit" class="erp-btn-primary px-3" [disabled]="busy || !userInput.trim()" aria-label="Send">
         <app-icon name="chevron-right" class="h-5 w-5" [stroke]="2" />
       </button>
     </form>
   </section>
+}
+
+@if (expanded; as m) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" (click)="expanded = null">
+    <div class="w-full max-w-5xl rounded-card border border-line bg-surface shadow-pop animate-fade-in" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+        <div class="min-w-0">
+          <p class="truncate font-semibold text-white">{{ chartTitle(m) }}</p>
+          <p class="truncate text-xs text-slate-500">{{ m.question }}</p>
+        </div>
+        <div class="flex shrink-0 items-center gap-2">
+          @if (m.pin !== 'pinned') {
+            <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="pin(m)" [disabled]="m.pin === 'saving'">
+              <app-icon name="plus" class="h-4 w-4" /> Pin to dashboard
+            </button>
+          } @else {
+            <span class="text-xs text-emerald-300">Pinned to your dashboard</span>
+          }
+          <button type="button" class="erp-icon-btn" (click)="expanded = null" aria-label="Close"><app-icon name="x" class="h-5 w-5" /></button>
+        </div>
+      </div>
+      <div class="p-4">
+        <app-ai-chart [spec]="m.spec!" [rows]="m.data!" [height]="460" />
+      </div>
+    </div>
+  </div>
 }

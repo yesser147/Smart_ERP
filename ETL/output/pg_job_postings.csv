@@ -1,251 +1,251 @@
 job_id,title,department_id,location,required_experience_years,offered_salary_min,offered_salary_max,status,created_at,description
-2,Healthcare Representative,5,Head Office,10,59000.0,79500.0,FILLED,2026-01-09 00:00:00,"Nexus is hiring a Healthcare Representative for its Research & Development department (Healthcare Representatives - Team 1). You will join an experienced team and contribute from day one.
+2,Healthcare Representative,5,Head Office,10,59000.0,79500.0,FILLED,2026-01-15 00:00:00,"Nexus is hiring a Healthcare Representative for its Research & Development department (Healthcare Representatives - Team 1). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 10 years of relevant experience
 - Key skills: Healthcare / pharmaceutical sales, product knowledge, relationship building with physicians, territory management, CRM, negotiation, medical terminology, presentations
 - Clear communication and a collaborative attitude"
-17,Manufacturing Director,44,Head Office,9,56500.0,75500.0,FILLED,2026-01-26 00:00:00,"Nexus is hiring a Manufacturing Director for its Research & Development department (Manufacturing Directors - Team 10). You will join an experienced team and contribute from day one.
+17,Manufacturing Director,44,Head Office,9,56500.0,75500.0,FILLED,2026-02-01 00:00:00,"Nexus is hiring a Manufacturing Director for its Research & Development department (Manufacturing Directors - Team 10). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: Manufacturing operations, production planning, GMP, quality management, lean / six sigma, supply chain, team leadership, budgeting
 - Clear communication and a collaborative attitude"
-19,Junior Research Scientist,50,Head Office,6,28000.0,40000.0,FILLED,2026-02-09 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 1). You will join an experienced team and contribute from day one.
+19,Junior Research Scientist,50,Head Office,6,28000.0,40000.0,FILLED,2026-02-15 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 1). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-18,Head of Research,46,Head Office,25,227500.0,235000.0,FILLED,2026-02-21 00:00:00,"Nexus is hiring a Head of Research for its Research & Development department (Research Directors - Team 2). You will join an experienced team and contribute from day one.
+18,Head of Research,46,Head Office,25,227500.0,235000.0,FILLED,2026-02-27 00:00:00,"Nexus is hiring a Head of Research for its Research & Development department (Research Directors - Team 2). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 25 years of relevant experience
 - Key skills: R&D strategy, scientific leadership, project and portfolio management, budgeting, regulatory affairs, team management, stakeholder communication, innovation
 - Clear communication and a collaborative attitude"
-14,Junior Laboratory Technician,30,Head Office,6,28000.0,42000.0,FILLED,2026-03-12 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 17). You will join an experienced team and contribute from day one.
+14,Junior Laboratory Technician,30,Head Office,6,28000.0,42000.0,FILLED,2026-03-18 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 17). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-29,Lead Sales Executive,85,Head Office,24,157500.0,162000.0,FILLED,2026-03-13 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 15). You will join an experienced team and contribute from day one.
+29,Lead Sales Executive,85,Head Office,24,157500.0,162000.0,FILLED,2026-03-19 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 15). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 24 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-27,Sales Executive,76,Head Office,9,56500.0,78000.0,FILLED,2026-03-17 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 6). You will join an experienced team and contribute from day one.
+27,Sales Executive,76,Head Office,9,56500.0,78000.0,FILLED,2026-03-23 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 6). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-11,Junior Laboratory Technician,22,Head Office,6,28000.0,42000.0,FILLED,2026-04-01 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 9). You will join an experienced team and contribute from day one.
+11,Junior Laboratory Technician,22,Head Office,6,28000.0,42000.0,FILLED,2026-04-07 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 9). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-36,Sales Executive,92,Head Office,9,56500.0,78000.0,FILLED,2026-04-10 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 22). You will join an experienced team and contribute from day one.
+36,Sales Executive,92,Head Office,9,56500.0,78000.0,FILLED,2026-04-16 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 22). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-8,Junior Laboratory Technician,16,Head Office,6,28000.0,42000.0,FILLED,2026-04-14 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 3). You will join an experienced team and contribute from day one.
+8,Junior Laboratory Technician,16,Head Office,6,28000.0,42000.0,FILLED,2026-04-20 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 3). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-13,Senior Laboratory Technician,20,Head Office,26,69000.0,82500.0,FILLED,2026-05-01 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 7). You will join an experienced team and contribute from day one.
+13,Senior Laboratory Technician,20,Head Office,26,69000.0,82500.0,FILLED,2026-05-07 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 7). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 26 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-9,Laboratory Technician,17,Head Office,10,41500.0,65000.0,FILLED,2026-05-09 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 4). You will join an experienced team and contribute from day one.
+9,Laboratory Technician,17,Head Office,10,41500.0,65000.0,FILLED,2026-05-15 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 4). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 10 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-31,Senior Sales Executive,75,Head Office,12,95000.0,123500.0,FILLED,2026-05-13 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 5). You will join an experienced team and contribute from day one.
+31,Senior Sales Executive,75,Head Office,12,95000.0,123500.0,FILLED,2026-05-19 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 5). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-26,Research Scientist,64,Head Office,12,51000.0,66000.0,OPEN,2026-05-17 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 15). You will join an experienced team and contribute from day one.
+26,Research Scientist,64,Head Office,12,51000.0,66000.0,OPEN,2026-05-23 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 15). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-38,Sales Representative,96,Head Office,11,37000.0,62500.0,OPEN,2026-05-19 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 4). You will join an experienced team and contribute from day one.
+38,Sales Representative,96,Head Office,11,37000.0,62500.0,OPEN,2026-05-25 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 4). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 11 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-15,Sales Director,69,Head Office,25,226000.0,235000.0,OPEN,2026-05-31 00:00:00,"Nexus is hiring a Sales Director for its Sales department (Managers - Team 1). You will join an experienced team and contribute from day one.
+15,Sales Director,69,Head Office,25,226000.0,235000.0,OPEN,2026-06-06 00:00:00,"Nexus is hiring a Sales Director for its Sales department (Managers - Team 1). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 25 years of relevant experience
 - Key skills: Team leadership, people management, budgeting, performance management, strategic planning, stakeholder communication, reporting, problem solving
 - Clear communication and a collaborative attitude"
-28,Senior Sales Executive,83,Head Office,12,95000.0,123500.0,OPEN,2026-06-04 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 13). You will join an experienced team and contribute from day one.
+28,Senior Sales Executive,83,Head Office,12,95000.0,123500.0,OPEN,2026-06-10 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 13). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-30,Sales Executive,74,Head Office,9,56500.0,78000.0,OPEN,2026-06-11 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 4). You will join an experienced team and contribute from day one.
+30,Sales Executive,74,Head Office,9,56500.0,78000.0,OPEN,2026-06-17 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 4). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-22,Research Scientist,57,Head Office,12,51000.0,66000.0,OPEN,2026-06-11 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 8). You will join an experienced team and contribute from day one.
+22,Research Scientist,57,Head Office,12,51000.0,66000.0,OPEN,2026-06-17 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 8). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-24,Research Scientist,68,Head Office,12,51000.0,66000.0,OPEN,2026-06-11 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 19). You will join an experienced team and contribute from day one.
+24,Research Scientist,68,Head Office,12,51000.0,66000.0,OPEN,2026-06-17 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 19). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-40,Sales Representative,93,Head Office,11,37000.0,62500.0,OPEN,2026-06-14 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 1). You will join an experienced team and contribute from day one.
+40,Sales Representative,93,Head Office,11,37000.0,62500.0,OPEN,2026-06-20 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 1). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 11 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-32,Lead Sales Executive,81,Head Office,24,157500.0,162000.0,OPEN,2026-06-26 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 11). You will join an experienced team and contribute from day one.
+32,Lead Sales Executive,81,Head Office,24,157500.0,162000.0,OPEN,2026-07-02 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 11). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 24 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-16,Manufacturing Director,38,Head Office,13,95500.0,125500.0,OPEN,2026-07-02 00:00:00,"Nexus is hiring a Manufacturing Director for its Research & Development department (Manufacturing Directors - Team 4). You will join an experienced team and contribute from day one.
+16,Manufacturing Director,38,Head Office,13,95500.0,125500.0,OPEN,2026-07-08 00:00:00,"Nexus is hiring a Manufacturing Director for its Research & Development department (Manufacturing Directors - Team 4). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 13 years of relevant experience
 - Key skills: Manufacturing operations, production planning, GMP, quality management, lean / six sigma, supply chain, team leadership, budgeting
 - Clear communication and a collaborative attitude"
-21,Junior Research Scientist,58,Head Office,6,28000.0,40000.0,OPEN,2026-07-11 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 9). You will join an experienced team and contribute from day one.
+21,Junior Research Scientist,58,Head Office,6,28000.0,40000.0,OPEN,2026-07-17 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 9). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-41,Junior Sales Representative,95,Head Office,3,27500.0,34500.0,OPEN,2026-07-12 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 3). You will join an experienced team and contribute from day one.
+41,Junior Sales Representative,95,Head Office,3,27500.0,34500.0,OPEN,2026-07-18 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 3). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 3 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-25,Junior Research Scientist,54,Head Office,6,28000.0,40000.0,OPEN,2026-07-18 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 5). You will join an experienced team and contribute from day one.
+25,Junior Research Scientist,54,Head Office,6,28000.0,40000.0,OPEN,2026-07-24 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 5). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-42,Sales Representative,98,Head Office,11,37000.0,62500.0,OPEN,2026-07-27 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 6). You will join an experienced team and contribute from day one.
+42,Sales Representative,98,Head Office,11,37000.0,62500.0,OPEN,2026-08-02 00:00:00,"Nexus is hiring a Sales Representative for its Sales department (Sales Representatives - Team 6). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 11 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-4,Senior HR Specialist,3,Head Office,9,103000.0,120000.0,OPEN,2026-07-29 00:00:00,"Nexus is hiring a Senior HR Specialist for its Human Resources department (HR Specialists - Team 3). You will join an experienced team and contribute from day one.
+4,Senior HR Specialist,3,Head Office,9,103000.0,120000.0,OPEN,2026-08-04 00:00:00,"Nexus is hiring a Senior HR Specialist for its Human Resources department (HR Specialists - Team 3). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: Recruitment, onboarding, employee relations, HR policies, labour law compliance, HRIS, payroll basics, communication
 - Clear communication and a collaborative attitude"
-35,Lead Sales Executive,79,Head Office,24,157500.0,162000.0,OPEN,2026-08-04 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 9). You will join an experienced team and contribute from day one.
+35,Lead Sales Executive,79,Head Office,24,157500.0,162000.0,OPEN,2026-08-10 00:00:00,"Nexus is hiring a Lead Sales Executive for its Sales department (Sales Executives - Team 9). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 24 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-12,Laboratory Technician,14,Head Office,10,41500.0,65000.0,OPEN,2026-08-08 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 1). You will join an experienced team and contribute from day one.
+12,Laboratory Technician,14,Head Office,10,41500.0,65000.0,OPEN,2026-08-14 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 1). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 10 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-3,Junior HR Specialist,2,Head Office,6,26500.0,40000.0,OPEN,2026-08-08 00:00:00,"Nexus is hiring a Junior HR Specialist for its Human Resources department (HR Specialists - Team 2). You will join an experienced team and contribute from day one.
+3,Junior HR Specialist,2,Head Office,6,26500.0,40000.0,OPEN,2026-08-14 00:00:00,"Nexus is hiring a Junior HR Specialist for its Human Resources department (HR Specialists - Team 2). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Recruitment, onboarding, employee relations, HR policies, labour law compliance, HRIS, payroll basics, communication
 - Clear communication and a collaborative attitude"
-23,Junior Research Scientist,60,Head Office,6,28000.0,40000.0,OPEN,2026-08-08 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 11). You will join an experienced team and contribute from day one.
+23,Junior Research Scientist,60,Head Office,6,28000.0,40000.0,OPEN,2026-08-14 00:00:00,"Nexus is hiring a Junior Research Scientist for its Research & Development department (Research Scientists - Team 11). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-6,Laboratory Technician,24,Head Office,10,41500.0,65000.0,OPEN,2026-08-10 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 11). You will join an experienced team and contribute from day one.
+6,Laboratory Technician,24,Head Office,10,41500.0,65000.0,OPEN,2026-08-16 00:00:00,"Nexus is hiring a Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 11). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 10 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-20,Research Scientist,63,Head Office,12,51000.0,66000.0,OPEN,2026-08-11 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 14). You will join an experienced team and contribute from day one.
+20,Research Scientist,63,Head Office,12,51000.0,66000.0,OPEN,2026-08-17 00:00:00,"Nexus is hiring a Research Scientist for its Research & Development department (Research Scientists - Team 14). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience
 - Key skills: Experimental design, laboratory research, data analysis, statistics, scientific writing, literature review, Python or R, regulatory standards (GLP)
 - Clear communication and a collaborative attitude"
-39,Junior Sales Representative,97,Head Office,3,27500.0,34500.0,OPEN,2026-08-17 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 5). You will join an experienced team and contribute from day one.
+39,Junior Sales Representative,97,Head Office,3,27500.0,34500.0,OPEN,2026-08-23 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 5). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 3 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-5,Junior Laboratory Technician,19,Head Office,6,28000.0,42000.0,OPEN,2026-08-21 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 6). You will join an experienced team and contribute from day one.
+5,Junior Laboratory Technician,19,Head Office,6,28000.0,42000.0,OPEN,2026-08-27 00:00:00,"Nexus is hiring a Junior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 6). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 6 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-1,Senior Healthcare Representative,12,Head Office,17,100500.0,126500.0,OPEN,2026-08-25 00:00:00,"Nexus is hiring a Senior Healthcare Representative for its Research & Development department (Healthcare Representatives - Team 8). You will join an experienced team and contribute from day one.
+1,Senior Healthcare Representative,12,Head Office,17,100500.0,126500.0,OPEN,2026-08-31 00:00:00,"Nexus is hiring a Senior Healthcare Representative for its Research & Development department (Healthcare Representatives - Team 8). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 17 years of relevant experience
 - Key skills: Healthcare / pharmaceutical sales, product knowledge, relationship building with physicians, territory management, CRM, negotiation, medical terminology, presentations
 - Clear communication and a collaborative attitude"
-37,Junior Sales Representative,94,Head Office,3,27500.0,34500.0,OPEN,2026-08-26 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 2). You will join an experienced team and contribute from day one.
+37,Junior Sales Representative,94,Head Office,3,27500.0,34500.0,OPEN,2026-09-01 00:00:00,"Nexus is hiring a Junior Sales Representative for its Sales department (Sales Representatives - Team 2). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 3 years of relevant experience
 - Key skills: Prospecting, customer service, product demonstrations, CRM, cold calling, negotiation, order processing, communication
 - Clear communication and a collaborative attitude"
-10,Senior Laboratory Technician,21,Head Office,26,69000.0,82500.0,OPEN,2026-08-28 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 8). You will join an experienced team and contribute from day one.
+10,Senior Laboratory Technician,21,Head Office,26,69000.0,82500.0,OPEN,2026-09-03 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 8). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 26 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-33,Sales Executive,80,Head Office,9,56500.0,78000.0,OPEN,2026-08-30 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 10). You will join an experienced team and contribute from day one.
+33,Sales Executive,80,Head Office,9,56500.0,78000.0,OPEN,2026-09-05 00:00:00,"Nexus is hiring a Sales Executive for its Sales department (Sales Executives - Team 10). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 9 years of relevant experience
 - Key skills: B2B sales, account management, negotiation, pipeline management, CRM (Salesforce), presentations, market analysis, customer relationship
 - Clear communication and a collaborative attitude"
-7,Senior Laboratory Technician,15,Head Office,26,69000.0,82500.0,OPEN,2026-09-05 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 2). You will join an experienced team and contribute from day one.
+7,Senior Laboratory Technician,15,Head Office,26,69000.0,82500.0,OPEN,2026-09-11 00:00:00,"Nexus is hiring a Senior Laboratory Technician for its Research & Development department (Laboratory Technicians - Team 2). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 26 years of relevant experience
 - Key skills: Laboratory techniques, sample preparation, lab equipment operation and calibration, quality control, GLP, safety procedures, documentation, data recording
 - Clear communication and a collaborative attitude"
-34,Senior Sales Executive,73,Head Office,12,95000.0,123500.0,OPEN,2026-09-17 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 3). You will join an experienced team and contribute from day one.
+34,Senior Sales Executive,73,Head Office,12,95000.0,123500.0,OPEN,2026-09-23 00:00:00,"Nexus is hiring a Senior Sales Executive for its Sales department (Sales Executives - Team 3). You will join an experienced team and contribute from day one.
 
 Profile:
 - About 12 years of relevant experience

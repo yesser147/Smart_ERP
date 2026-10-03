@@ -67,6 +67,7 @@ services:
       MINIO_ENDPOINT: http://minio:9000
       AI_SERVICE_URL: http://ai-engine:8000
       FRONTEND_URL: http://localhost:4200
+      TZ: ${TZ:-Europe/Paris}    # local time for the nightly leave job and "today" (set TZ in .env to change)
     ports:
       - "8080:8080"
     depends_on:

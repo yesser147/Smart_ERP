@@ -135,3 +135,5 @@ RETENTION_CACHE_SECONDS = int(os.environ.get("RETENTION_CACHE_SECONDS", "600"))
 # at most this many candidates per search are judged by the LLM (the best
 # ones by the cheap signals); the others keep their pre-screen score
 MATCH_LLM_MAX = int(os.environ.get("MATCH_LLM_MAX", "25"))
+# parallel LLM reviews when ranking; keep it low on Groq's free tier (tokens per minute)
+MATCH_LLM_WORKERS = int(os.environ.get("MATCH_LLM_WORKERS", "2"))

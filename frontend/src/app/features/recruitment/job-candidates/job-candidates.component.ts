@@ -8,7 +8,7 @@ import { AiService } from '../../../core/services/ai.service';
 import { HrService } from '../../../core/services/hr.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { JobApplicationDTO, JobPostingDTO } from '../../../core/models/hr.model';
-import { CandidateMatch, JobMatchResult } from '../../../core/models/ai.model';
+import { CandidateMatch, JobMatchResult, JobRequirement } from '../../../core/models/ai.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -190,6 +190,24 @@ export class JobCandidatesComponent implements OnInit {
   showMore(): void {
     this.topK += STEP;
     this.runMatch();
+  }
+
+  get jobRequirements(): JobRequirement[] {
+    return this.match?.requirements ?? [];
+  }
+
+  get mustHaves(): JobRequirement[] {
+    return this.jobRequirements.filter(r => r.type === 'must');
+  }
+
+  get niceToHaves(): JobRequirement[] {
+    return this.jobRequirements.filter(r => r.type === 'nice');
+  }
+
+  checkTone(status: string): string {
+    if (status === 'met') return 'bg-emerald-500/20 text-emerald-300';
+    if (status === 'partial') return 'bg-amber-500/20 text-amber-300';
+    return 'bg-rose-500/20 text-rose-300';
   }
 
   parseSkills(json: string): string[] {

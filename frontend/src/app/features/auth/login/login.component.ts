@@ -34,9 +34,6 @@ import { errorMessage } from '../../../shared/utils/errors';
           {{ loading() ? 'Signing in...' : 'Sign in' }}
         </button>
       </form>
-      <p class="mt-8 text-center text-xs text-slate-500">
-        Looking for a job? <a routerLink="/careers" class="text-accent hover:text-accent-hover">See our openings</a>
-      </p>
     </app-auth-layout>
   `
 })

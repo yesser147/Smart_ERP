@@ -51,10 +51,6 @@ export class HrService {
     return this.http.post<PerformanceReviewDTO>(`${this.apiUrl}/employees/${id}/reviews`, { rating, comments });
   }
 
-  exportPayroll(): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/payroll/export`, { responseType: 'blob' });
-  }
-
   // --- job postings
   getAllJobPostings(): Observable<JobPostingDTO[]> {
     return this.http.get<JobPostingDTO[]>(`${this.apiUrl}/job-postings`);

@@ -14,7 +14,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
         <div aria-hidden="true" class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(56,189,248,0.18),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(129,140,248,0.16),transparent_55%)]"></div>
         <div aria-hidden="true" class="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#94a3b8_1px,transparent_1px),linear-gradient(90deg,#94a3b8_1px,transparent_1px)] [background-size:36px_36px]"></div>
 
-        <a routerLink="/careers" class="relative flex items-center gap-3">
+        <a routerLink="/" class="relative flex items-center gap-3">
           <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-from to-brand-to shadow-glow">
             <img src="assets/images/nexus.svg" alt="" class="h-7 w-7" />
           </span>
@@ -42,7 +42,12 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
       </aside>
 
       <!-- form -->
-      <main class="flex items-center justify-center p-6 sm:p-10">
+      <main class="relative flex items-center justify-center p-6 sm:p-10">
+        <!-- outside the form: back home, or the careers site for candidates -->
+        <nav class="absolute right-4 top-4 flex items-center gap-2 sm:right-6 sm:top-6">
+          <a routerLink="/" class="erp-btn-ghost text-xs">Home</a>
+          <a routerLink="/careers" class="erp-btn-secondary erp-btn-sm"><app-icon name="briefcase" class="h-4 w-4" /> Careers · apply for a job</a>
+        </nav>
         <div class="w-full max-w-sm animate-fade-in">
           <div class="lg:hidden mb-8 flex items-center gap-3">
             <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-from to-brand-to">

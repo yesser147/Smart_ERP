@@ -3,10 +3,6 @@
     <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="exportCsv()" [disabled]="!!exporting || loading">
       <app-icon name="download" class="h-4 w-4" /> {{ exporting === 'csv' ? 'Exporting...' : 'Export CSV' }}
     </button>
-    <button type="button" class="erp-btn-secondary erp-btn-sm" (click)="exportPayroll()" [disabled]="!!exporting"
-            title="Active employees with their current salary">
-      <app-icon name="banknotes" class="h-4 w-4" /> {{ exporting === 'payroll' ? 'Exporting...' : 'Payroll export' }}
-    </button>
   </app-page-header>
 
   <div class="erp-card overflow-hidden">

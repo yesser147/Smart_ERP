@@ -6,15 +6,11 @@ import com.smarterp.hr.service.WorkforceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.util.List;
 
-/** HR side of reviews, leave requests, budget allocations and payroll. */
+/** HR side of reviews, leave requests and budget allocations. */
 @RestController
 @RequestMapping("/hr")
 @RequiredArgsConstructor
@@ -56,14 +52,5 @@ public class WorkforceController {
     @PostMapping("/budget-allocations")
     public BudgetAllocationDTO approveAllocation(@Valid @RequestBody BudgetAllocationCreateDTO req) {
         return workforceService.approveAllocation(req);
-    }
-
-    @GetMapping("/payroll/export")
-    public ResponseEntity<byte[]> payroll() {
-        byte[] body = workforceService.payrollCsv().getBytes(StandardCharsets.UTF_8);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=payroll-" + LocalDate.now() + ".csv")
-                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
-                .body(body);
     }
 }

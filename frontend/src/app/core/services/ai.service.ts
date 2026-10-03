@@ -4,7 +4,7 @@ import { Observable, shareReplay, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TokenService } from './token.service';
 import {
-  AtRiskEmployee, ChatMessage, CvSearchResult, DepartmentBaseline, EmployeeRisk, InterviewQuestions,
+  AssistantEvent, AtRiskEmployee, ChartSpec, ChatMessage, SavedChart, CvSearchResult, DepartmentBaseline, EmployeeRisk, InterviewQuestions,
   JobDescriptionResult, JobMatchResult, ModelsStatus, PopularQuestion, SimulationResult, SurvivalCurves
 } from '../models/ai.model';
 
@@ -19,8 +19,43 @@ export class AiService {
 
   // --- HR chatbot
   /** conversationId keeps each chat window's memory separate on the server. */
-  askAssistant(question: string, conversationId?: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/chat`, { question, conversation_id: conversationId });
+  /** The answer arrives as newline-delimited JSON events: the SQL result first,
+   *  then the written answer piece by piece. */
+  askAssistant(question: string, conversationId?: string): Observable<AssistantEvent> {
+    return new Observable<AssistantEvent>(subscriber => {
+      let buffer = '';
+      const sub = this.streamPost('/chat', { question, conversation_id: conversationId }).subscribe({
+        next: chunk => {
+          buffer += chunk;
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';            // the last line may be incomplete
+          for (const l of lines) if (l.trim()) subscriber.next(JSON.parse(l) as AssistantEvent);
+        },
+        error: e => subscriber.error(e),
+        complete: () => {
+          if (buffer.trim()) subscriber.next(JSON.parse(buffer) as AssistantEvent);
+          subscriber.complete();
+        }
+      });
+      return () => sub.unsubscribe();
+    });
+  }
+
+  /** "Create a chart" under an answer: the AI picks a chart for the query already run. */
+  chartForAnswer(question: string, sqlQuery: string): Observable<{ chart: ChartSpec }> {
+    return this.http.post<{ chart: ChartSpec }>(`${this.baseUrl}/chat/chart`, { question, sql_query: sqlQuery });
+  }
+
+  savedCharts(): Observable<SavedChart[]> {
+    return this.http.get<SavedChart[]>(`${this.baseUrl}/charts`);
+  }
+
+  saveChart(body: { title: string; question: string; sql_query: string; chart: ChartSpec }): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.baseUrl}/charts`, body);
+  }
+
+  deleteChart(id: number): Observable<unknown> {
+    return this.http.delete(`${this.baseUrl}/charts/${id}`);
   }
 
   popularQuestions(): Observable<PopularQuestion[]> {
@@ -86,9 +121,11 @@ export class AiService {
     return this.http.get<CvSearchResult[]>(`${this.baseUrl}/recruitment/search`, { params: { q: query, limit } });
   }
 
-  generateJobDescription(title: string, department?: string, requiredExperienceYears?: number | null): Observable<JobDescriptionResult> {
+  generateJobDescription(body: { title: string; department?: string; team?: string;
+                                  requiredExperienceYears?: number | null; notes?: string }): Observable<JobDescriptionResult> {
     return this.http.post<JobDescriptionResult>(`${this.baseUrl}/recruitment/job-description`, {
-      title, department, required_experience_years: requiredExperienceYears
+      title: body.title, department: body.department, team: body.team,
+      required_experience_years: body.requiredExperienceYears, notes: body.notes || null
     });
   }
 
@@ -97,18 +134,24 @@ export class AiService {
   }
 
   streamApplicantChat(applicantId: number, jobId: number, message: string): Observable<string> {
+    return this.streamPost(`/recruitment/chat/${applicantId}/${jobId}/stream`, { message });
+  }
+
+  /** POST that returns the response body piece by piece as it arrives.
+   *  fetch() is used because HttpClient can't stream; it bypasses the
+   *  interceptor, so the token is added here. */
+  private streamPost(path: string, body: unknown): Observable<string> {
     return new Observable<string>(subscriber => {
       const controller = new AbortController();
       (async () => {
         try {
-          const res = await fetch(`${this.baseUrl}/recruitment/chat/${applicantId}/${jobId}/stream`, {
+          const res = await fetch(`${this.baseUrl}${path}`, {
             method: 'POST',
-            // fetch() bypasses the HttpClient interceptor, so add the token here
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${this.tokenService.getToken() ?? ''}`
             },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify(body),
             signal: controller.signal
           });
           if (!res.ok || !res.body) {

@@ -1,10 +1,14 @@
 package com.smarterp.admin;
 
 import com.smarterp.shared.audit.AuditLogDTO;
+import com.smarterp.security.dto.AuthResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,6 +26,19 @@ public class AdminController {
                                     @RequestParam(required = false) String search,
                                     @RequestParam(required = false) String role) {
         return service.users(page, size, search, role);
+    }
+
+    /** Every account belongs to an employee: new hires get theirs at the Hire step,
+     *  existing employees get one here. */
+    @PostMapping("/users")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        return service.createAccount(request);
+    }
+
+    @GetMapping("/employees-without-account")
+    public List<EmployeeOptionDTO> employeesWithoutAccount(@RequestParam(required = false) String search) {
+        return service.employeesWithoutAccount(search);
     }
 
     @PatchMapping("/users/{id}/role")

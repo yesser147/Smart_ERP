@@ -9,6 +9,7 @@ so the provider, model and timeouts are configured once in .env:
 
 import json
 import logging
+import time
 
 import requests
 
@@ -17,6 +18,8 @@ import config
 log = logging.getLogger(__name__)
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_RATE_LIMIT_RETRIES = 3        # Groq's free tier limits tokens per minute (HTTP 429)
+GROQ_MAX_WAIT_SECONDS = 20
 
 
 class LLMUnavailable(Exception):
@@ -39,10 +42,27 @@ def _groq(messages, json_mode, temperature, max_tokens, timeout):
         body["max_tokens"] = max_tokens
     if json_mode:
         body["response_format"] = {"type": "json_object"}   # prompts must mention JSON (they do)
-    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
-                      json=body, timeout=timeout)
-    r.raise_for_status()
+    r = _groq_post(body, timeout=timeout)
     return r.json()["choices"][0]["message"]["content"].strip()
+
+
+def _groq_post(body: dict, timeout: float, stream: bool = False) -> requests.Response:
+    """POST to Groq; on "too many requests" waits as long as Groq asks (Retry-After)
+    and tries again, before giving up and letting the caller fall back to Ollama."""
+    for attempt in range(GROQ_RATE_LIMIT_RETRIES + 1):
+        r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
+                          json=body, timeout=timeout, stream=stream)
+        if r.status_code != 429 or attempt == GROQ_RATE_LIMIT_RETRIES:
+            break
+        try:
+            wait = float(r.headers.get("retry-after", 0)) or 2.0 * (attempt + 1)
+        except ValueError:
+            wait = 2.0 * (attempt + 1)
+        wait = min(wait, GROQ_MAX_WAIT_SECONDS)
+        log.info("Groq rate limit reached: waiting %.1f s before retrying", wait)
+        time.sleep(wait)
+    r.raise_for_status()
+    return r
 
 
 def _ollama(messages, json_mode, temperature, max_tokens, timeout):
@@ -67,13 +87,22 @@ def _providers(groq_fn, ollama_fn):
     return [groq_fn, ollama_fn] if config.LLM_PROVIDER == "groq" else [ollama_fn]
 
 
+def _label(fn) -> str:
+    """'groq (openai/gpt-oss-120b)' / 'ollama (llama3.1)', for the logs."""
+    name = fn.__name__.strip("_").replace("_stream", "")
+    return f"{name} ({config.GROQ_MODEL if name == 'groq' else config.OLLAMA_MODEL})"
+
+
 def chat(messages: list[dict], json_mode: bool = False, temperature: float = 0.3,
          max_tokens: int | None = None, timeout: float = 60) -> str:
     errors = []
     for fn in _providers(_groq, _ollama):
         try:
-            return fn(messages, json_mode, temperature, max_tokens, timeout)
+            answer = fn(messages, json_mode, temperature, max_tokens, timeout)
+            log.info("LLM answer from %s", _label(fn))
+            return answer
         except Exception as e:
+            log.warning("LLM %s failed, trying the next provider: %s", _label(fn), e)
             errors.append(f"{fn.__name__.lstrip('_')}: {e}")
     raise LLMUnavailable(" | ".join(errors))
 
@@ -109,9 +138,7 @@ def _groq_stream(messages, temperature):
         "temperature": temperature,
         "stream": True,
     }
-    r = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
-                      json=body, timeout=60, stream=True)
-    r.raise_for_status()
+    r = _groq_post(body, timeout=60, stream=True)
     r.encoding = "utf-8"
     for line in r.iter_lines(decode_unicode=True):
         if not line or not line.startswith("data:"):
@@ -156,8 +183,10 @@ def stream_chat(messages: list[dict], temperature: float = 0.3):
         except StopIteration:
             return
         except Exception as e:
+            log.warning("LLM %s failed, trying the next provider: %s", _label(fn), e)
             errors.append(f"{fn.__name__.strip('_')}: {e}")
             continue
+        log.info("LLM streamed answer from %s", _label(fn))
         yield first
         yield from gen
         return

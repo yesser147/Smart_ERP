@@ -16,6 +16,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 import { HrOverviewComponent } from '../hr-overview/hr-overview.component';
+import { MyChartsComponent } from '../my-charts/my-charts.component';
 import { HrTurnoverComponent } from '../hr-turnover/hr-turnover.component';
 import { HrCompensationComponent } from '../hr-compensation/hr-compensation.component';
 import { HrRecruitmentComponent } from '../hr-recruitment/hr-recruitment.component';
@@ -52,7 +53,7 @@ const HEADERS: Record<AnalyticsView, { title: string; subtitle: string; icon: st
 @Component({
   selector: 'app-analytics-page',
   standalone: true,
-  imports: [PageHeaderComponent, IconComponent, HrOverviewComponent, HrTurnoverComponent, HrCompensationComponent, HrRecruitmentComponent],
+  imports: [PageHeaderComponent, IconComponent, HrOverviewComponent, MyChartsComponent, HrTurnoverComponent, HrCompensationComponent, HrRecruitmentComponent],
   templateUrl: './analytics-page.component.html'
 })
 export class AnalyticsPageComponent implements OnInit {
@@ -303,7 +304,9 @@ export class AnalyticsPageComponent implements OnInit {
   }
 
   /** Average salary per department and gender, weighted by headcount, with the gap in the labels. */
-  private buildPayGapChart(payGap: GenderPayGapDTO[]): ChartOptions {
+  private buildPayGapChart(rows: GenderPayGapDTO[]): ChartOptions {
+    // employees whose gender is not recorded can't be compared: left out
+    const payGap = rows.filter(p => !!p.gender?.trim());
     const departments = [...new Set(payGap.map(p => p.departmentType || 'Unknown'))].sort();
     const genders = [...new Set(payGap.map(p => p.gender))].sort();
     const avg = (dept: string, gender: string) => {

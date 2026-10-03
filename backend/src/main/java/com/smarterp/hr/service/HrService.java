@@ -300,7 +300,8 @@ public class HrService {
         employee.setDob(applicant.getDob());
         employee.setState(req.state());
         employee.setJobFunction(req.jobFunction());
-        employee.setGender(applicant.getGender());
+        String gender = req.gender() == null ? "" : req.gender().trim().toUpperCase();
+        employee.setGender(gender.equals("MALE") || gender.equals("FEMALE") ? gender : applicant.getGender());
         employee.setLocation(req.location());
         employee.setSalary(req.salary());
         employee.setCurrency("USD");

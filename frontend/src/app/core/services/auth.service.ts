@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import { AuthResponse, LoginRequest, RegisterRequest, SetPasswordRequest } from '../models/auth.model';
+import { AuthResponse, LoginRequest, SetPasswordRequest } from '../models/auth.model';
 import { TokenService } from './token.service';
 import { environment } from '../../../environments/environment';
 
@@ -19,10 +19,6 @@ export class AuthService {
         if (response.accessToken) this.tokenService.saveAuthData(response);
       })
     );
-  }
-
-  createUser(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData);
   }
 
   forgotPassword(email: string): Observable<{ message: string }> {

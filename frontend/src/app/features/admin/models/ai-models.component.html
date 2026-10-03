@@ -11,7 +11,7 @@
   @if (loading) {
     <div class="grid gap-6 lg:grid-cols-2">@for (i of [1, 2]; track i) { <div class="erp-skeleton h-80"></div> }</div>
   } @else if (status) {
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div class="space-y-6">
       <!-- retention -->
       <div class="erp-card">
         <div class="erp-card-header">
@@ -24,13 +24,22 @@
         <div class="p-5 space-y-5">
           <p class="text-sm text-slate-300">{{ retentionVerdict.text }}</p>
           @if (retention; as m) {
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">ROC AUC</p><p class="text-xl font-semibold text-white">{{ m['cv_auc'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">± {{ m['cv_auc_std'] | number:'1.2-2' }}</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">PR AUC</p><p class="text-xl font-semibold text-white">{{ m['cv_pr_auc'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">chance = {{ m['churn_rate'] | number:'1.2-2' }}</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Baseline (logistic)</p><p class="text-xl font-semibold text-white">{{ m['baseline_cv_auc'] != null ? (m['baseline_cv_auc'] | number:'1.2-2') : '—' }}</p><p class="text-[10px] text-slate-500">ROC AUC</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Alert threshold</p><p class="text-xl font-semibold text-white">{{ m['risk_threshold'] * 100 | number:'1.0-0' }}%</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Precision at threshold</p><p class="text-xl font-semibold text-white">{{ m['threshold_precision'] * 100 | number:'1.0-0' }}%</p><p class="text-[10px] text-slate-500">of alerts really leave</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Recall at threshold</p><p class="text-xl font-semibold text-white">{{ m['threshold_recall'] * 100 | number:'1.0-0' }}%</p><p class="text-[10px] text-slate-500">of leavers caught</p></div>
+            <div class="divide-y divide-line rounded-xl border border-line overflow-hidden">
+              @for (x of retentionScores; track x.name) {
+                <div class="grid gap-3 p-4 sm:grid-cols-[180px_1fr] bg-surface-muted/40">
+                  <div>
+                    <p class="text-xs text-slate-400">{{ x.name }}</p>
+                    <p class="text-2xl font-semibold tabular-nums" [ngClass]="explainedTone(x.tone)">{{ x.value }}</p>
+                  </div>
+                  <dl class="space-y-1.5 text-sm">
+                    <div><dt class="inline text-slate-500">What it means: </dt><dd class="inline text-slate-200">{{ x.meaning }}</dd></div>
+                    <div><dt class="inline text-slate-500">Best possible: </dt><dd class="inline text-slate-300">{{ x.best }}</dd></div>
+                    @if (x.why !== '—') {
+                      <div><dt class="inline text-slate-500">Why not higher: </dt><dd class="inline text-slate-300">{{ x.why }}</dd></div>
+                    }
+                  </dl>
+                </div>
+              }
             </div>
             <p class="text-xs text-slate-500">
               Trained on {{ m['n_rows'] }} employees ({{ m['n_churned'] }} departures) with {{ m['features']?.length }} features
@@ -52,10 +61,22 @@
         <div class="p-5 space-y-5">
           <p class="text-sm text-slate-300">{{ budgetVerdict.text }}</p>
           @if (budget; as m) {
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">R²</p><p class="text-xl font-semibold" [class.text-rose-300]="m['cv_r2'] < 0" [class.text-white]="m['cv_r2'] >= 0">{{ m['cv_r2'] | number:'1.2-2' }}</p><p class="text-[10px] text-slate-500">± {{ m['cv_r2_std'] | number:'1.2-2' }}</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Mean error</p><p class="text-xl font-semibold text-white">{{ m['cv_mae'] | number:'1.3-3' }}</p><p class="text-[10px] text-slate-500">target spread {{ m['target_std'] | number:'1.3-3' }}</p></div>
-              <div class="rounded-lg bg-surface-muted border border-line p-3"><p class="text-[11px] text-slate-500">Teams</p><p class="text-xl font-semibold text-white">{{ m['n_rows'] }}</p><p class="text-[10px] text-slate-500">with {{ m['min_headcount'] }}+ people</p></div>
+            <div class="divide-y divide-line rounded-xl border border-line overflow-hidden">
+              @for (x of budgetScores; track x.name) {
+                <div class="grid gap-3 p-4 sm:grid-cols-[180px_1fr] bg-surface-muted/40">
+                  <div>
+                    <p class="text-xs text-slate-400">{{ x.name }}</p>
+                    <p class="text-2xl font-semibold tabular-nums" [ngClass]="explainedTone(x.tone)">{{ x.value }}</p>
+                  </div>
+                  <dl class="space-y-1.5 text-sm">
+                    <div><dt class="inline text-slate-500">What it means: </dt><dd class="inline text-slate-200">{{ x.meaning }}</dd></div>
+                    <div><dt class="inline text-slate-500">Best possible: </dt><dd class="inline text-slate-300">{{ x.best }}</dd></div>
+                    @if (x.why !== '—') {
+                      <div><dt class="inline text-slate-500">Why not higher: </dt><dd class="inline text-slate-300">{{ x.why }}</dd></div>
+                    }
+                  </dl>
+                </div>
+              }
             </div>
             <p class="text-xs text-slate-500">
               Budget range seen: ${{ m['budget_min'] | number:'1.0-0' }} – ${{ m['budget_max'] | number:'1.0-0' }}
@@ -73,8 +94,13 @@
         <div class="space-y-1">
           <h2 class="erp-section-title">Candidate matching</h2>
           <p class="text-sm text-slate-300">
-            Evaluated on a public data set of resume / job pairs labelled by recruiters: CV text similarity reached a ROC AUC of 0.54 (300 pairs)
-            and the LLM review 0.50 (40 pairs). The ranking is a help to read CVs faster, not a decision: a recruiter must review every candidate.
+            Each job is turned into a checklist of must-haves and nice-to-haves. The AI checks every CV against it line by line
+            (met, partial or missing) and quotes the evidence; the years of experience are checked by code. The score comes from
+            the checklist (must-haves count double, a missing must-have caps the score), so every score can be verified by a recruiter.
+          </p>
+          <p class="text-sm text-slate-300">
+            The previous method (one overall AI score) was evaluated on a public data set of CV / job pairs labelled by recruiters and
+            did not beat chance (ROC AUC 0.50 to 0.54). The ranking is a help to read CVs faster, not a decision.
           </p>
           <p class="text-xs text-slate-500">Script: ai_engine/models/recruitment/evaluate_matcher.py</p>
         </div>

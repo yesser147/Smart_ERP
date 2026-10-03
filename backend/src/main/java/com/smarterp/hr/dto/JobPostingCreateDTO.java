@@ -14,5 +14,5 @@ public record JobPostingCreateDTO(
         @DecimalMin("0") BigDecimal requiredExperienceYears,
         @DecimalMin("0") BigDecimal offeredSalaryMin,
         @DecimalMin("0") BigDecimal offeredSalaryMax,
-        @Size(max = 10000) String description
+        @NotBlank(message = "Generate the description with the AI before publishing.") @Size(max = 10000) String description
 ) {}
